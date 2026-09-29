@@ -45,6 +45,16 @@ const ROUTES = {
 // Sekmesi olmayan bina sayfalarında hangi sekme seçili görünsün.
 const PARENT_TAB = { demirci: 'koy', pazar: 'koy' };
 
+// Sayfa başlığının yanındaki madalyonun simgesi; sekmesi olanlarda sekmenin simgesi.
+const VIEW_ICONS = { demirci: 'savunma', pazar: 'tuccar', hazine: 'sandik' };
+
+/** Ekranın başlığına, altın çerçeveli bir madalyon içinde sayfanın simgesini ekler. */
+function withEmblem(view, name) {
+  const header = view.el.querySelector('.view-header');
+  header?.prepend(h('span', { class: 'view-emblem', 'aria-hidden': 'true' }, icon(VIEW_ICONS[name] ?? `nav-${name}`)));
+  return view;
+}
+
 /** Arayüzü kurar, yönlendirmeyi ve saniyelik yenilemeyi başlatır. */
 export function mountApp(game, { isNew, events }) {
   initToasts(document.getElementById('toasts'));
@@ -121,7 +131,7 @@ export function mountApp(game, { isNew, events }) {
   function route() {
     const [requested, ...params] = location.hash.replace(/^#\/?/, '').split('/');
     const name = ROUTES[requested] ? requested : 'koy';
-    views[name] ??= ROUTES[name]({ game, refresh });
+    views[name] ??= withEmblem(ROUTES[name]({ game, refresh }), name);
     current = views[name];
     viewRoot.replaceChildren(current.el);
     current.onShow?.(params.map(Number));

@@ -67,7 +67,8 @@ export function createRankingView({ game }) {
             h(
               'tr',
               { class: e.kind === 'oyuncu' && (!game.online || e.id === game.playerId) ? 'is-me' : null },
-              h('td', { class: 'num' }, String(e.rank)),
+              // İlk üç sıra altın, gümüş ve bronz madalya ile gösterilir.
+              h('td', { class: 'num' }, h('span', { class: e.rank <= 3 ? `rank rank-${e.rank}` : 'rank' }, String(e.rank))),
               h(
                 'td',
                 { class: 'wrap' },

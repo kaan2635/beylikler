@@ -1,6 +1,6 @@
 {
   "name": "beylikler",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "description": "Tarayıcıda çalışan, Klanlar/Travian/OGame esintili ortaçağ strateji oyunu.",
   "type": "module",

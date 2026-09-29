@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Beylikler</title>
     <meta name="description" content="Tarayıcıda oynanan ortaçağ strateji oyunu: köyünü büyüt, kaynak topla, beyliğini kur." />
-    <meta name="theme-color" content="#35261a" />
+    <meta name="theme-color" content="#2a1d12" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <!-- Aşağıdaki blok tools/stamp.js ile üretilir; elle düzenleme, npm run stamp çalıştır. -->
     <!-- sürüm-damgası:başla -->
-    <link rel="stylesheet" href="css/style.css?v=57dd2b4893" />
+    <link rel="stylesheet" href="css/style.css?v=b9017395c2" />
     <script type="importmap">
       {
         "imports": {
@@ -64,7 +64,7 @@
           "./js/systems/support.js": "./js/systems/support.js?v=3b4c02a925",
           "./js/systems/training.js": "./js/systems/training.js?v=26efcdb8e8",
           "./js/systems/world.js": "./js/systems/world.js?v=4ee2259491",
-          "./js/ui/app.js": "./js/ui/app.js?v=1c42e2e917",
+          "./js/ui/app.js": "./js/ui/app.js?v=23b9b87b85",
           "./js/ui/art/credits.js": "./js/ui/art/credits.js?v=27d92578ec",
           "./js/ui/art/game-icons.js": "./js/ui/art/game-icons.js?v=e5f3340ee1",
           "./js/ui/art/iso.js": "./js/ui/art/iso.js?v=a613796ed2",
@@ -86,12 +86,12 @@
           "./js/ui/views/market.js": "./js/ui/views/market.js?v=a3e6a723cf",
           "./js/ui/views/overview.js": "./js/ui/views/overview.js?v=94c9be63bf",
           "./js/ui/views/quests.js": "./js/ui/views/quests.js?v=6b3cd57469",
-          "./js/ui/views/ranking.js": "./js/ui/views/ranking.js?v=3957af1f1d",
+          "./js/ui/views/ranking.js": "./js/ui/views/ranking.js?v=32393b9b68",
           "./js/ui/views/reports.js": "./js/ui/views/reports.js?v=5d5040ba95",
           "./js/ui/views/settings.js": "./js/ui/views/settings.js?v=9a1440684a",
           "./js/ui/views/smithy.js": "./js/ui/views/smithy.js?v=2bea12776b",
           "./js/ui/views/treasury.js": "./js/ui/views/treasury.js?v=d028da7ab0",
-          "./js/ui/views/village.js": "./js/ui/views/village.js?v=26b0fb92fc"
+          "./js/ui/views/village.js": "./js/ui/views/village.js?v=a0ca3697c9"
         }
       }
     </script>
@@ -99,34 +99,37 @@
     <!-- sürüm-damgası:bitir -->
   </head>
   <body>
-    <header class="topbar">
-      <a class="brand" href="#/koy">
-        <img src="assets/favicon.svg" alt="" width="30" height="30" />
-        <span>Beylikler</span>
-      </a>
-      <select id="village-switch" class="village-switch" aria-label="Yönetilen köy" hidden></select>
-      <a id="incoming-alert" class="incoming-alert" href="#/ordu" hidden></a>
-      <a id="akce-chip" class="akce-chip" href="#/hazine" title="Akçe · Hazine"></a>
-      <a id="online-chip" class="online-chip" href="#/ayarlar" title="Çok oyunculu dünya" hidden></a>
-      <div id="resource-bar" class="resource-bar" aria-label="Kaynaklar"></div>
-    </header>
+    <!-- Üst gösterge çubuğu: kaynaklar ve sekmeler birlikte sabit durur (telefonda sekmeler altta). -->
+    <div class="hud">
+      <header class="topbar">
+        <a class="brand" href="#/koy">
+          <img src="assets/favicon.svg" alt="" width="40" height="40" />
+          <span>Beylikler</span>
+        </a>
+        <select id="village-switch" class="village-switch" aria-label="Yönetilen köy" hidden></select>
+        <a id="incoming-alert" class="incoming-alert" href="#/ordu" hidden></a>
+        <a id="akce-chip" class="akce-chip" href="#/hazine" title="Akçe · Hazine"></a>
+        <a id="online-chip" class="online-chip" href="#/ayarlar" title="Çok oyunculu dünya" hidden></a>
+        <div id="resource-bar" class="resource-bar" aria-label="Kaynaklar"></div>
+      </header>
 
-    <nav class="tabs" aria-label="Bölümler">
-      <a href="#/koy" data-route="koy">Köy</a>
-      <a href="#/koyler" data-route="koyler" hidden>Köyler</a>
-      <a href="#/harita" data-route="harita">Harita</a>
-      <a href="#/kesif" data-route="kesif">Keşif</a>
-      <a href="#/ordu" data-route="ordu">Ordu</a>
-      <a href="#/raporlar" data-route="raporlar">
-        Raporlar <span id="reports-badge" class="nav-badge" hidden aria-label="okunmamış rapor"></span>
-      </a>
-      <a href="#/gorevler" data-route="gorevler">
-        Görevler <span id="quests-badge" class="nav-badge" hidden aria-label="ödülü bekleyen görev"></span>
-      </a>
-      <a href="#/siralama" data-route="siralama">Sıralama</a>
-      <a href="#/sohbet" data-route="sohbet" hidden>Sohbet</a>
-      <a href="#/ayarlar" data-route="ayarlar">Ayarlar</a>
-    </nav>
+      <nav class="tabs" aria-label="Bölümler">
+        <a href="#/koy" data-route="koy">Köy</a>
+        <a href="#/koyler" data-route="koyler" hidden>Köyler</a>
+        <a href="#/harita" data-route="harita">Harita</a>
+        <a href="#/kesif" data-route="kesif">Keşif</a>
+        <a href="#/ordu" data-route="ordu">Ordu</a>
+        <a href="#/raporlar" data-route="raporlar">
+          Raporlar <span id="reports-badge" class="nav-badge" hidden aria-label="okunmamış rapor"></span>
+        </a>
+        <a href="#/gorevler" data-route="gorevler">
+          Görevler <span id="quests-badge" class="nav-badge" hidden aria-label="ödülü bekleyen görev"></span>
+        </a>
+        <a href="#/siralama" data-route="siralama">Sıralama</a>
+        <a href="#/sohbet" data-route="sohbet" hidden>Sohbet</a>
+        <a href="#/ayarlar" data-route="ayarlar">Ayarlar</a>
+      </nav>
+    </div>
 
     <main id="view" class="view">
       <div class="splash" aria-live="polite">
@@ -139,7 +142,7 @@
     <div id="toasts" class="toasts" aria-live="polite"></div>
 
     <footer class="footer">
-      Beylikler v1.2 · Tek ve çok oyunculu ·
+      Beylikler v1.3 · Tek ve çok oyunculu ·
       <a href="https://github.com/kaan2635/beylikler">Kaynak kod</a> ·
       <a href="#/ayarlar">Emeği geçenler</a>
     </footer>

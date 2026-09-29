@@ -211,6 +211,17 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Harita: köyler bina görselleriyle, sahibinin renginde halka ve sancakla; barbar köyleri çeşitli
 - [x] Ayarlar → Emeği geçenler ve [EMEGI_GECENLER.md](EMEGI_GECENLER.md) (lisanslar ve atıflar)
 
+## ✅ Adım 15 — Arayüz yenileme: "Saray" görünümü (1.3.0)
+
+- [x] Yeni tasarım dili: koyu ahşap üst gösterge çubuğu (HUD), altın süs çizgileri, dokulu parşömen zemin (SVG gürültü dokusu, harici dosya yok)
+- [x] Kaynaklar oyulmuş yuvalarda: madalyon simge, miktar, üretim ve ambar doluluk çubuğu; Akçe kesesi; sekmeler üst çubuğun alt katında, seçili sekmede altın ışık
+- [x] Çift çerçeveli paneller (içte ince altın çizgi, köşelerde elmaslar), süslü başlık çizgileri, her sayfa başlığında simgeli madalyon
+- [x] Laka kırmızısı ve altın düğmeler, parşömen ikincil düğmeler, oyuk ilerleme çubukları, rozetler, maliyet çipleri, şeritli başlıklı tablolar
+- [x] Köy ekranı pano düzeni: geniş ekranda sahne ve binalar solda, inşaat kuyruğu ve görevler sağ sütunda; dar ekranda alt alta
+- [x] Köy sahnesi ve harita ahşap-altın çerçevede; pencereler (sınıf seçimi, oda) çerçeveli parşömen; koyu bildirimler
+- [x] Sıralamada ilk üçe altın, gümüş, bronz madalya
+- [x] Karanlık tema: deri dokulu koyu zemin, koyu ahşap paneller; telefonda alt sekme çubuğu ve tek satırlık üst çubuk
+
 ## Bilinen sınırlamalar
 
 - Kayıt yalnızca o tarayıcıda durur. Başka cihaza geçmek için Ayarlar → Kayıt kodunu kullan.

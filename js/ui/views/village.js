@@ -44,18 +44,27 @@ export function createVillageView({ game, refresh }) {
     quests.el,
   );
 
+  // Geniş ekranda sahne ve binalar solda, kuyruk ve görevler sağ sütunda; dar ekranda
+  // hepsi alt alta (sahne, kuyruk, görevler, binalar) dizilir (bkz. .village-layout).
   const el = h(
     'section',
     { class: 'stack' },
     h('header', { class: 'view-header' }, name, coords),
-    scene.el,
-    questPanel,
-    queue.el,
     h(
-      'section',
-      { class: 'panel' },
-      h('div', { class: 'panel-head' }, h('h2', null, 'Binalar')),
-      h('div', { class: 'building-grid' }, cards.map((card) => card.el)),
+      'div',
+      { class: 'village-layout' },
+      h(
+        'div',
+        { class: 'village-main' },
+        scene.el,
+        h(
+          'section',
+          { class: 'panel buildings-panel' },
+          h('div', { class: 'panel-head' }, h('h2', null, 'Binalar')),
+          h('div', { class: 'building-grid' }, cards.map((card) => card.el)),
+        ),
+      ),
+      h('aside', { class: 'village-side' }, queue.el, questPanel),
     ),
   );
 
@@ -128,7 +137,7 @@ function createQueuePanel() {
   const body = h('div', { class: 'queue' });
   const el = h(
     'section',
-    { class: 'panel' },
+    { class: 'panel queue-panel' },
     h('div', { class: 'panel-head' }, h('h2', null, 'İnşaat kuyruğu'), count),
     body,
   );
