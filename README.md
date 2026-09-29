@@ -6,7 +6,7 @@ Saf HTML, CSS ve JavaScript ile yazıldı. Kurulum ya da derleme gerektirmez; Gi
 
 **Oyna:** https://kaan2635.github.io/beylikler/
 
-**Durum:** Adım 10 (keşif seferleri) tamamlandı: OGame tarzı keşif seferleri (kaynak, paralı asker, Akçe ya da eşkıya ve fırtına), oyun başında sınıf seçimi (Tüccar Bey, Serdar, Kâşif), oyun içinde kazanılan premium para Akçe ile görevliler ve hızlandırmalar; kaynak ekonomisi, 14 bina, 14 asker türü, Demirci, Pazar ve Saray; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, Elçiyle köy fethi, çoklu köy yönetimi, köyler arası kaynak nakliyesi ve destek, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
+**Durum:** Adım 11 (görsel yenileme) tamamlandı: özgün izometrik bina çizimleri, seviyeyle büyüyen köy sahnesi, birim portreleri ve yenilenen arayüz; OGame tarzı keşif seferleri (kaynak, paralı asker, Akçe ya da eşkıya ve fırtına), oyun başında sınıf seçimi (Tüccar Bey, Serdar, Kâşif), oyun içinde kazanılan premium para Akçe ile görevliler ve hızlandırmalar; kaynak ekonomisi, 14 bina, 14 asker türü, Demirci, Pazar ve Saray; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, Elçiyle köy fethi, çoklu köy yönetimi, köyler arası kaynak nakliyesi ve destek, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
 
 ## Yerelde çalıştırma
 
@@ -49,6 +49,7 @@ js/
   systems/              Oyun kuralları: ekonomi, inşaat, asker eğitimi, dünya, barbar köyleri, savaş, hareketler
   storage/              Kayıt deposu (localStorage)
   ui/                   Arayüz: kaynak çubuğu, ekranlar, bildirimler
+  ui/art/               Özgün çizimler: izometrik binalar, köy sahnesi, birim portreleri (SVG)
 tests/                  Node testleri (node --test)
 tools/serve.js          Bağımlılıksız yerel geliştirme sunucusu
 docs/                   Araştırma raporu ve yol haritası
@@ -70,5 +71,6 @@ Damga eskiyse `npm test` bunu yakalar ve başarısız olur.
 
 - **Ayarlar → Dünya hızı** ile oyunu 100 kata kadar hızlandırabilirsin.
 - Tarayıcı konsolunda `beylikler.state` tüm oyun durumunu gösterir.
+- `http://localhost:8080/tools/sanat.html` tüm bina ve birim çizimlerini ve köy sahnesini tek sayfada gösterir.
 - Denge değerleri `js/core/formulas.js` ve `js/config/` klasöründedir (binalar, birimler, savaş, Demirci ve Pazar).
 - Kayıt şeması değişirse `js/config/game.js` içindeki `saveVersion` değerini artır ve `js/core/state.js` içine bir migrasyon ekle.

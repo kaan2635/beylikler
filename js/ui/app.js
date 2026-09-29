@@ -51,6 +51,8 @@ export function mountApp(game, { isNew, events }) {
   incomingAlert.append(icon('saldiri'), alertText);
   const villageSwitch = document.getElementById('village-switch');
   const overviewTab = document.querySelector('[data-route="koyler"]');
+  // Sekmelere simge
+  for (const link of document.querySelectorAll('.tabs [data-route]')) link.prepend(icon(`nav-${link.dataset.route}`));
   const akceChip = document.getElementById('akce-chip');
   const akceText = h('span', { class: 'akce-amount' });
   akceChip.append(icon('akce'), akceText);

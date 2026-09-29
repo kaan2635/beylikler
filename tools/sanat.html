@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Beylikler · Çizim galerisi</title>
+    <style>
+      body { margin: 0; padding: 16px; font: 14px system-ui, sans-serif; background: #eee3c9; color: #2e2316; }
+      h1 { font-family: Georgia, serif; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+      figure { margin: 0; padding: 8px; background: #fbf6ea; border: 1px solid #d4bf95; border-radius: 10px; text-align: center; }
+      figure svg { width: 100%; height: auto; }
+      figcaption { font-size: 12px; color: #6d5b42; }
+      .ghost { filter: grayscale(1); opacity: 0.45; }
+      :root { --scene-sky-top: #cfe3ea; --scene-sky-bottom: #f3ead3; --scene-hill-far: #b9c7a0; --scene-hill-near: #a4b67c; --scene-ground: #b3c47c; }
+      #scene svg { width: 100%; height: auto; max-height: 520px; display: block; border-radius: 12px; }
+      .scene-hit { fill: transparent; }
+      .scene-plate circle { fill: #35261a; stroke: #f1e3c2; stroke-width: 1; }
+      .scene-plate text { fill: #f1e3c2; font: 700 7px system-ui; }
+      .scene-building.empty > :not(.scene-plate):not(.scene-hit) { opacity: 0.55; }
+      .dark { background: #1b1610; }
+      .dark figure { background: #29221a; border-color: #4b3d2b; }
+    </style>
+  </head>
+  <body>
+    <h1>Bina çizimleri</h1>
+    <p>Yalnızca geliştirme için: her bina üç kademede (1, 5, 15. seviye) ve inşa edilmemiş hâliyle.</p>
+    <div id="grid" class="grid"></div>
+    <h1>Birimler</h1>
+    <div id="units" class="grid"></div>
+    <h1>Köy sahnesi</h1>
+    <div id="scene"></div>
+    <script type="module">
+      import { buildingArt, BUILDING_ART_IDS } from '../js/ui/art/buildings.js';
+      const grid = document.getElementById('grid');
+      for (const id of BUILDING_ART_IDS) {
+        for (const level of [0, 1, 5, 15]) {
+          const fig = document.createElement('figure');
+          fig.innerHTML = `${buildingArt(id, level)}<figcaption>${id} · ${level}</figcaption>`;
+          grid.append(fig);
+        }
+      }
+      const { unitArt } = await import('../js/ui/art/units.js');
+      const { UNIT_IDS } = await import('../js/config/units.js');
+      for (const id of UNIT_IDS) {
+        const fig = document.createElement('figure');
+        fig.innerHTML = `${unitArt(id)}<figcaption>${id}</figcaption>`;
+        document.getElementById('units').append(fig);
+      }
+      try {
+        const { sceneSvg } = await import('../js/ui/art/scene.js');
+        const levels = Object.fromEntries(BUILDING_ART_IDS.map((id, i) => [id, [3, 8, 16, 1, 12, 6, 0, 5, 2, 0, 7, 4, 1, 3, 9][i] ?? 1]));
+        document.getElementById('scene').innerHTML = sceneSvg(levels, { building: 'kisla' });
+      } catch (e) {
+        document.getElementById('scene').textContent = 'Sahne yok: ' + e.message;
+      }
+    </script>
+  </body>
+</html>

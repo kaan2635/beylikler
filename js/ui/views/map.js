@@ -22,12 +22,33 @@ import { inspectAttack, isOutbound } from '../../systems/movements.js';
 import { fmtInt, fmtDecimal, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
 import { createAttackForm } from './attack-form.js';
+import { mapSpriteSvg } from '../art/buildings.js';
 
 const ZOOMS = [16, 24, 32, 44, 60, 80]; // alan başına piksel
 const DEFAULT_ZOOM = 3;
 const NEARBY_RADIUS = 15;
 const NEARBY_LIMIT = 25;
 const RULER = 18; // üst ve sol kenardaki koordinat şeridinin kalınlığı (px)
+
+// Harita imleri SVG'den bir kez resme çevrilir; yüklenince harita yeniden çizilir.
+const sprites = new Map();
+let onSpriteLoad = () => {};
+
+function mapSprite(kind, tier) {
+  const key = `${kind}:${tier}`;
+  let entry = sprites.get(key);
+  if (!entry) {
+    const img = new Image();
+    entry = { img, ready: false };
+    img.onload = () => {
+      entry.ready = true;
+      onSpriteLoad();
+    };
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(mapSpriteSvg(kind, tier))}`;
+    sprites.set(key, entry);
+  }
+  return entry.ready ? entry.img : null;
+}
 
 /** Yerleşim sınırının ötesi: köy yok, keşif seferlerinin gittiği yabani topraklar. */
 function inWild(x, y) {
@@ -37,6 +58,7 @@ function inWild(x, y) {
 /** Harita ekranı: tuval üzerinde sürüklenebilir dünya, seçili alanın bilgisi ve yakın köyler. */
 export function createMapView({ game, refresh }) {
   const attackForm = createAttackForm({ game, refresh });
+  onSpriteLoad = () => requestDraw();
   const canvas = h('canvas', {
     class: 'map-canvas',
     tabindex: 0,
@@ -370,6 +392,8 @@ export function createMapView({ game, refresh }) {
     const y0 = Math.floor(cam.cy - hgt / 2 / t);
     const y1 = Math.floor(cam.cy + hgt / 2 / t);
 
+    // Önce arazi, sonra köyler: köy çizimleri karesinden biraz taşar, komşu arazi üstüne binmesin.
+    const villages = [];
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         if (!inWorld(x, y)) continue;
@@ -377,14 +401,13 @@ export function createMapView({ game, refresh }) {
         const sy = toScreenY(y);
         const village = villageAt(state, x, y);
         drawTerrain(ctx, colors, village ? 'cayir' : terrainAt(seed, x, y), tileDetail(seed, x, y), sx, sy, t);
-        if (village) drawVillage(ctx, colors, village, sx, sy, t);
+        if (village) villages.push([village, sx, sy]);
         else if (inWild(x, y)) {
           ctx.fillStyle = colors.wild; // yabani topraklar: sisle örtülü
           ctx.fillRect(sx, sy, t + 0.5, t + 0.5);
         }
       }
     }
-
     if (t >= 24) {
       ctx.strokeStyle = colors.grid;
       ctx.lineWidth = 1;
@@ -401,6 +424,7 @@ export function createMapView({ game, refresh }) {
       }
       ctx.stroke();
     }
+    for (const [village, sx, sy] of villages) drawVillage(ctx, colors, village, sx, sy, t);
 
     if (hover && !drag) {
       ctx.fillStyle = colors.hover;
@@ -762,6 +786,16 @@ function drawTerrain(ctx, c, kind, detail, sx, sy, t) {
  * her biri kendi rengindedir.
  */
 function drawVillage(ctx, c, village, sx, sy, t) {
+  // Yakın görünümde özgün çizimler; resim henüz yüklenmediyse ya da uzak görünümde basit ev.
+  if (t >= 24) {
+    const tier = village.points < 150 ? 1 : village.points < 500 ? 2 : 3;
+    const img = mapSprite(village.kind, tier);
+    if (img) {
+      const w = t * 1.35;
+      ctx.drawImage(img, sx + (t - w) / 2, sy + t * 1.02 - w * (100 / 92) * 0.92, w, w * (100 / 92));
+      return;
+    }
+  }
   const palette = {
     oyuncu: { body: c.own, roof: c.ownRoof, flag: c.flag },
     bey: { body: c.lord, roof: c.lordRoof, flag: c.lordFlag },

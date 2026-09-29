@@ -1,5 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#35261a"/>
-  <path d="M12 54V26h6v6h6v-6h6v6h4v-6h6v6h6v-6h6v28H38V42a6 6 0 0 0-12 0v12z" fill="#e8c77a"/>
-  <path d="M30 10h10l-4 4 4 4h-8v8h-2z" fill="#c0573b"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0cf78"/>
+      <stop offset="1" stop-color="#b8862a"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e2553a"/>
+      <stop offset="1" stop-color="#a3301f"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#2b1f14"/>
+  <!-- Selçuklu yıldızı: iç içe iki kare -->
+  <g transform="translate(32 32)" fill="url(#g)" stroke="#6b4a14" stroke-width="1.2" stroke-linejoin="round">
+    <rect x="-19" y="-19" width="38" height="38" rx="2"/>
+    <rect x="-19" y="-19" width="38" height="38" rx="2" transform="rotate(45)"/>
+  </g>
+  <circle cx="32" cy="32" r="15.5" fill="#1f5f66" stroke="#6b4a14" stroke-width="1.2"/>
+  <circle cx="32" cy="32" r="13" fill="none" stroke="#f0cf78" stroke-width="0.8" stroke-dasharray="1.6 1.8"/>
+  <!-- Lale -->
+  <path d="M32 44v-9" stroke="#8fc38a" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M32 41c-3-3-6-3-8-2 2 1 5 2 8 4z" fill="#8fc38a"/>
+  <path d="M32 36c-5 0-8-4-8-10 3 1 5 3 6 5-1-4 0-8 2-10 2 2 3 6 2 10 1-2 3-4 6-5 0 6-3 10-8 10z" fill="url(#t)" stroke="#5e1a10" stroke-width="0.8" stroke-linejoin="round"/>
 </svg>

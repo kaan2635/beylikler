@@ -3,6 +3,8 @@ import { RESOURCES } from '../../config/resources.js';
 import { TRAINING_BUILDINGS } from '../../config/units.js';
 import { inspectUpgrade, maxBuildQueue } from '../../systems/construction.js';
 import { finishCost } from '../../systems/premium.js';
+import { buildingArt, tierOf } from '../art/buildings.js';
+import { sceneSvg } from '../art/scene.js';
 
 // Kendi sayfası olan binalar: kart üzerinde, bina inşa edilince görünen bağlantı.
 const BUILDING_PAGES = {
@@ -24,11 +26,20 @@ export function createVillageView({ game, refresh }) {
   const coords = h('span', { class: 'muted' });
   const queue = createQueuePanel();
   const cards = BUILDING_IDS.map(createBuildingCard);
+  const scene = createScene((id) => {
+    const card = cards.find((c) => c.el.dataset.building === id)?.el;
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.remove('flash');
+    void card.offsetWidth; // animasyonu yeniden başlat
+    card.classList.add('flash');
+  });
 
   const el = h(
     'section',
     { class: 'stack' },
     h('header', { class: 'view-header' }, name, coords),
+    scene.el,
     queue.el,
     h(
       'section',
@@ -63,8 +74,40 @@ export function createVillageView({ game, refresh }) {
       setText(name, village.name);
       const points = fmtInt(villagePoints(village.buildings));
       setText(coords, `(${village.x}|${village.y}) · ${continentOf(village.x, village.y)} · ${points} puan`);
+      scene.update(village);
       queue.update(village, now, game.state);
       for (const card of cards) card.update(village, game.state.world, now);
+    },
+  };
+}
+
+/** Köy sahnesi: binalar seviyelerine göre çizilir; tıklanan binanın kartına gidilir. */
+function createScene(onSelect) {
+  const el = h('section', { class: 'scene-panel', 'aria-label': 'Köy görünümü' });
+  let signature = null;
+  const pick = (event) => {
+    const target = event.target.closest('[data-building]');
+    if (target) onSelect(target.dataset.building);
+  };
+  el.addEventListener('click', pick);
+  el.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    pick(event);
+  });
+  const names = Object.fromEntries(BUILDING_IDS.map((id) => [id, BUILDINGS[id].name]));
+
+  return {
+    el,
+    update(village) {
+      const upgrading = new Set(village.buildQueue.map((job) => job.building));
+      const locked = new Set(
+        BUILDING_IDS.filter((id) => Object.entries(BUILDINGS[id].requires).some(([req, lvl]) => (village.buildings[req] ?? 0) < lvl)),
+      );
+      const next = JSON.stringify([village.id, village.buildings, [...upgrading], [...locked]]);
+      if (next === signature) return;
+      signature = next;
+      el.innerHTML = sceneSvg(village.buildings, { upgrading, locked, names });
     },
   };
 }
@@ -164,10 +207,12 @@ function createBuildingCard(buildingId) {
     h('span', { class: 'cost-item', title: 'Süre' }, icon('saat'), time),
   );
 
+  const art = h('div', { class: 'building-art' });
+  let artTier = null;
   const el = h(
     'article',
-    { class: 'card', dataset: { building: buildingId } },
-    h('div', { class: 'card-head' }, h('h3', null, def.name), badge),
+    { class: 'card building-card', dataset: { building: buildingId }, id: `bina-${buildingId}` },
+    h('div', { class: 'card-head' }, art, h('div', { class: 'card-title' }, h('h3', null, def.name), badge)),
     h('p', { class: 'card-desc' }, def.description),
     effect,
     costRow,
@@ -181,6 +226,12 @@ function createBuildingCard(buildingId) {
       const planned = plannedLevel(village, buildingId);
       const check = inspectUpgrade(village, world, buildingId, now);
 
+      // Çizim yalnızca kademe değişince yenilenir (1–4, 5–14, 15+).
+      const tier = `${tierOf(current)}`;
+      if (tier !== artTier) {
+        artTier = tier;
+        art.innerHTML = buildingArt(buildingId, current);
+      }
       setText(badge, current > 0 ? `${current}. seviye` : 'Yok');
       if (pageLink) pageLink.hidden = current === 0;
       badge.classList.toggle('badge-muted', current === 0);

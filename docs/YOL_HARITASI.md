@@ -166,11 +166,17 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Haritada yerleşimin ötesi "Yabani topraklar" olarak sisle örtülü; seçilince keşif bağlantısı
 - [x] 120 birim testi
 
-## ⬜ Adım 11 — Görsel yenileme
+## ✅ Adım 11 — Görsel yenileme
 
-- [ ] Bina ve birim görselleri (özgün, vektör tabanlı çizimler)
-- [ ] Köy sahnesi: binalar seviyesine göre büyür
-- [ ] Arayüz ve etkileşim tasarımının elden geçirilmesi
+- [x] Özgün izometrik çizim sistemi (`js/ui/art/`): ortak ışık, çizgi ve renk; tüm çizimler kodla üretilen SVG
+- [x] 15 binanın her biri üç kademede (1–4, 5–14, 15+) büyüyen çizimler: konakta cumba, sarayda kubbe ve kuleler, pazarda çizgili tenteler…
+- [x] Köy sahnesi: binalar arsalarında, sur köyü çevreleyen bir halka; yapımı süren binada iskele, seviye levhaları; tıklayınca kartına gider
+- [x] 14 birim portresi (börk, miğfer, sarık, kalpak; mızrak, kılıç-kalkan, yay, at…); kategori renginde madalyonlar
+- [x] Harita imleri: kendi konağın, beylerin mor sancaklı kaleleri, barbar obaları
+- [x] Yeni amblem (Selçuklu yıldızı ve lale), ahşap tepe çubuğu ve çini şerit, ambar doluluk çubukları
+- [x] Simgeli sekmeler; telefonda ekranın altında sekme çubuğu
+- [x] Gece teması: akşam gökyüzü altında köy
+- [x] Çizim galerisi: `tools/sanat.html` (geliştirme için)
 
 ## ⬜ Adım 12 — Oyunlaştırma ve PWA
 

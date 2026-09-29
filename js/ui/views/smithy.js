@@ -4,6 +4,7 @@ import { RESEARCH } from '../../config/tech.js';
 import { trainingTimeFactor } from '../../core/formulas.js';
 import { inspectResearch } from '../../systems/research.js';
 import { finishCost } from '../../systems/premium.js';
+import { unitPortrait } from './army.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
@@ -147,7 +148,7 @@ function createResearchCard(unitId) {
     h(
       'div',
       { class: 'card-head' },
-      h('div', { class: 'unit-title' }, h('span', { class: 'unit-icon' }, icon(unitId)), h('div', null, h('h3', null, unit.name), h('span', { class: 'role' }, unit.role))),
+      h('div', { class: 'unit-title' }, unitPortrait(unitId), h('div', null, h('h3', null, unit.name), h('span', { class: 'role' }, unit.role))),
       levelBadge,
     ),
     effect,

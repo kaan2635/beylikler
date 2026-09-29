@@ -20,9 +20,26 @@
   --bar-soft: #c9b48b;
   --bar-full: #ff9b7f;
   --shadow: 0 1px 2px rgb(46 35 22 / 0.12), 0 4px 14px rgb(46 35 22 / 0.08);
-  --radius: 10px;
+  --shadow-lift: 0 2px 4px rgb(46 35 22 / 0.14), 0 10px 24px rgb(46 35 22 / 0.12);
+  --radius: 12px;
   --font-ui: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-title: Georgia, "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --font-title: "Palatino Linotype", "Book Antiqua", Palatino, "Iowan Old Style", "URW Palladio L", Georgia, serif;
+  --turq: #1f7a80;
+  --glow: rgb(255 255 255 / 0.35);
+
+  /* Köy sahnesi */
+  --scene-sky-top: #cfe3ea;
+  --scene-sky-bottom: #f3ead3;
+  --scene-hill-far: #b9c7a0;
+  --scene-hill-near: #a4b67c;
+  --scene-ground: #b3c47c;
+
+  /* Birim madalyonları */
+  --cat-piyade: #9c3b22;
+  --cat-suvari: #2c5d9b;
+  --cat-okcu: #3f6f2e;
+  --cat-kusatma: #5d646b;
+  --cat-ozel: #9a7420;
 
   /* Harita renkleri (tuval bunları okur) */
   --map-outside: #2b2217;
@@ -74,6 +91,19 @@
     --bad: #e0735d;
     --bar: #120e0a;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.25);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.45), 0 10px 24px rgb(0 0 0 / 0.35);
+    --turq: #4fb3b8;
+    --glow: rgb(255 214 140 / 0.05);
+    --scene-sky-top: #22324a;
+    --scene-sky-bottom: #5a4a36;
+    --scene-hill-far: #34422d;
+    --scene-hill-near: #3d4f2f;
+    --scene-ground: #56683a;
+    --cat-piyade: #e0735d;
+    --cat-suvari: #7fb0ec;
+    --cat-okcu: #8fc36f;
+    --cat-kusatma: #b4bcc4;
+    --cat-ozel: #e3b85a;
 
     --map-outside: #0f0c08;
     --map-cayir: #5f6d40;
@@ -1609,6 +1639,436 @@ textarea {
   color: inherit;
 }
 
+/* ==========================================================================
+   Görsel kimlik (Adım 11): ahşap tepe çubuğu, çini şerit, simgeli sekmeler,
+   madalyon birimler, bina çizimleri ve köy sahnesi.
+   ========================================================================== */
+
+body {
+  background:
+    radial-gradient(ellipse at 50% -10%, var(--glow), transparent 60%),
+    var(--bg) radial-gradient(var(--bg-dot) 1px, transparent 1px) 0 0 / 18px 18px;
+}
+
+.topbar {
+  background: linear-gradient(180deg, #3d2c1c 0%, #2a1d12 100%);
+  border-bottom: 1px solid #b8892c;
+}
+
+/* Çini şerit: turkuaz, altın ve kiremit */
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 4px;
+  background: repeating-linear-gradient(90deg, var(--turq) 0 14px, #d9a441 14px 17px, #9c3b22 17px 31px, #d9a441 31px 34px);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.brand img {
+  width: 34px;
+  height: 34px;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.5));
+}
+
+.brand span {
+  color: #f3dca0;
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 0.4);
+}
+
+.res {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.04));
+}
+
+.res-meter {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.res-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: #e7c77e;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1s linear;
+}
+
+.res-odun .res-fill {
+  background: #d69a5c;
+}
+
+.res-kil .res-fill {
+  background: #e07c55;
+}
+
+.res-demir .res-fill {
+  background: #b9c3cc;
+}
+
+.res.near-full .res-fill {
+  background: #ffb25a;
+}
+
+.res.full .res-fill {
+  background: var(--bar-full);
+}
+
+.res-ambar .res-meter {
+  display: none;
+}
+
+/* Sekmeler: simge + ad */
+.tabs {
+  gap: 2px;
+  background: var(--panel);
+  box-shadow: 0 1px 0 var(--border);
+  padding-top: 6px;
+}
+
+.tabs a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px 10px;
+  border-radius: 10px 10px 0 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.tabs a .icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.85;
+}
+
+.tabs a:hover {
+  background: var(--panel-2);
+}
+
+.tabs a.active {
+  background: var(--panel-2);
+}
+
+.tabs a.active .icon {
+  opacity: 1;
+}
+
+/* Paneller: başlıklarda küçük altın elmas */
+.panel {
+  border-radius: 14px;
+}
+
+.panel h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.panel h2::before {
+  content: "";
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--gold);
+  transform: rotate(45deg);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 28%, transparent);
+}
+
+.view-header h1 {
+  font-size: 1.9rem;
+  letter-spacing: 0.01em;
+}
+
+/* Düğmeler */
+.btn {
+  border-color: color-mix(in srgb, var(--accent) 75%, #000);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 86%, #fff), var(--accent));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 1px 2px rgb(0 0 0 / 0.18);
+  transition: background 0.15s, transform 0.08s, box-shadow 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-hover) 86%, #fff), var(--accent-hover));
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.25);
+}
+
+.btn:disabled {
+  border-color: var(--border);
+  background: var(--panel-2);
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.btn-gold {
+  border-color: #8a6414;
+  background: linear-gradient(180deg, #ecc865, #b88a26);
+}
+
+.btn-gold:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f3d57b, #c4952e);
+}
+
+.btn-danger {
+  background: linear-gradient(180deg, #c2503a, var(--bad));
+}
+
+/* Kartlar */
+.card {
+  transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, var(--gold) 45%, var(--border));
+  box-shadow: var(--shadow);
+}
+
+.card.flash {
+  animation: card-flash 1.6s ease-out;
+}
+
+@keyframes card-flash {
+  0%,
+  30% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 80%, transparent);
+    border-color: var(--gold);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.building-card .card-head {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.card-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.building-art {
+  flex: none;
+  width: 84px;
+  height: 80px;
+  margin: -6px 0 -4px -6px;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at 50% 72%, color-mix(in srgb, var(--scene-ground) 45%, transparent) 0 42%, transparent 70%);
+}
+
+.building-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.building-art svg.ghost,
+.card.locked .building-art svg {
+  filter: grayscale(1);
+  opacity: 0.42;
+}
+
+.card.locked {
+  opacity: 0.82;
+}
+
+/* Birim madalyonları: kategoriye göre renk */
+.unit-icon {
+  --cat: var(--accent);
+  border: 1.5px solid color-mix(in srgb, var(--cat) 55%, var(--border));
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--cat) 10%, var(--panel)), color-mix(in srgb, var(--cat) 22%, var(--panel)));
+  color: var(--cat);
+  box-shadow: inset 0 0 0 2px var(--panel);
+}
+
+.unit-icon:has(.icon[data-cat="piyade"]) {
+  --cat: var(--cat-piyade);
+}
+
+.unit-icon:has(.icon[data-cat="suvari"]) {
+  --cat: var(--cat-suvari);
+}
+
+.unit-icon:has(.icon[data-cat="okcu"]) {
+  --cat: var(--cat-okcu);
+}
+
+.unit-icon:has(.icon[data-cat="kusatma"]) {
+  --cat: var(--cat-kusatma);
+}
+
+.unit-icon:has(.icon[data-cat="ozel"]) {
+  --cat: var(--cat-ozel);
+}
+
+/* Birim portreleri */
+.unit-portrait {
+  --cat: var(--accent);
+  flex: none;
+  display: grid;
+  place-items: end center;
+  width: 58px;
+  height: 58px;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--cat) 60%, var(--border));
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--cat) 8%, var(--panel)), color-mix(in srgb, var(--cat) 26%, var(--panel)));
+  box-shadow: inset 0 0 0 2px var(--panel), 0 1px 3px rgb(0 0 0 / 0.15);
+}
+
+.unit-portrait svg {
+  width: 100%;
+  height: 100%;
+}
+
+.unit-portrait[data-cat="piyade"] {
+  --cat: var(--cat-piyade);
+}
+
+.unit-portrait[data-cat="suvari"] {
+  --cat: var(--cat-suvari);
+}
+
+.unit-portrait[data-cat="okcu"] {
+  --cat: var(--cat-okcu);
+}
+
+.unit-portrait[data-cat="kusatma"] {
+  --cat: var(--cat-kusatma);
+}
+
+.unit-portrait[data-cat="ozel"] {
+  --cat: var(--cat-ozel);
+}
+
+/* Köy sahnesi */
+.scene-panel {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--scene-sky-top), var(--scene-sky-bottom));
+  box-shadow: var(--shadow);
+}
+
+.scene-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(56vh, 520px);
+  margin: 0 auto;
+}
+
+.scene-hit {
+  fill: transparent;
+}
+
+.scene-building,
+.scene-plates g {
+  cursor: pointer;
+  outline: none;
+}
+
+.scene-building {
+  transition: filter 0.15s;
+}
+
+.scene-building:hover,
+.scene-building:focus-visible {
+  filter: brightness(1.08) drop-shadow(0 0 3px rgb(255 226 150 / 0.95));
+}
+
+.scene-building.empty > :not(.scene-hit) {
+  opacity: 0.7;
+}
+
+.scene-building.locked > :not(.scene-hit) {
+  opacity: 0.35;
+}
+
+.scene-plate circle {
+  fill: #2b1f14;
+  stroke: #f0cf78;
+  stroke-width: 1;
+}
+
+.scene-plate text {
+  fill: #f6e7c3;
+  font: 700 7.5px var(--font-ui);
+}
+
+.scene-plate.empty circle {
+  fill: var(--turq);
+}
+
+.scene-plate.locked circle {
+  fill: #7a6a52;
+  stroke: #c9b48b;
+}
+
+.scaffold {
+  opacity: 0.95;
+}
+
+/* Hazine, keşif ve sınıf: madalyonların altın çerçevesi */
+.class-emblem {
+  box-shadow: 0 0 0 3px var(--panel), 0 0 0 4.5px color-mix(in srgb, var(--gold) 70%, transparent);
+}
+
+.footer {
+  padding-bottom: 24px;
+}
+
+.splash {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  min-height: 50vh;
+  color: var(--ink-soft);
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+}
+
+.splash img {
+  animation: splash-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes splash-pulse {
+  50% {
+    transform: scale(0.94);
+    opacity: 0.8;
+  }
+}
+
 /* ---------- Dar ekranlar ---------- */
 
 @media (max-width: 640px) {
@@ -1673,10 +2133,78 @@ textarea {
   }
 }
 
+/* Telefonda sekmeler ekranın altında, başparmak erişiminde. */
+@media (max-width: 720px) {
+  .tabs {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 15;
+    gap: 0;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, #2f2217, #1f160e);
+    border-top: 1px solid #b8892c;
+    box-shadow: 0 -4px 14px rgb(0 0 0 / 0.25);
+  }
+
+  .tabs a {
+    flex: 1 0 auto;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 50px;
+    padding: 5px 4px;
+    border-radius: 10px;
+    border-bottom: 0;
+    color: var(--bar-soft);
+    font-size: 0.68rem;
+    font-weight: 600;
+  }
+
+  .tabs a .icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .tabs a:hover {
+    background: transparent;
+  }
+
+  .tabs a.active {
+    color: #f3dca0;
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  .nav-badge {
+    position: absolute;
+    top: 0;
+    right: 6px;
+    min-width: 18px;
+    margin: 0;
+    line-height: 18px;
+  }
+
+  body {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  .toasts {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .building-art {
+    width: 72px;
+    height: 68px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .toast,
   .incoming-alert,
-  .progress > span {
+  .progress > span,
+  .res-fill,
+  .card,
+  .card.flash {
     animation: none;
     transition: none;
   }

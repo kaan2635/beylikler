@@ -1,4 +1,5 @@
 import { h } from './dom.js';
+import { UNITS } from '../config/units.js';
 
 // Oyuna özgü basit SVG simgeler (harici dosya ya da font gerekmez).
 const ICONS = {
@@ -44,14 +45,30 @@ const ICONS = {
   defterdar: line('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7M8 10h7M8 13h4"/>'),
   mimarbasi: line('<path d="M4 20l9-9"/><path d="M12 4l6 6-3 3-6-6z"/><path d="M14 20h7M14 20v-6"/>'),
   serasker: line('<path d="M5 21V3"/><path d="M5 4h12l-3 4 3 4H5"/>'),
+
+  // Gezinme sekmeleri.
+  'nav-koy': line('<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'),
+  'nav-koyler': line('<path d="M2 12l5-4 5 4"/><path d="M3.5 11v8h7v-8"/><path d="M12 9l5-4 5 4"/><path d="M13.5 8v11h7V8"/>'),
+  'nav-harita': line('<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>'),
+  'nav-kesif': line('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/>'),
+  'nav-ordu': line('<path d="M5 5l11 11"/><path d="M19 5L8 16"/><path d="M13.5 18.5l5-5M5.5 13.5l5 5"/>'),
+  'nav-raporlar': line('<path d="M7 3h10a2 2 0 0 1 2 2v14l-3-2-2 2-2-2-2 2-2-2-3 2V5a2 2 0 0 1 2-2z"/><path d="M9 8h6M9 12h6"/>'),
+  'nav-siralama': line('<path d="M4 18h16l1-10-5 4-4-7-4 7-5-4z"/><path d="M4 21h16"/>'),
+  'nav-ayarlar': line('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'),
 };
+
+/** Birim simgelerinin kategorisi: madalyon rengi için. */
+const UNIT_CATEGORY = {};
+for (const [id, unit] of Object.entries(UNITS)) {
+  UNIT_CATEGORY[id] = unit.building === 'atolye' ? 'kusatma' : unit.building === 'saray' ? 'ozel' : unit.type;
+}
 
 function line(paths) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
 }
 
 export function icon(name, title) {
-  const span = h('span', { class: 'icon', title, 'aria-hidden': title ? null : 'true' });
-  span.innerHTML = ICONS[name];
+  const span = h('span', { class: 'icon', title, 'aria-hidden': title ? null : 'true', dataset: UNIT_CATEGORY[name] ? { cat: UNIT_CATEGORY[name] } : null });
+  span.innerHTML = ICONS[name] ?? '';
   return span;
 }

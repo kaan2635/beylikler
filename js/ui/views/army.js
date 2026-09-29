@@ -8,6 +8,7 @@ import { isOutbound } from '../../systems/movements.js';
 import { techMultiplier } from '../../systems/research.js';
 import { incomingEstimate } from '../../systems/ai.js';
 import { defendersOf, supportAt, stationedAway } from '../../systems/support.js';
+import { unitArt } from '../art/units.js';
 import { COMBAT } from '../../config/combat.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
@@ -443,7 +444,7 @@ function createUnitCard(unitId, { game, refresh }) {
     h(
       'div',
       { class: 'card-head' },
-      h('div', { class: 'unit-title' }, unitIcon(unitId), h('div', null, h('h3', null, unit.name), h('span', { class: 'role' }, unit.role, techTag))),
+      h('div', { class: 'unit-title' }, unitPortrait(unitId), h('div', null, h('h3', null, unit.name), h('span', { class: 'role' }, unit.role, techTag))),
       home,
     ),
     h('p', { class: 'card-desc' }, unit.description),
@@ -504,6 +505,14 @@ function createUnitCard(unitId, { game, refresh }) {
       else setText(status, check.reason);
     },
   };
+}
+
+/** Birim portresi (özgün çizim), kategori renginde madalyon çerçevede. */
+export function unitPortrait(unitId) {
+  const el = h('span', { class: 'unit-portrait', 'aria-hidden': 'true' });
+  el.innerHTML = unitArt(unitId, { portrait: true });
+  el.dataset.cat = UNITS[unitId].building === 'atolye' ? 'kusatma' : UNITS[unitId].building === 'saray' ? 'ozel' : UNITS[unitId].type;
+  return el;
 }
 
 function unitIcon(unitId, small = false) {
