@@ -505,10 +505,14 @@ export function createMapView({ game, refresh }) {
       title = 'Dünyanın sınırı';
     } else if (village) {
       title = village.name;
-      const owner = { oyuncu: 'Sen', bey: village.owner, barbar: 'Barbar köyü' }[village.kind];
+      const owner = { oyuncu: 'Sen', bey: village.owner, barbar: 'Barbar köyü', rakip: `${village.owner} (oyuncu)` }[village.kind];
       rows.push(['Sahibi', owner], ['Puan', fmtInt(village.points)]);
       if (village.kind === 'bey') rows.push(['Kişilik', PERSONALITIES[village.personality].name]);
-      if (village.kind !== 'oyuncu') rows.push(['Bağlılık', fmtInt(loyaltyOf(state, village.id))]);
+      if (village.kind === 'bey' || village.kind === 'barbar') rows.push(['Bağlılık', fmtInt(loyaltyOf(state, village.id))]);
+      if (village.kind === 'rakip') {
+        if (village.capital) rows.push(['Durum', 'Başkent (fethedilemez)']);
+        if (village.protected) rows.push(['Koruma', 'Yeni oyuncu, saldırılamaz']);
+      }
     } else if (inWild(x, y)) {
       title = 'Yabani topraklar';
       rows.push(['Arazi', TERRAIN[terrainAt(state.world.seed, x, y)].name], ['Durum', 'Kimsenin bilmediği topraklar']);
@@ -548,6 +552,8 @@ export function createMapView({ game, refresh }) {
         h('p', { class: 'muted' }, `Senin köyün. ${own.name} köyünden buraya destek gönderebilirsin; askerler bu köyü savunur.`),
         h('button', { type: 'button', class: 'btn btn-small btn-ghost', dataset: { manage: village.id } }, 'Bu köyü yönet'),
       );
+    } else if (village?.kind === 'rakip') {
+      children.push(h('p', { class: 'muted' }, 'Başka bir oyuncunun köyü. Gözcü gönderip ordusunu öğrenebilir, saldırıp yağmalayabilirsin; başkent dışındaki köyler elçilerle fethedilebilir.'));
     } else if (village?.kind === 'bey') {
       children.push(h('p', { class: 'muted' }, `Rakip bey. ${PERSONALITIES[village.personality].description}`));
     } else if (inWild(x, y)) {
@@ -744,6 +750,7 @@ function readColors(el) {
     transport: v('transport'),
     expedition: v('expedition'),
     wild: v('wild'),
+    rival: v('rival'),
   };
 }
 
@@ -798,6 +805,7 @@ function drawVillage(ctx, c, village, sx, sy, t) {
   }
   const palette = {
     oyuncu: { body: c.own, roof: c.ownRoof, flag: c.flag },
+    rakip: { body: c.own, roof: c.rival, flag: c.rival },
     bey: { body: c.lord, roof: c.lordRoof, flag: c.lordFlag },
     barbar: { body: c.barbar, roof: c.barbarRoof, flag: null },
   }[village.kind];

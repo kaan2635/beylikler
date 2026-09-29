@@ -109,4 +109,19 @@ export const DIFFICULTIES = Object.freeze({
     intervalFactor: 0.6,
     protectionDays: 1.5,
   },
+  // Çok oyunculu dünya: rakipler gerçek oyunculardır. Beyler oyunculara saldırmaz ama dünyada
+  // yaşamaya devam eder (barbar yağmalar, birbirine savaş açar) ve fethedilebilir.
+  cok: {
+    name: 'Çok oyunculu',
+    description: 'Beyler oyunculara saldırmaz; rakiplerin gerçek oyunculardır.',
+    attacks: false,
+    raids: true,
+    attackFactor: 0,
+    intervalFactor: 1,
+    protectionDays: 0,
+    hidden: true, // Ayarlar'daki zorluk listesinde görünmez
+  },
 });
+
+// Çok oyunculu dünyada yeni oyuncunun saldırıya karşı korunduğu süre (oyun günü).
+export const NEWBIE_PROTECTION_DAYS = 3;

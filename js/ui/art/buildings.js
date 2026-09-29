@@ -511,6 +511,10 @@ function keep(t, banner) {
 
 /** Haritadaki köy imi (tam SVG). kind: 'oyuncu' | 'bey' | 'barbar'; tier 1..3. */
 export function mapSpriteSvg(kind, tier) {
+  if (kind === 'rakip') {
+    // Başka oyuncunun konağı: kiremit çatılar mavi tona çevrilir.
+    return `<svg viewBox="-46 -56 92 100" xmlns="http://www.w3.org/2000/svg"><defs><filter id="mavi"><feColorMatrix type="hueRotate" values="200"/></filter></defs><g filter="url(#mavi)">${ART.konak(tier)}</g></svg>`;
+  }
   const inner = kind === 'bey' ? keep(tier, '#7c4dbb') : kind === 'oyuncu' ? ART.konak(tier) : hamlet(tier);
   return `<svg viewBox="-46 -56 92 100" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
 }

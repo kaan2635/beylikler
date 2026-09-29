@@ -6,7 +6,7 @@ Saf HTML, CSS ve JavaScript ile yazıldı. Kurulum ya da derleme gerektirmez; Gi
 
 **Oyna:** https://kaan2635.github.io/beylikler/
 
-**Durum:** Adım 12 tamamlandı: görev zinciri, başarımlar, günlük hazine ve Sultanlık hedefi; telefona kurulabilir, internetsiz açılır (PWA). Özgün izometrik bina çizimleri, seviyeyle büyüyen köy sahnesi, birim portreleri ve yenilenen arayüz; OGame tarzı keşif seferleri (kaynak, paralı asker, Akçe ya da eşkıya ve fırtına), oyun başında sınıf seçimi (Tüccar Bey, Serdar, Kâşif), oyun içinde kazanılan premium para Akçe ile görevliler ve hızlandırmalar; kaynak ekonomisi, 14 bina, 14 asker türü, Demirci, Pazar ve Saray; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, Elçiyle köy fethi, çoklu köy yönetimi, köyler arası kaynak nakliyesi ve destek, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
+**Durum:** Yol haritasının 13 adımı tamamlandı. Tek oyunculu ya da **çok oyunculu** (kendi sunucunla, arkadaşlarınla aynı dünyada) oynanır → [Çok oyunculu sunucu rehberi](docs/COK_OYUNCULU.md). Görev zinciri, başarımlar, günlük hazine ve Sultanlık hedefi; telefona kurulabilir, internetsiz açılır (PWA). Özgün izometrik bina çizimleri, seviyeyle büyüyen köy sahnesi, birim portreleri ve yenilenen arayüz; OGame tarzı keşif seferleri (kaynak, paralı asker, Akçe ya da eşkıya ve fırtına), oyun başında sınıf seçimi (Tüccar Bey, Serdar, Kâşif), oyun içinde kazanılan premium para Akçe ile görevliler ve hızlandırmalar; kaynak ekonomisi, 14 bina, 14 asker türü, Demirci, Pazar ve Saray; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, Elçiyle köy fethi, çoklu köy yönetimi, köyler arası kaynak nakliyesi ve destek, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
 
 ## Yerelde çalıştırma
 
@@ -19,6 +19,14 @@ npm start
 Ardından tarayıcıda `http://localhost:8080` adresini aç.
 
 > `index.html` dosyasına çift tıklamak işe yaramaz. Tarayıcılar JavaScript modüllerini `file://` üzerinden yüklemez; oyunu bir sunucu üzerinden açmak gerekir.
+
+## Çok oyunculu sunucu
+
+```bash
+npm run server
+```
+
+Ardından `http://localhost:8787` adresini aç ve sınıf seçiminde **"Arkadaşlarınla oyna"** ile hesap aç. Aynı ağdaki arkadaşların için, internete açmak için ve GitHub Pages'teki oyunla bağlanmak için: [docs/COK_OYUNCULU.md](docs/COK_OYUNCULU.md).
 
 ## Testler
 
@@ -52,6 +60,8 @@ js/
   storage/              Kayıt deposu (localStorage)
   ui/                   Arayüz: kaynak çubuğu, ekranlar, bildirimler
   ui/art/               Özgün çizimler: izometrik binalar, köy sahnesi, birim portreleri (SVG)
+  net/                  Çok oyunculu istemci: sunucu API'si ve çevrimiçi oyun
+server/                 Çok oyunculu sunucu (Node.js, bağımlılıksız): API, hesaplar, kayıt
 tests/                  Node testleri (node --test)
 tools/serve.js          Bağımlılıksız yerel geliştirme sunucusu
 docs/                   Araştırma raporu ve yol haritası

@@ -158,7 +158,35 @@ function playerWon(report) {
 
 function renderReport(report, now) {
   if (report.type === 'kesif') return renderExpeditionReport(report, now);
+  if (report.type === 'bildirim') return renderNotice(report, now);
   return report.type === 'casus' ? renderSpyReport(report, now) : renderAttackReport(report, now);
+}
+
+/** Bildirim: başka bir oyuncunun casusluğu gibi kısa haberler. */
+function renderNotice(report, now) {
+  const item = h(
+    'details',
+    { class: 'panel report' },
+    h(
+      'summary',
+      null,
+      h('span', { class: 'badge badge-spy' }, 'Bildirim'),
+      h('span', { class: 'report-title' }, `${placeLabel(report.origin)} → ${report.target.name}`),
+      h('span', { class: 'muted report-meta' }, fmtClock(report.at, now)),
+    ),
+    h(
+      'div',
+      { class: 'report-body stack-sm' },
+      h('p', null, report.text),
+      h(
+        'div',
+        { class: 'form-row' },
+        h('a', { class: 'btn btn-small', href: `#/harita/${report.origin.x}/${report.origin.y}` }, 'Karşılık ver'),
+        h('button', { class: 'btn btn-small btn-ghost btn-quiet', type: 'button', dataset: { action: 'delete', report: report.id } }, 'Sil'),
+      ),
+    ),
+  );
+  return { item, repeat: null };
 }
 
 /** Keşif seferi raporu: anlatı, bulunanlar, kayıplar ve varsa eşkıya savaşı. */
@@ -391,9 +419,13 @@ function renderAttackReport(report, now) {
         ? h(
             'p',
             { class: `siege-line${report.conquest.conquered ? ' conquest' : ''}` },
-            report.conquest.conquered
-              ? `Köy fethedildi! Bağlılık ${report.conquest.from} → 0. Sağ kalan askerler yeni köyde destek olarak kaldı.`
-              : `Elçiler bağlılığı düşürdü: ${report.conquest.from} → ${report.conquest.to}.`,
+            report.conquest.lostVillage
+              ? 'Köyünün bağlılığı sıfırlandı; köy artık düşmanın.'
+              : report.conquest.capital
+                ? 'Başkent fethedilemez; elçiler etkisiz kaldı.'
+                : report.conquest.conquered
+                  ? `Köy fethedildi! Bağlılık ${report.conquest.from} → 0. Sağ kalan askerler yeni köyde destek olarak kaldı.`
+                  : `Elçiler bağlılığı düşürdü: ${report.conquest.from} → ${report.conquest.to}.`,
           )
         : null,
       actions,

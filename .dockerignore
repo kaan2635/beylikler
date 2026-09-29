@@ -1,0 +1,9 @@
+.git
+.github
+.claude
+data
+node_modules
+tests
+docs
+tools
+*.log

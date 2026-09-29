@@ -1,4 +1,6 @@
 node_modules/
+# Çok oyunculu sunucunun kayıtları (hesaplar, dünya): depoya girmez
+data/
 .DS_Store
 Thumbs.db
 *.log

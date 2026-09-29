@@ -29,13 +29,60 @@ export function advance(state, now) {
     advanceClock(state.world, next.at);
     produce(next.village, state.world, next.at);
     const event = next.run();
-    if (event) events.push(event);
+    if (event) {
+      const { others, ...own } = event; // tek oyunculuda başka oyuncu yok
+      events.push(own);
+    }
     syncBonuses(state); // fetihle yeni köy gelmiş ya da bir görevli ayrılmış olabilir
   }
   for (const village of Object.values(state.villages)) produce(village, state.world, now);
   advanceClock(state.world, now);
-  events.push(...checkAchievements(state, now), ...checkVictory(state, now));
+  events.push(...checkAchievements(state, now));
+  // Sultanlık tek oyunculu bir hedeftir; çok oyunculu dünyada beyler herkesin ortak rakibidir.
+  if (!state.peers) events.push(...checkVictory(state, now));
   return events;
+}
+
+/**
+ * Çok oyunculu dünya: birden çok oyuncunun durumunu tek bir zaman çizelgesinde ilerletir.
+ * Oyuncuların `world`, `barbarians`, `ai` ve `news` alanları aynı (paylaşılan) nesnelerdir;
+ * her adımda tüm oyuncular arasındaki en erken olay işlenir. Bir olay başka bir oyuncuyu da
+ * etkilediyse (oyuncular arası savaş) onun olayı `others` ile gelir ve o oyuncunun listesine
+ * yazılır. Dönen: Map<durum, olaylar[]>.
+ */
+export function advanceMany(states, now) {
+  const results = new Map(states.map((state) => [state, []]));
+  for (const state of states) {
+    ensureLordSchedules(state, now);
+    syncBonuses(state);
+  }
+  for (;;) {
+    let next = null;
+    let owner = null;
+    for (const state of states) {
+      const candidate = nextEvent(state, now);
+      if (candidate && (!next || candidate.at < next.at)) {
+        next = candidate;
+        owner = state;
+      }
+    }
+    if (!next) break;
+    advanceClock(owner.world, next.at);
+    produce(next.village, owner.world, next.at);
+    const event = next.run();
+    if (event) {
+      const { others, ...own } = event;
+      results.get(owner).push(own);
+      for (const other of others ?? []) results.get(other.state)?.push(other.event);
+    }
+    for (const state of states) syncBonuses(state); // köy el değiştirmiş olabilir
+  }
+  for (const state of states) {
+    for (const village of Object.values(state.villages)) produce(village, state.world, now);
+    advanceClock(state.world, now);
+    results.get(state).push(...checkAchievements(state, now));
+  }
+  return results;
 }
 
 /** `now` anına kadar gerçekleşmiş en erken olayı bulur (yoksa null). Eşitlikte ilk bulunan önce gelir. */
@@ -56,7 +103,8 @@ function nextEvent(state, now) {
     }
     if (village.research) consider(village.research.endAt, village, () => completeResearch(village));
     for (const attack of village.incoming) {
-      consider(attack.arriveAt, village, () => resolveIncoming(state, village, attack));
+      // Oyuncu saldırıları saldıranın hareketiyle çözülür; burada yalnızca bey saldırıları.
+      if (!attack.pvp) consider(attack.arriveAt, village, () => resolveIncoming(state, village, attack));
     }
   }
   for (const lord of lordsOf(state.world.seed)) {

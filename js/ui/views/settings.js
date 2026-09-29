@@ -2,6 +2,8 @@ import { GAME } from '../../config/game.js';
 import { DIFFICULTIES } from '../../config/lords.js';
 import { h } from '../dom.js';
 import { toast } from '../toast.js';
+import { createOnlineForm } from '../online-login.js';
+import { readOnlineConfig, writeOnlineConfig } from '../../net/api.js';
 
 /** Ayarlar: köy adı, kaydı dışa/içe aktarma, dünya hızı ve sıfırlama. */
 export function createSettingsView({ game, refresh }) {
@@ -18,7 +20,9 @@ export function createSettingsView({ game, refresh }) {
   const difficultySelect = h(
     'select',
     { id: 'difficulty' },
-    Object.entries(DIFFICULTIES).map(([key, d]) => h('option', { value: key }, d.name)),
+    Object.entries(DIFFICULTIES)
+      .filter(([, d]) => !d.hidden)
+      .map(([key, d]) => h('option', { value: key }, d.name)),
   );
   const difficultyInfo = h('p', { class: 'muted' });
   const installText = h('p', { class: 'muted' });
@@ -47,6 +51,30 @@ export function createSettingsView({ game, refresh }) {
           : 'Tarayıcının menüsünden "Uygulamayı yükle" ya da "Ana ekrana ekle" seçeneğini kullanabilirsin. Oyun bir kez açıldıktan sonra internetsiz de açılır.';
   }
 
+  const online = !!game.online;
+  const logout = h('button', { class: 'btn btn-ghost', type: 'button' }, 'Çıkış yap ve tek oyunculuya dön');
+  logout.addEventListener('click', async () => {
+    await game.logout();
+    writeOnlineConfig(null);
+    location.hash = '#/koy';
+    location.reload();
+  });
+  const multiplayer = h(
+    'section',
+    { class: 'panel stack-sm multiplayer-panel' },
+    h('h2', null, 'Çok oyunculu'),
+    online
+      ? [
+          h('p', null, 'Bağlı olduğun dünya: ', h('strong', null, readOnlineConfig()?.base ?? ''), '. Hesabın: ', h('strong', null, game.username ?? '')),
+          h('p', { class: 'muted' }, 'Bu dünyada zaman, hız ve kurallar sunucudadır. Tek oyunculu kaydın bu cihazda duruyor; çıkış yapınca geri gelir.'),
+          h('div', { class: 'form-row' }, logout),
+        ]
+      : [
+          h('p', { class: 'muted' }, 'Arkadaşlarınla aynı dünyada oyna: saldır, fethet, sohbet et. Sunucuyu kuran kişi (bkz. README → Çok oyunculu sunucu) adresini paylaşır. Tek oyunculu kaydın silinmez.'),
+          createOnlineForm(),
+        ],
+  );
+
   const el = h(
     'section',
     { class: 'stack' },
@@ -54,6 +82,7 @@ export function createSettingsView({ game, refresh }) {
     h(
       'div',
       { class: 'settings-grid' },
+      multiplayer,
       h(
         'section',
         { class: 'panel stack-sm' },
@@ -78,22 +107,26 @@ export function createSettingsView({ game, refresh }) {
         { class: 'panel stack-sm' },
         h('h2', null, 'Dünya'),
         createdAt,
-        h('div', { class: 'form-row' }, h('label', { for: 'world-speed' }, 'Dünya hızı'), speedSelect),
+        online ? null : h('div', { class: 'form-row' }, h('label', { for: 'world-speed' }, 'Dünya hızı'), speedSelect),
         h(
           'p',
           { class: 'muted' },
-          'Test için hızı artırabilirsin. Üretimi ve yeni inşaatları hızlandırır; sıradaki işlerin süresi değişmez.',
+          online ? 'Dünyanın hızını sunucu belirler.' : 'Test için hızı artırabilirsin. Üretimi ve yeni inşaatları hızlandırır; sıradaki işlerin süresi değişmez.',
         ),
       ),
-      h(
-        'section',
-        { class: 'panel stack-sm' },
-        h('h2', null, 'Rakip beyler'),
-        h('div', { class: 'form-row' }, h('label', { for: 'difficulty' }, 'Zorluk'), difficultySelect),
-        difficultyInfo,
-        h('p', { class: 'muted' }, 'Zorluk değişince beylerin saldırı takvimi yeniden kurulur; ilk saldırı en az 12 oyun saati sonra gelir.'),
-      ),
-      h(
+      online
+        ? null
+        : h(
+            'section',
+            { class: 'panel stack-sm' },
+            h('h2', null, 'Rakip beyler'),
+            h('div', { class: 'form-row' }, h('label', { for: 'difficulty' }, 'Zorluk'), difficultySelect),
+            difficultyInfo,
+            h('p', { class: 'muted' }, 'Zorluk değişince beylerin saldırı takvimi yeniden kurulur; ilk saldırı en az 12 oyun saati sonra gelir.'),
+          ),
+      online
+        ? null
+        : h(
         'section',
         { class: 'panel stack-sm' },
         h('h2', null, 'Kayıt'),
@@ -119,7 +152,9 @@ export function createSettingsView({ game, refresh }) {
         installText,
         h('div', { class: 'form-row' }, installButton),
       ),
-      h(
+      online
+        ? null
+        : h(
         'section',
         { class: 'panel stack-sm danger' },
         h('h2', null, 'Oyunu sıfırla'),
@@ -207,7 +242,7 @@ export function createSettingsView({ game, refresh }) {
     exportArea.value = '';
     updateInstall();
     const created = new Date(game.state.createdAt).toLocaleString('tr-TR');
-    createdAt.textContent = `Kuruluş: ${created} · Harita tohumu: ${game.state.world.seed}`;
+    createdAt.textContent = `Kuruluş: ${created} · Harita tohumu: ${game.state.world.seed}${game.online ? ` · Hız ${game.state.world.speed}x` : ''}`;
   }
 
   return { el, onShow, update() {} };

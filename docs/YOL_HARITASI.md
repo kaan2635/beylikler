@@ -187,12 +187,18 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] PWA: manifest, telefon simgeleri, service worker; ilk açılıştan sonra internetsiz açılır; Ayarlar'da "Ana ekrana ekle"
 - [x] Kayıt şeması 9. sürüm; 126 birim testi
 
-## ⬜ Adım 13 — Çok oyunculu
+## ✅ Adım 13 — Çok oyunculu
 
-- [ ] Supabase: kimlik doğrulama, Postgres şeması, satır düzeyi güvenlik
-- [ ] Motoru sunucuya taşıma (Edge Functions): istemci yalnızca niyet gönderir
-- [ ] Ortak dünya, oyuncular arası saldırı ve ticaret
-- [ ] Klanlar, mesajlaşma, gerçek zamanlı bildirimler
+- [x] Bağımlılıksız Node.js sunucusu (`server/`): hesaplar (scrypt), oturum jetonları, hız sınırı, JSON kayıt (bozulmaya karşı geçici dosya + yeniden adlandırma)
+- [x] Sunucu otoriter: istemci yalnızca niyet gönderir, kurallar sunucuda aynı kodla (`js/`) ve sunucu saatiyle işler; tehlikeli eylemler (hız, sıfırlama, içe aktarma) kapalı
+- [x] Ortak dünya motoru (`advanceMany`): bütün oyuncuların olayları tek zaman çizelgesinde; barbar köyleri ve beyler ortak
+- [x] Oyuncular arası saldırı, casusluk, yağma, kuşatma ve elçiyle fetih (başkent fethedilemez); iki tarafa rapor; savunana gelen saldırı uyarısı
+- [x] Yeni oyuncu koruması (3 oyun günü; saldıran korumasını kaybeder)
+- [x] Çevrimiçi istemci: anında yerel önizleme + sunucu doğrulaması, canlı bildirim (SSE), bağlantı göstergesi, sohbet, oyunculu sıralama, haritada mavi çatılı rakip köyler
+- [x] Giriş/kayıt: sınıf seçiminden ya da Ayarlar'dan; tek oyunculu kayıt silinmez
+- [x] Dockerfile ve kurulum rehberi: [COK_OYUNCULU.md](COK_OYUNCULU.md)
+- [x] 137 birim testi (çok oyunculu dünya, oyuncular arası savaş, fetih, kayıt/yükleme, şifreler, eylem denetimi)
+- [ ] Sonraki adımlar: klanlar (ittifak, ortak sohbet), oyuncular arası ticaret ve destek, özel mesajlar, yönetici paneli
 
 ## Bilinen sınırlamalar
 

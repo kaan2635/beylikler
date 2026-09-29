@@ -82,12 +82,21 @@ function ownVillageAt(state, x, y) {
 }
 
 /**
+ * Çok oyunculu dünyada başka oyuncuların köyleri. `state.peers` kayda yazılmaz; sunucu gerçek
+ * köylerle, istemci sunucunun gönderdiği özetle kurar (bkz. systems/peers.js). Tek oyunculuda yoktur.
+ */
+export function peerAt(state, x, y) {
+  return state.peers?.villageAt(x, y) ?? null;
+}
+
+/**
  * Başlangıç köyünün hemen çevresi boş kalır; barbar köyü kapıya dayanmasın. Yalnızca başlangıç
- * köyü için geçerlidir: fethedilen bir köyün komşusu olan barbar köyleri yerinde kalmalı.
+ * köyü (başkent) için geçerlidir: fethedilen bir köyün komşusu olan barbar köyleri yerinde kalmalı.
  */
 function nearStartVillage(state, x, y) {
-  const start = state.villages[START_VILLAGE_ID];
-  return !!start && distance(x, y, start.x, start.y) < WORLD.ownVillageClearance;
+  const start = Object.values(state.villages).find((v) => v.capital) ?? state.villages[START_VILLAGE_ID];
+  if (start && distance(x, y, start.x, start.y) < WORLD.ownVillageClearance) return true;
+  return !!state.peers?.nearCapital(x, y, WORLD.ownVillageClearance);
 }
 
 /**
@@ -100,7 +109,7 @@ export function barbarianAt(state, x, y) {
   const rng = mulberry32(hash3(seed ^ SALT.village, x, y));
   if (rng() >= barbarianChance(x, y)) return null;
   if (terrainAt(seed, x, y) === 'gol' || lordTiles(seed).has(`${x}|${y}`)) return null;
-  if (nearStartVillage(state, x, y) || ownVillageAt(state, x, y)) return null; // fethedilen alan artık oyuncunun
+  if (nearStartVillage(state, x, y) || ownVillageAt(state, x, y) || peerAt(state, x, y)) return null; // fethedilen alan artık oyuncunun
 
   const { first, second } = VILLAGE_NAME_PARTS;
   const head = first[Math.floor(rng() * first.length)];
@@ -266,7 +275,7 @@ export function lordDefeated(state, lordId) {
 export function lordAt(state, x, y) {
   if (!lordTiles(state.world.seed).has(`${x}|${y}`)) return null;
   const lord = lordsOf(state.world.seed).find((l) => l.x === x && l.y === y);
-  if (lordDefeated(state, lord.id) || ownVillageAt(state, x, y)) return null;
+  if (lordDefeated(state, lord.id) || ownVillageAt(state, x, y) || peerAt(state, x, y)) return null;
   return lordVillage(state, lord);
 }
 
@@ -275,13 +284,18 @@ export function npcAt(state, x, y) {
   return lordAt(state, x, y) ?? barbarianAt(state, x, y);
 }
 
-/** Alandaki köy (oyuncunun, beyin ya da barbar); yoksa null. Oyuncu köyleri de aynı biçimde döner. */
+/** Saldırılabilecek köy: başka bir oyuncunun köyü, bey hisarı ya da barbar köyü. */
+export function targetAt(state, x, y) {
+  return peerAt(state, x, y) ?? npcAt(state, x, y);
+}
+
+/** Alandaki köy (oyuncunun, rakip oyuncunun, beyin ya da barbar); yoksa null. */
 export function villageAt(state, x, y) {
   const own = ownVillageAt(state, x, y);
   if (own) {
     return { id: own.id, kind: 'oyuncu', name: own.name, x, y, buildings: own.buildings, points: villagePoints(own.buildings) };
   }
-  return npcAt(state, x, y);
+  return targetAt(state, x, y);
 }
 
 /** (x, y) çevresinde `radius` alan içindeki barbar köyleri, yakından uzağa. */

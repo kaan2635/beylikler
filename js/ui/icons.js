@@ -54,6 +54,7 @@ const ICONS = {
   'nav-ordu': line('<path d="M5 5l11 11"/><path d="M19 5L8 16"/><path d="M13.5 18.5l5-5M5.5 13.5l5 5"/>'),
   'nav-raporlar': line('<path d="M7 3h10a2 2 0 0 1 2 2v14l-3-2-2 2-2-2-2 2-2-2-3 2V5a2 2 0 0 1 2-2z"/><path d="M9 8h6M9 12h6"/>'),
   'nav-siralama': line('<path d="M4 18h16l1-10-5 4-4-7-4 7-5-4z"/><path d="M4 21h16"/>'),
+  'nav-sohbet': line('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>'),
   'nav-gorevler': line('<path d="M6 3h12a1 1 0 0 1 1 1v17l-3-2-2 2-2-2-2 2-2-2-3 2V4a1 1 0 0 1 1-1z"/><path d="M9 10l2 2 4-4"/>'),
   kupa: line('<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/><path d="M12 14v4M8 21h8M9 18h6"/>'),
   sandik: line('<path d="M4 10h16v10H4z"/><path d="M4 10a8 5 0 0 1 16 0"/><path d="M4 14h16"/><rect x="10.5" y="12.5" width="3" height="3.5" rx="0.6" fill="currentColor"/>'),

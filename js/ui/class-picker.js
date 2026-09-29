@@ -2,6 +2,7 @@ import { CLASSES, CLASS_IDS } from '../config/classes.js';
 import { h } from './dom.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
+import { openOnlineLogin } from './online-login.js';
 
 /**
  * Oyun başında sınıf seçimi penceresi. Sınıf seçilene kadar oyunun önünde durur; bey ve köy
@@ -38,7 +39,12 @@ export function openClassPicker(game, onDone) {
       h('label', { for: 'picker-village' }, 'Köyünün adı', villageName),
     ),
     h('div', { class: 'class-grid', role: 'group', 'aria-label': 'Sınıf' }, cards),
-    h('div', { class: 'picker-foot' }, start),
+    h(
+      'div',
+      { class: 'picker-foot' },
+      game.online ? null : h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => openOnlineLogin() }, 'Arkadaşlarınla oyna (çok oyunculu)'),
+      start,
+    ),
   );
   const overlay = h('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'picker-title' }, form);
 

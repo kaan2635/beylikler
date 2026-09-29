@@ -1,11 +1,12 @@
 {
   "name": "beylikler",
-  "version": "0.15.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Tarayıcıda çalışan, Klanlar/Travian/OGame esintili ortaçağ strateji oyunu.",
   "type": "module",
   "scripts": {
     "start": "node tools/serve.js",
+    "server": "node server/index.js",
     "stamp": "node tools/stamp.js",
     "test": "node --test"
   }

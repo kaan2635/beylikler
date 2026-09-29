@@ -53,6 +53,19 @@ export function addNews(state, at, text) {
   state.news.length = Math.min(state.news.length, LORD.newsMax);
 }
 
+/** Hareketi dönüşe çevirir: aynı süreyle geri gelir. */
+export function turnBack(movement, units, loot) {
+  const duration = movement.arriveAt - movement.departAt;
+  Object.assign(movement, {
+    type: 'donus',
+    units,
+    loot,
+    turnAt: 1,
+    departAt: movement.arriveAt,
+    arriveAt: movement.arriveAt + duration,
+  });
+}
+
 /** Raporu en başa ekler; en fazla COMBAT.maxReports rapor saklanır. */
 export function addReport(state, fields) {
   const report = { id: state.nextId++, read: false, ...fields };

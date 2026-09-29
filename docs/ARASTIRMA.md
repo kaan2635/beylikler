@@ -182,6 +182,15 @@ Beylikler'de bu yapı `js/core/engine.js` içinde uygulandı ve testlerle doğru
 
 **Karar:** A ile başla. Motoru saf ve deterministik yaz. Böylece B'ye geçişte aynı motor sunucuya taşınabilir.
 
+**Adım 13'te verilen karar: D (bağımlılıksız Node sunucusu).** Gerekçeler:
+
+- Oyunun motoru zaten saf JavaScript; Node sunucusu onu olduğu gibi çalıştırır. Supabase Edge Functions (Deno) de çalıştırabilirdi ama oyuncular arası savaşta iki oyuncunun durumu aynı anda, zaman sırasıyla güncellenmeli. Bu, tek süreçte bellekte tutulan bir dünya ile çok daha basit ve tutarlı (bkz. `advanceMany`).
+- Hesap açmadan yerelde ve aynı ağda hemen denenebilir; bir bulut hesabı gerekmez. İnternete açmak için herhangi bir Node/Docker barındırması yeter (depoda `Dockerfile`).
+- Veri küçük: bir dünya birkaç yüz oyuncuya kadar tek bir JSON dosyasına sığar. Çok büyürse aynı `store.js` arayüzü bir veritabanına (SQLite, Postgres) bağlanabilir.
+- Gerçek zamanlı bildirim için WebSocket yerine Server-Sent Events: tarayıcıda yerleşik, tek yönlü (sunucudan istemciye) ve proxy'lerle sorunsuz.
+
+Ayrıntılar: [COK_OYUNCULU.md](COK_OYUNCULU.md).
+
 ## 7. Teknoloji kararları
 
 | Karar | Gerekçe |

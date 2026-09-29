@@ -16,6 +16,7 @@ import { createExpeditionView } from './views/expedition.js';
 import { EXPEDITION_OUTCOMES } from '../config/expedition.js';
 import { createQuestsView, claimableQuests } from './views/quests.js';
 import { openVictory } from './victory.js';
+import { createChatView } from './views/chat.js';
 import { openClassPicker } from './class-picker.js';
 import { CLASSES, OFFICERS } from '../config/classes.js';
 import { initToasts, toast } from './toast.js';
@@ -38,6 +39,7 @@ const ROUTES = {
   hazine: (ctx) => createTreasuryView(ctx),
   kesif: (ctx) => createExpeditionView(ctx),
   gorevler: (ctx) => createQuestsView(ctx),
+  sohbet: (ctx) => createChatView(ctx),
 };
 
 // Sekmesi olmayan bina sayfalarında hangi sekme seçili görünsün.
@@ -60,6 +62,11 @@ export function mountApp(game, { isNew, events }) {
   const akceChip = document.getElementById('akce-chip');
   const akceText = h('span', { class: 'akce-amount' });
   akceChip.append(icon('akce'), akceText);
+  // Çok oyunculu: sohbet sekmesi ve bağlantı göstergesi.
+  const chatTab = document.querySelector('[data-route="sohbet"]');
+  if (chatTab) chatTab.hidden = !game.online;
+  const onlineChip = document.getElementById('online-chip');
+  if (onlineChip) onlineChip.hidden = !game.online;
   let switchSignature = null;
   villageSwitch.addEventListener('change', () => {
     if (game.setActiveVillage(villageSwitch.value)) toast(`${game.village.name} köyünü yönetiyorsun.`);
@@ -93,6 +100,10 @@ export function mountApp(game, { isNew, events }) {
     const claimable = claimableQuests(game.state);
     questsBadge.hidden = claimable === 0;
     questsBadge.textContent = String(claimable);
+    if (game.online && onlineChip) {
+      onlineChip.textContent = `● ${game.username ?? ''} · ${game.playerCount ?? 0} oyuncu`;
+      onlineChip.classList.toggle('stale', !!game.pending);
+    }
 
     // Köye gelen bey saldırıları: tepe çubuğunda her sayfadan görünen uyarı.
     const incoming = Object.values(game.state.villages).flatMap((village) => village.incoming);
@@ -132,8 +143,24 @@ export function mountApp(game, { isNew, events }) {
   }
 
   game.on((newEvents) => {
-    announce(newEvents, false);
-    if (newEvents.some((event) => event.type === 'victory')) openVictory(game);
+    // Çok oyunculu bildirimler: sohbet, sunucu reddi, oturum sonu.
+    const rest = [];
+    for (const event of newEvents) {
+      if (event.type === 'chat') {
+        const { message } = event;
+        if (!message.system && message.playerId !== game.playerId && !location.hash.startsWith('#/sohbet')) toast(`${message.name}: ${message.text}`, 'info', 5000);
+        else if (message.system) toast(message.text, 'info', 4000);
+      } else if (event.type === 'server-error') {
+        toast(`Sunucu: ${event.reason}`, 'error', 6000);
+      } else if (event.type === 'session-expired') {
+        toast('Oturumun sona erdi. Ayarlar → Çok oyunculu bölümünden yeniden giriş yap.', 'error', 10000);
+      } else {
+        rest.push(event);
+      }
+    }
+    if (rest.length) announce(rest, false);
+    if (rest.some((event) => event.type === 'victory')) openVictory(game);
+    if (game.online) refresh(); // sunucudan gelen değişiklik hemen görünsün
   });
   window.addEventListener('hashchange', route);
   document.addEventListener('visibilitychange', () => {
@@ -224,8 +251,11 @@ function describe(event) {
         text: `${event.attacker} saldırıya geçti! Varış ${fmtClock(event.arriveAt, event.at)}. Askerlerini ve surunu hazırla.`,
         kind: 'error',
       };
+    case 'spy-caught':
+      return { text: `${event.attacker} köyünü gözetlemeye çalıştı; gözcüleri yakalandı.`, kind: 'info' };
     case 'defense-result': {
       if (event.defended) return { text: `${event.attacker} saldırısı püskürtüldü!`, kind: 'success' };
+      if (event.lostVillage) return { text: `${event.attacker} bir köyünü fethetti!`, kind: 'error' };
       const wall = event.siege?.wall;
       const wallText = wall && wall.to < wall.from ? ` Surun ${wall.to ? `${wall.to}. seviyeye indi` : 'yıkıldı'}.` : '';
       return { text: `${event.attacker} köyünü yağmaladı: ${fmtInt(total(event.loot))} kaynak gitti.${wallText}`, kind: 'error' };

@@ -15,20 +15,35 @@ export function createVillage({ id, name, x, y, now }) {
   });
 }
 
-export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSeed(), difficulty = GAME.defaultDifficulty }) {
+/**
+ * Yeni oyun. Çok oyunculu dünyada sunucu her oyuncu için `idPrefix` (köy numaraları dünyada
+ * benzersiz olsun), başlangıç yeri ve paylaşılan dünya nesnelerini verir.
+ */
+export function createNewGame({
+  now,
+  speed = GAME.defaultSpeed,
+  seed = randomSeed(),
+  difficulty = GAME.defaultDifficulty,
+  idPrefix = 'v',
+  x = 500,
+  y = 500,
+  playerName,
+}) {
+  const startId = `${idPrefix}1`;
+  const start = createVillage({ id: startId, name: START.villageName, x, y, now });
+  start.capital = true; // başkent: fethedilemez
   return {
     version: GAME.saveVersion,
     createdAt: now,
+    idPrefix,
     // clock: dünya saati (oyun zamanı, ms); dünya hızıyla işler. Barbar köylerinin büyümesi buna bağlıdır.
     world: { speed, seed, clock: { time: 0, at: now } },
-    player: newPlayer(),
-    activeVillageId: 'v1',
-    villages: {
-      v1: createVillage({ id: 'v1', name: START.villageName, x: 500, y: 500, now }),
-    },
+    player: newPlayer(playerName),
+    activeVillageId: startId,
+    villages: { [startId]: start },
     barbarians: {}, // yalnızca saldırıya uğramış barbar köylerinin ve bey hisarlarının son durumu
     reports: [], // en yeni başta
-    nextId: 1, // hareket ve rapor numaraları için sayaç
+    nextId: 2, // hareket, rapor ve yeni köy numaraları için sayaç (1 başkentin)
     ai: { difficulty, lords: {} }, // rakip beylerin saldırı takvimi (motor ilk ilerlemede kurar)
     stats: newStats(), // savaş puanı, ganimet ve görev/başarım sayaçları
     news: [], // dünya olayları, en yeni başta

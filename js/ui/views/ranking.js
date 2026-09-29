@@ -1,4 +1,5 @@
 import { PERSONALITIES } from '../../config/lords.js';
+import { CLASSES } from '../../config/classes.js';
 import { ranking } from '../../systems/ranking.js';
 import { h } from '../dom.js';
 import { fmtInt, fmtClock } from '../format.js';
@@ -56,7 +57,8 @@ export function createRankingView({ game }) {
   return {
     el,
     update(now) {
-      const table = ranking(game.state);
+      // Çok oyunculu dünyada sıralamayı sunucu verir: bütün oyuncular ve beyler.
+      const table = game.online ? game.ranking : ranking(game.state);
       const signature = game.state.player.name + table.map((e) => `${e.id}:${e.points}:${e.kills}:${e.loot}`).join('|');
       if (signature !== tableSignature) {
         tableSignature = signature;
@@ -64,13 +66,13 @@ export function createRankingView({ game }) {
           ...table.map((e) =>
             h(
               'tr',
-              { class: e.kind === 'oyuncu' ? 'is-me' : null },
+              { class: e.kind === 'oyuncu' && (!game.online || e.id === game.playerId) ? 'is-me' : null },
               h('td', { class: 'num' }, String(e.rank)),
               h(
                 'td',
                 { class: 'wrap' },
                 e.kind === 'oyuncu'
-                  ? h('strong', null, `${lordTitle(game.state.player.name)} (sen)`)
+                  ? h('strong', null, !game.online || e.id === game.playerId ? `${lordTitle(e.name ?? game.state.player.name)} (sen)` : lordTitle(e.name))
                   : e.defeated
                     ? h('s', { class: 'muted' }, e.name)
                     : h('a', { class: 'card-link', href: `#/harita/${e.x}/${e.y}` }, e.name),
@@ -78,7 +80,9 @@ export function createRankingView({ game }) {
                   'span',
                   { class: 'cell-sub' },
                   e.kind === 'oyuncu'
-                    ? `${e.villages} köy: ${e.villageName}`
+                    ? game.online
+                      ? `${e.villages} köy${e.class ? ` · ${CLASSES[e.class]?.name ?? ''}` : ''}`
+                      : `${e.villages} köy: ${e.villageName}`
                     : e.defeated
                       ? `${e.villageName} fethedildi, oyundan çekildi`
                       : `${e.villageName} · ${PERSONALITIES[e.personality].name}`,

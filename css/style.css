@@ -69,6 +69,7 @@
   --map-transport: #7a4fb0;
   --map-expedition: #0f7c83;
   --map-wild: rgb(236 228 210 / 0.45);
+  --map-rival: #2c5d9b;
   --map-lord: #e6dcf0;
   --map-lord-roof: #5b3a86;
   --map-lord-flag: #7c4dbb;
@@ -127,6 +128,7 @@
     --map-transport: #c9a3ff;
     --map-expedition: #5fd4dc;
     --map-wild: rgb(15 12 8 / 0.45);
+    --map-rival: #7fb0ec;
     --map-lord: #cdbfe0;
     --map-lord-roof: #6e4aa0;
     --map-lord-flag: #b28cf0;
@@ -1525,7 +1527,100 @@ body.has-overlay {
 
 .picker-foot {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: 8px;
+}
+
+.online-overlay {
+  z-index: 40;
+}
+
+.online-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.online-form input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+/* Çok oyunculu göstergesi ve sohbet */
+.online-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border: 1px solid rgb(127 196 140 / 0.45);
+  border-radius: 999px;
+  background: rgb(127 196 140 / 0.12);
+  color: #bfe6c6;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.online-chip.stale {
+  opacity: 0.7;
+}
+
+.chat-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(60vh, 520px);
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.chat-message {
+  display: grid;
+  gap: 2px;
+  max-width: min(80%, 560px);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px 12px 12px 4px;
+  background: var(--panel-2);
+}
+
+.chat-message.mine {
+  align-self: flex-end;
+  border-radius: 12px 12px 4px 12px;
+  background: color-mix(in srgb, var(--turq) 12%, var(--panel-2));
+}
+
+.chat-meta {
+  font-size: 0.78rem;
+}
+
+.chat-text {
+  overflow-wrap: anywhere;
+}
+
+.chat-form {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
 }
 
 .btn:focus-visible,

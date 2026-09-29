@@ -44,7 +44,7 @@ export function applyEnvoys(state, origin, movement, target, survivors, building
 }
 
 function conquer(state, origin, target, survivors, buildings, resources, at) {
-  const id = `v${state.nextId++}`;
+  const id = `${state.idPrefix ?? 'v'}${state.nextId++}`;
   const village = createVillage({ id, name: target.name, x: target.x, y: target.y, now: at });
   Object.assign(village.buildings, buildings);
   village.resources = Object.fromEntries(RESOURCE_IDS.map((r) => [r, Math.max(0, Math.floor(resources[r]))]));

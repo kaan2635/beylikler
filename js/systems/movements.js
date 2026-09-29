@@ -2,7 +2,7 @@ import { UNITS, UNIT_IDS } from '../config/units.js';
 import { COMBAT, CATAPULT_TARGETS, MIN_BUILDING_LEVEL } from '../config/combat.js';
 import { RESOURCE_IDS } from '../config/resources.js';
 import { travelSeconds } from '../core/formulas.js';
-import { npcAt, distance } from './world.js';
+import { npcAt, targetAt, distance } from './world.js';
 import { barbarianLive, recordBarbarian, recordDamage } from './barbarians.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { deposit } from './economy.js';
@@ -12,6 +12,7 @@ import { deliverTransport } from './market.js';
 import { stationSupport } from './support.js';
 import { bonusOf } from './bonus.js';
 import { resolveExpedition } from './expedition.js';
+import { pvpAttack, pvpSpy } from './pvp.js';
 import {
   totalUnits,
   armySpeed,
@@ -22,6 +23,7 @@ import {
   addReport,
   battlePoints,
   resourceTotal,
+  turnBack,
 } from './army.js';
 
 // Önceki sürümlerle uyum: bu yardımcılar artık army.js'te.
@@ -92,8 +94,11 @@ export function inspectAttack(state, village, x, y, requested, now, options = {}
     if (own.id === village.id) return { ...info, code: 'self', reason: 'Askerler zaten bu köyde' };
     return { ...info, target: { id: own.id, kind: 'oyuncu', name: own.name, x: own.x, y: own.y }, ok: true };
   }
-  const target = npcAt(state, x, y);
+  const target = targetAt(state, x, y);
   if (!target) return { ...info, code: 'target', reason: 'Burada saldırılabilecek bir köy yok' };
+  if (target.kind === 'rakip' && target.protected) {
+    return { ...info, target, code: 'protected', reason: `${target.owner} yeni bir oyuncu; koruma süresi bitene kadar saldırılamaz` };
+  }
   if (info.catapultTarget && !CATAPULT_TARGETS.includes(info.catapultTarget)) {
     return { ...info, target, code: 'catapult', reason: 'Mancınık için geçerli bir hedef bina seç' };
   }
@@ -106,10 +111,11 @@ export function sendAttack(state, village, x, y, requested, now, options = {}) {
   if (!check.ok) return check;
   for (const [id, n] of Object.entries(check.units)) village.units[id] -= n;
   const { target } = check;
+  const pvp = target.kind === 'rakip';
   const movement = {
     id: state.nextId++,
     type: check.mission,
-    target: { id: target.id, name: target.name, x: target.x, y: target.y },
+    target: { id: target.id, name: target.name, x: target.x, y: target.y, ...(pvp && { kind: 'rakip', owner: target.owner, ownerId: target.ownerId }) },
     units: check.units,
     loot: null,
     departAt: now,
@@ -117,18 +123,38 @@ export function sendAttack(state, village, x, y, requested, now, options = {}) {
     ...(check.catapultTarget && { catapultTarget: check.catapultTarget }),
   };
   village.movements.push(movement);
+  if (pvp) {
+    // Saldıran oyuncunun yeni oyuncu koruması biter; savunan, gelen saldırıyı görür.
+    if (state.player) state.player.protectUntil = 0;
+    state.peers?.notifyIncoming(target.id, incomingNotice(state, village, movement));
+  }
   return { ...check, movement };
+}
+
+/** Savunan oyuncunun göreceği gelen saldırı kaydı (ordunun tam dökümü görünmez). */
+function incomingNotice(state, village, movement) {
+  return {
+    id: movement.id,
+    pvp: true,
+    spy: movement.type === 'casus',
+    from: { id: village.id, kind: 'rakip', name: village.name, owner: state.player?.name ?? 'Bey', x: village.x, y: village.y },
+    units: movement.type === 'casus' ? { gozcu: movement.units.gozcu } : movement.units,
+    tech: village.tech,
+    departAt: movement.departAt,
+    arriveAt: movement.arriveAt,
+  };
 }
 
 /**
  * Hedefe giden birliği geri çağırır. Birlik bulunduğu yerden döner; dönüş, o ana kadar yolda
  * geçen süre kadar sürer. Savaş olmaz, rapor yazılmaz.
  */
-export function recallAttack(village, movementId, now) {
+export function recallAttack(village, movementId, now, state = null) {
   const movement = village.movements.find((m) => m.id === movementId);
   if (!movement) return { ok: false, reason: 'Bu hareket artık yok' };
   if (!isOutbound(movement)) return { ok: false, reason: 'Yalnızca hedefe giden birlikler geri çağrılabilir' };
   if (now >= movement.arriveAt) return { ok: false, reason: 'Birlik hedefe çoktan vardı' };
+  if (movement.target.kind === 'rakip') state?.peers?.cancelIncoming(movement.target.id, movement.id);
   const elapsed = Math.max(0, now - movement.departAt);
   Object.assign(movement, {
     type: 'donus',
@@ -146,6 +172,9 @@ export function completeMovement(state, village, movement) {
   if (movement.type === 'nakliye') return deliverTransport(state, village, movement);
   if (movement.type === 'destek') return arriveSupport(state, village, movement);
   if (movement.type === 'kesif') return resolveExpedition(state, village, movement);
+  if (movement.target.kind === 'rakip') {
+    return movement.type === 'casus' ? pvpSpy(state, village, movement) : pvpAttack(state, village, movement);
+  }
   const target = npcAt(state, movement.target.x, movement.target.y);
   if (!target) {
     // Hedef artık yok (ör. yanına köy kuruldu): bir şey yapmadan geri dön.
@@ -318,18 +347,6 @@ function reportTarget(target) {
 }
 
 /** Hareketi dönüşe çevirir: aynı süreyle geri gelir. */
-function turnBack(movement, units, loot) {
-  const duration = movement.arriveAt - movement.departAt;
-  Object.assign(movement, {
-    type: 'donus',
-    units,
-    loot,
-    turnAt: 1,
-    departAt: movement.arriveAt,
-    arriveAt: movement.arriveAt + duration,
-  });
-}
-
 function arriveHome(village, movement) {
   for (const [id, n] of Object.entries(movement.units)) village.units[id] += n;
   const stored = deposit(village, movement.loot ?? {});

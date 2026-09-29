@@ -58,9 +58,14 @@ export class Game {
     const events = advance(this.state, now);
     if (events.length) {
       this.save();
-      for (const listener of this.#listeners) listener(events);
+      this.emit(events);
     }
     return events;
+  }
+
+  /** Olayları dinleyicilere iletir (çevrimiçi oyun sunucudan gelenler için de kullanır). */
+  emit(events) {
+    for (const listener of this.#listeners) listener(events);
   }
 
   upgrade(buildingId, now) {
@@ -176,7 +181,7 @@ export class Game {
 
   recallAttack(movementId, now) {
     this.tick(now);
-    const result = recallAttack(this.village, movementId, now);
+    const result = recallAttack(this.village, movementId, now, this.state);
     if (result.ok) this.save();
     return result;
   }
