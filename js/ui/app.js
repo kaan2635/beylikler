@@ -101,8 +101,10 @@ export function mountApp(game, { isNew, events }) {
     questsBadge.hidden = claimable === 0;
     questsBadge.textContent = String(claimable);
     if (game.online && onlineChip) {
-      onlineChip.textContent = `● ${game.username ?? ''} · ${game.playerCount ?? 0} oyuncu`;
-      onlineChip.classList.toggle('stale', !!game.pending);
+      const where = game.room ? `Oda ${game.room.code}` : game.username ?? '';
+      onlineChip.textContent = `${game.connected === false ? '○' : '●'} ${where} · ${game.playerCount ?? 0} oyuncu`;
+      onlineChip.classList.toggle('stale', !!game.pending || game.connected === false);
+      onlineChip.title = game.room?.host ? 'Oda senin tarayıcında açık. Davet için: Ayarlar → Çok oyunculu' : 'Çok oyunculu dünya · sohbet';
     }
 
     // Köye gelen bey saldırıları: tepe çubuğunda her sayfadan görünen uyarı.
@@ -152,6 +154,10 @@ export function mountApp(game, { isNew, events }) {
         else if (message.system) toast(message.text, 'info', 4000);
       } else if (event.type === 'server-error') {
         toast(`Sunucu: ${event.reason}`, 'error', 6000);
+      } else if (event.type === 'connection-lost') {
+        toast('Ev sahibiyle bağlantı koptu; yeniden bağlanılıyor…', 'error', 6000);
+      } else if (event.type === 'connection-back') {
+        toast('Bağlantı yeniden kuruldu.', 'success');
       } else if (event.type === 'session-expired') {
         toast('Oturumun sona erdi. Ayarlar → Çok oyunculu bölümünden yeniden giriş yap.', 'error', 10000);
       } else {

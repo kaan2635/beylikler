@@ -17,7 +17,7 @@ import { Game } from '../js/game.js';
 import { createWorld, addPlayer, advanceWorld, playerView, postChat } from '../js/systems/multiplayer.js';
 import { createStore } from './store.js';
 import { hashPassword, verifyPassword, newToken, validUsername, validPassword } from './auth.js';
-import { ACTIONS } from './actions.js';
+import { ACTIONS } from '../js/net/actions.js';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const PORT = Number(process.env.PORT ?? 8787);

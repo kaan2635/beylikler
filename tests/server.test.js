@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { hashPassword, verifyPassword, validUsername, validPassword, newToken } from '../server/auth.js';
-import { ACTIONS } from '../server/actions.js';
+import { ACTIONS } from '../js/net/actions.js';
 import { createWorld, addPlayer, advanceWorld } from '../js/systems/multiplayer.js';
 import { Game } from '../js/game.js';
 

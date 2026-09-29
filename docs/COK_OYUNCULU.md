@@ -1,9 +1,31 @@
-# Beylikler — Çok oyunculu sunucu
+# Beylikler — Çok oyunculu
 
-Beylikler iki kipte oynanır:
+Beylikler üç biçimde oynanır:
 
-- **Tek oyunculu:** Oyun tamamen tarayıcıda çalışır, kayıt o cihazda durur. GitHub Pages'teki adres bu kiptedir.
-- **Çok oyunculu:** Bir sunucu tek bir ortak dünyayı yönetir. Herkes hesap açar, köyler aynı haritadadır; oyuncular birbirine saldırır, casus yollar, köy fetheder ve sohbet eder.
+| Kip | Nasıl | Ne gerekir |
+|---|---|---|
+| **Tek oyunculu** | https://kaan2635.github.io/beylikler/ adresini aç | Hiçbir şey |
+| **Oda (önerilen)** | Bir oyuncu tarayıcısında oda kurar, arkadaşları oda koduyla katılır | Hiçbir şey: hesap, sunucu, kurulum yok |
+| **Kendi sunucun** | Node.js sunucusu sürekli açık bir dünya tutar | Bir bilgisayar ya da barındırma hesabı |
+
+## Oda: GitHub Pages'ten doğrudan çok oyunculu
+
+1. Oyunu aç: https://kaan2635.github.io/beylikler/
+2. Sınıf seçim penceresinde **"Arkadaşlarınla oyna"** (ya da **Ayarlar → Çok oyunculu**) → **Oda kur**. Bey adını ve dünya hızını seç.
+3. Oyun 6 harfli bir **oda kodu** verir (tepe çubuğunda görünür). **Ayarlar → Davet bağlantısını kopyala** ile bağlantıyı arkadaşlarına gönder.
+4. Arkadaşların bağlantıyı açar (ya da **Odaya katıl**'a kodu yazar), bey adını girer ve katılır.
+
+Nasıl çalışır:
+
+- Dünya **ev sahibinin tarayıcısında** tutulur ve kaydedilir. Ev sahibinin sekmesi sunucu gibi çalışır: bütün oyuncuların eylemlerini oyunun kurallarıyla uygular.
+- Oyuncular ev sahibine **doğrudan** bağlanır (WebRTC). Bağlantıyı kurmak için yalnızca [PeerJS](https://peerjs.com)'in ücretsiz, herkese açık tanışma sunucusu kullanılır; oyun verisi tarayıcılar arasında şifreli akar. PeerJS kütüphanesi (MIT) jsDelivr'den bütünlük özetiyle (SRI) yüklenir.
+- **Ev sahibi oyunu kapatınca dünya bekler**; ev sahibi açınca her şey kaldığı yerden sürer (üretim, ordular, savaşlar arada birikmiş olarak işlenir). Bağlantısı kopan oyuncu kendiliğinden yeniden bağlanır.
+- Her tarayıcı o oda için gizli bir anahtar saklar; aynı tarayıcıyla dönen oyuncu kendi köyüne döner. Başka cihazdan girmek için şimdilik yeni bir bey açılır.
+- Ev sahibi dünyayı "hileyle" değiştirebilir (dünya onun tarayıcısında). Arkadaş grupları için sorun değil; herkese açık, hilesiz bir dünya için kendi sunucunu kullan.
+
+Sürekli açık bir dünya (ev sahibi olmadan) istiyorsan aşağıdaki sunucuyu kur.
+
+## Kendi sunucun
 
 Sunucu **bağımlılıksızdır**: yalnızca [Node.js](https://nodejs.org) (20 ya da üstü) gerekir, `npm install` bile gerekmez.
 

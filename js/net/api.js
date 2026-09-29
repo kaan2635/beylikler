@@ -1,6 +1,7 @@
 /**
- * Çok oyunculu sunucunun istemcisi (server/index.js). Bağlantı bilgisi tarayıcıda saklanır:
- * localStorage['beylikler:cevrimici'] = { base, token, username }
+ * Çok oyunculu bağlantı bilgisi tarayıcıda saklanır: localStorage['beylikler:cevrimici'] =
+ *   { base, token, username }                             → Node sunucusu (server/index.js)
+ *   { mode: 'oda', role: 'host'|'guest', room, name, secret } → tarayıcıda kurulan oda (p2p.js)
  */
 
 const CONFIG_KEY = 'beylikler:cevrimici';
@@ -8,6 +9,7 @@ const CONFIG_KEY = 'beylikler:cevrimici';
 export function readOnlineConfig() {
   try {
     const value = JSON.parse(localStorage.getItem(CONFIG_KEY) ?? 'null');
+    if (value?.mode === 'oda') return value.room && value.secret ? value : null;
     return value?.token && typeof value.base === 'string' ? value : null;
   } catch {
     return null;

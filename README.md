@@ -20,13 +20,17 @@ Ardından tarayıcıda `http://localhost:8080` adresini aç.
 
 > `index.html` dosyasına çift tıklamak işe yaramaz. Tarayıcılar JavaScript modüllerini `file://` üzerinden yüklemez; oyunu bir sunucu üzerinden açmak gerekir.
 
-## Çok oyunculu sunucu
+## Çok oyunculu
+
+**En kolayı (kurulum yok):** Oyunu aç → **"Arkadaşlarınla oyna" → Oda kur**. Oyun bir oda kodu verir; arkadaşların GitHub Pages'teki aynı adresten bu kodla katılır. Dünya senin tarayıcında tutulur, bağlantı tarayıcılar arasında doğrudandır (WebRTC).
+
+**Sürekli açık bir dünya için kendi sunucun:**
 
 ```bash
 npm run server
 ```
 
-Ardından `http://localhost:8787` adresini aç ve sınıf seçiminde **"Arkadaşlarınla oyna"** ile hesap aç. Aynı ağdaki arkadaşların için, internete açmak için ve GitHub Pages'teki oyunla bağlanmak için: [docs/COK_OYUNCULU.md](docs/COK_OYUNCULU.md).
+Ayrıntılar (oda nasıl çalışır, aynı ağda oynama, internete açma): [docs/COK_OYUNCULU.md](docs/COK_OYUNCULU.md).
 
 ## Testler
 

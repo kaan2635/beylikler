@@ -96,7 +96,16 @@ export class OnlineGame extends Game {
         if (!message.system) this.chatLog = [...this.chatLog, message].slice(-50);
         this.emit([{ type: 'chat', message }]);
       },
+      disconnected: () => {
+        this.connected = false;
+        this.emit([{ type: 'connection-lost' }]);
+      },
+      reconnected: () => {
+        this.connected = true;
+        this.emit([{ type: 'connection-back' }]);
+      },
     });
+    this.connected = true;
     // Yedek: bildirim gelmese de arada bir durumu tazele.
     this.poll = setInterval(() => this.sync(), 20_000);
   }

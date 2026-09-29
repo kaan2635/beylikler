@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <!-- Aşağıdaki blok tools/stamp.js ile üretilir; elle düzenleme, npm run stamp çalıştır. -->
     <!-- sürüm-damgası:başla -->
-    <link rel="stylesheet" href="css/style.css?v=83bf58dcd8" />
+    <link rel="stylesheet" href="css/style.css?v=b9150a7147" />
     <script type="importmap">
       {
         "imports": {
@@ -37,9 +37,12 @@
           "./js/core/state.js": "./js/core/state.js?v=0a4b54890e",
           "./js/core/village.js": "./js/core/village.js?v=43b0118869",
           "./js/game.js": "./js/game.js?v=ff295feed0",
-          "./js/main.js": "./js/main.js?v=fa37fead75",
-          "./js/net/api.js": "./js/net/api.js?v=3492ac029b",
-          "./js/net/online-game.js": "./js/net/online-game.js?v=bc62810759",
+          "./js/main.js": "./js/main.js?v=73da66fbd4",
+          "./js/net/actions.js": "./js/net/actions.js?v=c223129d69",
+          "./js/net/api.js": "./js/net/api.js?v=0cdd80955c",
+          "./js/net/host.js": "./js/net/host.js?v=725c2a9a0e",
+          "./js/net/online-game.js": "./js/net/online-game.js?v=40d3dffe92",
+          "./js/net/p2p.js": "./js/net/p2p.js?v=56c136e155",
           "./js/storage/local-store.js": "./js/storage/local-store.js?v=32dd81302d",
           "./js/systems/ai.js": "./js/systems/ai.js?v=3cd110fdd2",
           "./js/systems/army.js": "./js/systems/army.js?v=ccb21c05b8",
@@ -61,7 +64,7 @@
           "./js/systems/support.js": "./js/systems/support.js?v=3b4c02a925",
           "./js/systems/training.js": "./js/systems/training.js?v=26efcdb8e8",
           "./js/systems/world.js": "./js/systems/world.js?v=4ee2259491",
-          "./js/ui/app.js": "./js/ui/app.js?v=f30f5392b7",
+          "./js/ui/app.js": "./js/ui/app.js?v=1c42e2e917",
           "./js/ui/art/buildings.js": "./js/ui/art/buildings.js?v=98d31b0f81",
           "./js/ui/art/iso.js": "./js/ui/art/iso.js?v=a613796ed2",
           "./js/ui/art/scene.js": "./js/ui/art/scene.js?v=502c557c84",
@@ -70,7 +73,7 @@
           "./js/ui/dom.js": "./js/ui/dom.js?v=99613f402c",
           "./js/ui/format.js": "./js/ui/format.js?v=423ebdf8a0",
           "./js/ui/icons.js": "./js/ui/icons.js?v=b29bee1887",
-          "./js/ui/online-login.js": "./js/ui/online-login.js?v=0c615e1020",
+          "./js/ui/online-login.js": "./js/ui/online-login.js?v=61ce3c8146",
           "./js/ui/resource-bar.js": "./js/ui/resource-bar.js?v=ff89b2f72e",
           "./js/ui/toast.js": "./js/ui/toast.js?v=1cd41d825e",
           "./js/ui/victory.js": "./js/ui/victory.js?v=bf17d58e35",
@@ -84,14 +87,14 @@
           "./js/ui/views/quests.js": "./js/ui/views/quests.js?v=6b3cd57469",
           "./js/ui/views/ranking.js": "./js/ui/views/ranking.js?v=3957af1f1d",
           "./js/ui/views/reports.js": "./js/ui/views/reports.js?v=5d5040ba95",
-          "./js/ui/views/settings.js": "./js/ui/views/settings.js?v=21dfe16cfd",
+          "./js/ui/views/settings.js": "./js/ui/views/settings.js?v=56826490b0",
           "./js/ui/views/smithy.js": "./js/ui/views/smithy.js?v=2bea12776b",
           "./js/ui/views/treasury.js": "./js/ui/views/treasury.js?v=d028da7ab0",
           "./js/ui/views/village.js": "./js/ui/views/village.js?v=088072e519"
         }
       }
     </script>
-    <script type="module" src="js/main.js?v=fa37fead75"></script>
+    <script type="module" src="js/main.js?v=73da66fbd4"></script>
     <!-- sürüm-damgası:bitir -->
   </head>
   <body>
@@ -103,7 +106,7 @@
       <select id="village-switch" class="village-switch" aria-label="Yönetilen köy" hidden></select>
       <a id="incoming-alert" class="incoming-alert" href="#/ordu" hidden></a>
       <a id="akce-chip" class="akce-chip" href="#/hazine" title="Akçe · Hazine"></a>
-      <a id="online-chip" class="online-chip" href="#/sohbet" title="Çok oyunculu dünya" hidden></a>
+      <a id="online-chip" class="online-chip" href="#/ayarlar" title="Çok oyunculu dünya" hidden></a>
       <div id="resource-bar" class="resource-bar" aria-label="Kaynaklar"></div>
     </header>
 

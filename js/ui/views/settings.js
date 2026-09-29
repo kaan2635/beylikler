@@ -1,8 +1,8 @@
 import { GAME } from '../../config/game.js';
 import { DIFFICULTIES } from '../../config/lords.js';
-import { h } from '../dom.js';
+import { h, setText } from '../dom.js';
 import { toast } from '../toast.js';
-import { createOnlineForm } from '../online-login.js';
+import { createMultiplayerChoices } from '../online-login.js';
 import { readOnlineConfig, writeOnlineConfig } from '../../net/api.js';
 
 /** Ayarlar: köy adı, kaydı dışa/içe aktarma, dünya hızı ve sıfırlama. */
@@ -59,20 +59,37 @@ export function createSettingsView({ game, refresh }) {
     location.hash = '#/koy';
     location.reload();
   });
+  const room = game.room;
+  const inviteLink = room ? `${location.origin}${location.pathname}#/katil/${room.code}` : '';
+  const copyInvite = h('button', { class: 'btn', type: 'button' }, 'Davet bağlantısını kopyala');
+  copyInvite.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      toast('Davet bağlantısı kopyalandı. Arkadaşlarına gönder!', 'success');
+    } catch {
+      toast(`Bağlantı: ${inviteLink}`, 'info', 10000);
+    }
+  });
+  if (room) setText(logout, room.host ? 'Odayı kapat ve tek oyunculuya dön' : 'Odadan çık ve tek oyunculuya dön');
   const multiplayer = h(
     'section',
     { class: 'panel stack-sm multiplayer-panel' },
     h('h2', null, 'Çok oyunculu'),
-    online
+    room
       ? [
-          h('p', null, 'Bağlı olduğun dünya: ', h('strong', null, readOnlineConfig()?.base ?? ''), '. Hesabın: ', h('strong', null, game.username ?? '')),
-          h('p', { class: 'muted' }, 'Bu dünyada zaman, hız ve kurallar sunucudadır. Tek oyunculu kaydın bu cihazda duruyor; çıkış yapınca geri gelir.'),
-          h('div', { class: 'form-row' }, logout),
+          h('p', null, 'Oda kodu: ', h('strong', { class: 'room-code' }, room.code), room.host ? ' · ev sahibi sensin' : ''),
+          h('p', { class: 'muted' }, room.host
+            ? 'Arkadaşların oyunu açıp bu kodla (ya da davet bağlantısıyla) katılır. Onlar oynarken bu sekme açık kalmalı. Dünya bu tarayıcıda saklanır; odayı kapatsan da silinmez, yeniden kurunca aynı kodla açılır.'
+            : 'Dünya ev sahibinin tarayıcısında. Ev sahibi oyunu kapatırsa bağlantı kopar; açınca kaldığın yerden devam edersin.'),
+          h('div', { class: 'form-row' }, copyInvite, logout),
         ]
-      : [
-          h('p', { class: 'muted' }, 'Arkadaşlarınla aynı dünyada oyna: saldır, fethet, sohbet et. Sunucuyu kuran kişi (bkz. README → Çok oyunculu sunucu) adresini paylaşır. Tek oyunculu kaydın silinmez.'),
-          createOnlineForm(),
-        ],
+      : online
+        ? [
+            h('p', null, 'Bağlı olduğun dünya: ', h('strong', null, readOnlineConfig()?.base ?? ''), '. Hesabın: ', h('strong', null, game.username ?? '')),
+            h('p', { class: 'muted' }, 'Bu dünyada zaman, hız ve kurallar sunucudadır. Tek oyunculu kaydın bu cihazda duruyor; çıkış yapınca geri gelir.'),
+            h('div', { class: 'form-row' }, logout),
+          ]
+        : [h('p', { class: 'muted' }, 'Arkadaşlarınla aynı dünyada oyna. Tek oyunculu kaydın silinmez; istediğin zaman geri dönersin.'), createMultiplayerChoices()],
   );
 
   const el = h(

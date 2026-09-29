@@ -1,6 +1,7 @@
-// Oyuncunun sunucuda çalıştırabileceği eylemler. Her eylem argümanlarını denetler ve oyunun
-// kendi kurallarını (Game → systems/) sunucu saatiyle çağırır. Listede olmayan hiçbir şey
-// (dünya hızı, zorluk, sıfırlama, kayıt içe aktarma) istemciden değiştirilemez.
+// Oyuncunun ev sahibinde (Node sunucusu ya da tarayıcıda kurulan oda) çalıştırabileceği eylemler.
+// Her eylem argümanlarını denetler ve oyunun kendi kurallarını (Game → systems/) ev sahibinin
+// saatiyle çağırır. Listede olmayan hiçbir şey (dünya hızı, zorluk, sıfırlama, kayıt içe
+// aktarma) oyuncudan değiştirilemez.
 
 const fail = (message) => {
   throw new Error(message);
