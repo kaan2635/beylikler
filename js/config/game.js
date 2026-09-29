@@ -12,6 +12,9 @@ export const GAME = Object.freeze({
   tickMs: 1000,
 });
 
+// Başlangıç köyünün numarası; fethedilen köyler v2, v3… olmaz, sayaçtan (nextId) numara alır.
+export const START_VILLAGE_ID = 'v1';
+
 // Yeni oyunun başlangıç durumu. Listede olmayan binalar 0. seviyeden başlar.
 export const START = Object.freeze({
   villageName: 'Beyliğim',

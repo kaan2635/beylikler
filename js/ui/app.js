@@ -40,11 +40,30 @@ export function mountApp(game, { isNew, events }) {
   const incomingAlert = document.getElementById('incoming-alert');
   const alertText = h('span');
   incomingAlert.append(icon('saldiri'), alertText);
+  const villageSwitch = document.getElementById('village-switch');
+  let switchSignature = null;
+  villageSwitch.addEventListener('change', () => {
+    if (game.setActiveVillage(villageSwitch.value)) toast(`${game.village.name} köyünü yönetiyorsun.`);
+    refresh();
+  });
   const views = {};
   let current = null;
 
+  /** Birden fazla köy varsa tepe çubuğunda köy seçimi. */
+  function updateVillageSwitch() {
+    const villages = Object.values(game.state.villages);
+    villageSwitch.hidden = villages.length < 2;
+    const signature = villages.map((v) => `${v.id}:${v.name}`).join('|');
+    if (signature !== switchSignature) {
+      switchSignature = signature;
+      villageSwitch.replaceChildren(...villages.map((v) => h('option', { value: v.id }, `${v.name} (${v.x}|${v.y})`)));
+    }
+    villageSwitch.value = game.state.activeVillageId;
+  }
+
   function refresh(now = Date.now()) {
     game.tick(now);
+    updateVillageSwitch();
     resourceBar.update(game);
     current?.update(now);
     const unread = game.state.reports.filter((report) => !report.read).length;
@@ -138,6 +157,12 @@ function describe(event) {
       return { text: `${fmtInt(event.count)} ${UNITS[event.unit].name} eğitildi ve köyde hazır.`, kind: 'success' };
     case 'attack-result': {
       if (!event.attackerWins) return { text: `${event.target} saldırısı: yenilgi. Birlikler geri dönemedi.`, kind: 'error' };
+      if (event.conquest?.conquered) {
+        return { text: `${event.target} fethedildi! Artık senin köyün; tepe çubuğundan köyler arasında geçebilirsin.`, kind: 'success' };
+      }
+      if (event.conquest) {
+        return { text: `${event.target} saldırısı: zafer! Elçiler bağlılığı düşürdü: ${event.conquest.from} → ${event.conquest.to}.`, kind: 'success' };
+      }
       const { wall, catapult } = event.siege ?? {};
       const fell = (name, { from, to }) => (to < from ? (to === 0 ? `${name} yıkıldı` : `${name} ${to}. seviyeye indi`) : '');
       const siege = [wall && fell('sur', wall), catapult && fell(BUILDINGS[catapult.building].name, catapult)].filter(Boolean);

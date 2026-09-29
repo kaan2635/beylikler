@@ -12,7 +12,9 @@ import {
   nearbyBarbarians,
   lordsOf,
   lordVillage,
+  lordDefeated,
 } from '../../systems/world.js';
+import { loyaltyOf } from '../../systems/barbarians.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { inspectAttack, isOutbound } from '../../systems/movements.js';
@@ -436,7 +438,8 @@ export function createMapView({ game, refresh }) {
     const own = game.village;
     const { x, y } = selected;
     const village = villageAt(state, x, y);
-    const signature = `${x}|${y}|${village?.points}|${state.world.speed}|${own.id}`;
+    const loyalty = village && village.kind !== 'oyuncu' ? Math.floor(loyaltyOf(state, village.id)) : '';
+    const signature = `${x}|${y}|${village?.kind}|${village?.points}|${loyalty}|${state.world.speed}|${own.id}`;
     if (signature === infoSignature) return;
     infoSignature = signature;
 
@@ -449,6 +452,7 @@ export function createMapView({ game, refresh }) {
       const owner = { oyuncu: 'Sen', bey: village.owner, barbar: 'Barbar köyü' }[village.kind];
       rows.push(['Sahibi', owner], ['Puan', fmtInt(village.points)]);
       if (village.kind === 'bey') rows.push(['Kişilik', PERSONALITIES[village.personality].name]);
+      if (village.kind !== 'oyuncu') rows.push(['Bağlılık', fmtInt(loyaltyOf(state, village.id))]);
     } else {
       title = TERRAIN[terrainAt(state.world.seed, x, y)].name;
       rows.push(['Durum', 'Boş arazi']);
@@ -492,6 +496,7 @@ export function createMapView({ game, refresh }) {
   function renderLords() {
     const own = game.village;
     const lords = lordsOf(game.state.world.seed)
+      .filter((lord) => !lordDefeated(game.state, lord.id))
       .map((lord) => lordVillage(game.state, lord))
       .map((v) => ({ ...v, distance: distance(own.x, own.y, v.x, v.y) }))
       .sort((a, b) => a.distance - b.distance);

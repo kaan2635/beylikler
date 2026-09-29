@@ -1,8 +1,9 @@
-import { lordsOf, lordVillage, villagePoints } from './world.js';
+import { lordsOf, lordVillage, lordDefeated, villagePoints } from './world.js';
 
 /**
  * Sıralama: oyuncu ve rakip beyler, puana (eşitlikte savaş puanına) göre.
- * Puan köy binalarından gelir; savaş puanı öldürülen düşman askerlerinin nüfus değeridir.
+ * Puan köylerin binalarından gelir; savaş puanı öldürülen düşman askerlerinin nüfus değeridir.
+ * Hisarı fethedilen beyler en sonda, puansız olarak listelenir.
  */
 export function ranking(state) {
   const villages = Object.values(state.villages);
@@ -21,14 +22,16 @@ export function ranking(state) {
   const lords = lordsOf(state.world.seed).map((lord) => {
     const village = lordVillage(state, lord);
     const entry = state.ai.lords[lord.id] ?? {};
+    const defeated = lordDefeated(state, lord.id);
     return {
       kind: 'bey',
       id: lord.id,
       name: village.owner,
       villageName: village.name,
       personality: lord.personality,
-      villages: 1,
-      points: village.points,
+      defeated,
+      villages: defeated ? 0 : 1,
+      points: defeated ? 0 : village.points,
       kills: entry.kills ?? 0,
       loot: entry.loot ?? 0,
       x: village.x,

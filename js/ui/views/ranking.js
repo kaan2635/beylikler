@@ -66,11 +66,17 @@ export function createRankingView({ game }) {
                 { class: 'wrap' },
                 e.kind === 'oyuncu'
                   ? h('strong', null, 'Sen')
-                  : h('a', { class: 'card-link', href: `#/harita/${e.x}/${e.y}` }, e.name),
+                  : e.defeated
+                    ? h('s', { class: 'muted' }, e.name)
+                    : h('a', { class: 'card-link', href: `#/harita/${e.x}/${e.y}` }, e.name),
                 h(
                   'span',
                   { class: 'cell-sub' },
-                  e.kind === 'oyuncu' ? e.villageName : `${e.villageName} · ${PERSONALITIES[e.personality].name}`,
+                  e.kind === 'oyuncu'
+                    ? `${e.villages} köy: ${e.villageName}`
+                    : e.defeated
+                      ? `${e.villageName} fethedildi, oyundan çekildi`
+                      : `${e.villageName} · ${PERSONALITIES[e.personality].name}`,
                 ),
               ),
               h('td', { class: 'num' }, fmtInt(e.points)),

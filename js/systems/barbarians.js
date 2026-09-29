@@ -1,4 +1,4 @@
-import { BARBARIAN } from '../config/combat.js';
+import { BARBARIAN, CONQUEST } from '../config/combat.js';
 import { RESOURCES, RESOURCE_IDS } from '../config/resources.js';
 import { productionPerHour, storageCapacity, hiddenCapacity } from '../core/formulas.js';
 
@@ -53,15 +53,32 @@ export function barbarianLive(state, village) {
   return { units, resources, cap, hidden: hiddenCapacity(village.buildings.gizlidepo) };
 }
 
-/** Savaştan sonra köyün kalan askerlerini ve kaynaklarını kaydeder (önceki yıkım bilgisi korunur). */
+/** Savaştan sonra köyün kalan askerlerini ve kaynaklarını kaydeder (yıkım ve bağlılık bilgisi korunur). */
 export function recordBarbarian(state, village, units, resources) {
-  const damage = state.barbarians[village.id]?.damage;
+  const { damage, loyalty } = state.barbarians[village.id] ?? {};
   state.barbarians[village.id] = {
     units: { ...units },
     resources: { ...resources },
     time: state.world.clock.time,
     ...(damage && { damage }),
+    ...(loyalty && { loyalty }),
   };
+}
+
+/** Köyün şu anki bağlılığı (0..100); her oyun saati toparlanır. Dokunulmamış köy 100'dür. */
+export function loyaltyOf(state, villageId) {
+  const entry = state.barbarians[villageId]?.loyalty;
+  if (!entry) return CONQUEST.loyaltyMax;
+  const hours = Math.max(0, state.world.clock.time - entry.time) / HOUR;
+  return Math.min(CONQUEST.loyaltyMax, entry.value + hours * CONQUEST.loyaltyRegenPerHour);
+}
+
+/**
+ * Bağlılığı kaydeder. Savaştan sonra, recordBarbarian köyün kaydını oluşturduktan sonra
+ * çağrılır (boş bir kayıt garnizonu sıfırlanmış sanılırdı).
+ */
+export function setLoyalty(state, villageId, value) {
+  state.barbarians[villageId].loyalty = { value, time: state.world.clock.time };
 }
 
 /** Köyün bir binasından `levels` seviye yıkıldığını kaydeder; onarılmamış eski yıkıma eklenir. */

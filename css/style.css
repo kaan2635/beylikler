@@ -265,6 +265,21 @@ code {
   border-bottom-color: var(--accent);
 }
 
+.village-switch {
+  max-width: 220px;
+  padding: 4px 8px;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.08);
+  color: var(--bar-ink);
+  font-weight: 600;
+}
+
+.village-switch option {
+  background: var(--panel);
+  color: var(--ink);
+}
+
 .incoming-alert {
   display: inline-flex;
   align-items: center;
@@ -889,6 +904,14 @@ input.coord-input {
 .siege-line {
   font-weight: 600;
   color: var(--accent);
+}
+
+.siege-line.conquest {
+  padding: 8px 10px;
+  border-left: 4px solid var(--gold);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--gold) 15%, transparent);
+  color: var(--ink);
 }
 
 .building-levels {

@@ -11,6 +11,14 @@ export const COMBAT = Object.freeze({
   catapultsPerLevel: 1, // mancınık → seçilen bina
 });
 
+// Fetih: Elçi, kazanılan saldırıda köyün bağlılığını düşürür; sıfırda köy fethedilir.
+export const CONQUEST = Object.freeze({
+  loyaltyMax: 100,
+  loyaltyDrop: [20, 35], // hayatta kalan her Elçi bu aralıkta düşürür
+  loyaltyRegenPerHour: 1, // bağlılık her oyun saati 1 puan toparlanır
+  loyaltyAfterConquest: 25, // fethedilen köyün yeni sahibine bağlılığı
+});
+
 // Mancınıkla hedeflenebilecek binalar (sur koçbaşının işidir).
 export const CATAPULT_TARGETS = Object.freeze(['konak', 'ambar', 'gizlidepo', 'oduncu', 'kilocagi', 'demirmadeni', 'ciftlik']);
 

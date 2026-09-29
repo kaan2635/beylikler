@@ -140,6 +140,14 @@ export class Game {
     if (changed) this.save();
   }
 
+  /** Yönetilen köyü değiştirir (fethedilen köyler arasında geçiş). */
+  setActiveVillage(id) {
+    if (!this.state.villages[id] || this.state.activeVillageId === id) return false;
+    this.state.activeVillageId = id;
+    this.save();
+    return true;
+  }
+
   renameVillage(name) {
     const clean = name.trim().slice(0, 32);
     if (!clean) return false;

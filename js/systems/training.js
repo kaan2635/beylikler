@@ -31,11 +31,27 @@ export function totalCost(unit, count) {
   return cost;
 }
 
+/** Köyün sahip olduğu birim sayısı: köyde, eğitimde ve yolda olanlar. */
+export function unitsOwned(village, unitId) {
+  const training = village.trainQueues[UNITS[unitId].building]
+    .filter((batch) => batch.unit === unitId)
+    .reduce((total, batch) => total + batch.count - batch.trained, 0);
+  const away = village.movements.reduce((total, m) => total + (m.units[unitId] ?? 0), 0);
+  return village.units[unitId] + training + away;
+}
+
+/** Sayısı bir binaya bağlı birimlerde (Elçi → Saray) kalan hak; sınırsız birimlerde Infinity. */
+export function unitAllowance(village, unitId) {
+  const unit = UNITS[unitId];
+  if (!unit.limitBy) return Infinity;
+  return Math.max(0, village.buildings[unit.limitBy] - unitsOwned(village, unitId));
+}
+
 /** Kaynak ve boş nüfusla şu an en fazla kaç birim eğitilebileceği. */
 export function maxTrainable(village, unitId) {
   const unit = UNITS[unitId];
   if (missingUnitRequirements(village, unitId)) return 0;
-  let max = Math.floor((populationCap(village) - populationUsed(village)) / unit.pop);
+  let max = Math.min(unitAllowance(village, unitId), Math.floor((populationCap(village) - populationUsed(village)) / unit.pop));
   for (const [resource, amount] of Object.entries(unit.cost)) {
     max = Math.min(max, Math.floor(village.resources[resource] / amount));
   }
@@ -44,7 +60,7 @@ export function maxTrainable(village, unitId) {
 
 /**
  * `count` adet birimin eğitilip eğitilemeyeceğini inceler.
- * Dönen `code`: 'count' | 'requires' | 'queue' | 'population' | 'storage' | 'resources' (ok ise yok)
+ * Dönen `code`: 'count' | 'requires' | 'limit' | 'queue' | 'population' | 'storage' | 'resources' (ok ise yok)
  */
 export function inspectTraining(village, world, unitId, count, now) {
   const unit = UNITS[unitId];
@@ -63,6 +79,10 @@ export function inspectTraining(village, world, unitId, count, now) {
   if (!valid) return { ...info, code: 'count', reason: `1 ile ${GAME.maxTrainBatch} arasında bir sayı gir` };
   const missing = missingUnitRequirements(village, unitId);
   if (missing) return { ...info, code: 'requires', reason: missing };
+  if (count > unitAllowance(village, unitId)) {
+    const limit = village.buildings[unit.limitBy];
+    return { ...info, code: 'limit', reason: `En fazla ${limit} ${unit.name} (${BUILDINGS[unit.limitBy].name} seviyesi kadar)` };
+  }
   if (village.trainQueues[unit.building].length >= GAME.maxTrainQueue) {
     return { ...info, code: 'queue', reason: `${BUILDINGS[unit.building].name} kuyruğu dolu` };
   }

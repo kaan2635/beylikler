@@ -33,7 +33,7 @@ export function createArmyView(ctx) {
     el,
     update(now) {
       const village = ctx.game.village;
-      incoming.update(village, now);
+      incoming.update(ctx.game.state, village, now);
       summary.update(village);
       movements.update(village, now);
       for (const panel of panels) panel.update(village, ctx.game.state.world, now);
@@ -129,20 +129,24 @@ function createIncomingPanel() {
 
   return {
     el,
-    update(village, now) {
-      const attacks = [...village.incoming].sort((a, b) => a.arriveAt - b.arriveAt);
+    /** Tüm köylere gelen saldırılar; savunma özeti yönetilen köy içindir. */
+    update(state, village, now) {
+      const villages = Object.values(state.villages);
+      const attacks = villages
+        .flatMap((v) => v.incoming.map((attack) => ({ attack, target: v })))
+        .sort((a, b) => a.attack.arriveAt - b.attack.arriveAt);
       el.hidden = attacks.length === 0;
       if (!attacks.length) return;
       const d = villageDefense(village);
       setText(
         defense,
-        `Köyünün savunması: piyadeye ${fmtInt(d.piyade)} · süvariye ${fmtInt(d.suvari)} · okçuya ${fmtInt(d.okcu)}` +
+        `${village.name} savunması: piyadeye ${fmtInt(d.piyade)} · süvariye ${fmtInt(d.suvari)} · okçuya ${fmtInt(d.okcu)}` +
           ` (sur ${village.buildings.sur}. seviye dahil). Askerlerini köyde tut; Gizli Depo kaynaklarını korur.`,
       );
-      const next = attacks.map((a) => a.id).join('|');
+      const next = attacks.map((a) => a.attack.id).join('|');
       if (next !== signature) {
         signature = next;
-        rows = attacks.map((attack) => {
+        rows = attacks.map(({ attack, target }) => {
           const remaining = h('span', { class: 'queue-remaining' });
           const bar = h('span');
           const row = h(
@@ -154,6 +158,7 @@ function createIncomingPanel() {
               h('span', { class: 'unit-icon small' }, icon('saldiri')),
               h('strong', null, attack.from.owner),
               h('a', { class: 'card-link', href: `#/harita/${attack.from.x}/${attack.from.y}` }, `${attack.from.name} (${attack.from.x}|${attack.from.y})`),
+              villages.length > 1 ? h('span', null, `→ ${target.name}`) : null,
               h('span', { class: 'muted movement-units' }, `tahmini saldırı gücü ~${fmtInt(incomingEstimate(attack))}`),
             ),
             h('div', { class: 'queue-time' }, remaining, h('span', { class: 'muted' }, `varış ${fmtClock(attack.arriveAt, now)}`)),

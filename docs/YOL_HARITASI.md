@@ -71,7 +71,7 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Saldırı formunda "Son orduyu kullan"
 - [x] Raporları süzme (tümü, okunmamış, zafer, yenilgi), tek tek ya da okunanları silme
 - [x] 56 birim testi (Game sınıfı bellek içi depoyla da test ediliyor)
-- [ ] Destek (kendi köyleri arasında asker gönderme) → Adım 8'de çoklu köyle birlikte
+- [ ] Destek (kendi köyleri arasında asker gönderme) → Adım 8b
 
 ## ✅ Adım 6 — Derinlik
 
@@ -118,22 +118,54 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Barış zorluğunda dünya tamamen sakin; 60 oyun günü 40 ms'de hesaplanır
 - [x] Kayıt şeması 7. sürüm; 93 birim testi
 
-## ⬜ Adım 8 — Fetih ve çoklu köy
+## 🔶 Adım 8 — Fetih ve çoklu köy
 
-- [ ] Elçi birimi ve köy bağlılığı
-- [ ] Köy ele geçirme, köyler arası geçiş
-- [ ] Köyler arası kaynak ve asker gönderme
+**8a: Fetih** ✅
 
-## ⬜ Adım 9 — Oyunlaştırma ve PWA
+- [x] Saray binası (Konak 12, Demirci 5, Pazar 5); her seviyesi bir Elçi hakkı verir
+- [x] Elçi: pahalı, yavaş; kazanılan saldırıdan sağ çıkan her Elçi bağlılığı 20–35 düşürür
+- [x] Bağlılık her oyun saati 1 dolar; sıfırlanan köy binaları, kalan kaynakları ve sağ kalan saldırganlarla oyuncuya geçer (bağlılık 25'ten başlar)
+- [x] Hisarı fethedilen bey oyundan çekilir: saldırmaz, yağmalamaz, sıralamada üstü çizili görünür
+- [x] Tepe çubuğunda köy seçici; Köy, Ordu, Demirci ve Pazar seçili köye göre çalışır; tüm köylere gelen saldırılar tek listede
+- [x] 4 yeni asker: Muhafız (ağır savunma piyadesi), Serdengeçti (ağır saldırı piyadesi), Deli (hızlı ve ucuz hafif süvari), Atlı Okçu (okçu türünde süvari) → toplam 14 birim
+- [x] Haritada ve saldırı formunda bağlılık bilgisi; raporlarda fetih satırı
+- [x] 98 birim testi
+
+**8b: Köyler arası lojistik**
+
+- [ ] Kendi köyleri arasında kaynak gönderme (tüccarla)
+- [ ] Destek: asker gönderme, geri çağırma, başka köyde duran askerler
+- [ ] Köylere genel bakış ekranı
+
+## ⬜ Adım 9 — Sınıf seçimi ve premium
+
+- [ ] Oyun başında sınıf seçimi (OGame benzeri): ör. Tüccar (üretim ve tüccar), Sipahi Beyi (ordu hızı ve gücü), Kâşif (keşif seferleri)
+- [ ] Premium para birimi "Akçe": oyun içinde kazanılır (keşif, görev, başarım); gerçek para yok
+- [ ] Premium özellikler: inşaatı hızlandırma, ek kuyruk sırası, üretim bonusu, yağma asistanı eklentileri
+
+## ⬜ Adım 10 — Keşif seferleri
+
+- [ ] Haritanın kenarındaki bilinmeyen topraklara OGame tarzı keşif birliği gönderme
+- [ ] Sonuçlar: kaynak, asker, Akçe, nadir eşya; ya da gecikme, pusu, kayıp
+- [ ] Keşif raporları; sınıfa ve Kâşif bonusuna göre olasılıklar
+
+## ⬜ Adım 11 — Görsel yenileme
+
+- [ ] Bina ve birim görselleri (özgün, vektör tabanlı çizimler)
+- [ ] Köy sahnesi: binalar seviyesine göre büyür
+- [ ] Arayüz ve etkileşim tasarımının elden geçirilmesi
+
+## ⬜ Adım 12 — Oyunlaştırma ve PWA
 
 - [ ] Görevler ve oyun içi eğitim
-- [ ] Puan, sıralama, başarımlar, oyun sonu hedefi
+- [ ] Başarımlar, oyun sonu hedefi
 - [ ] PWA: telefona kurulum, çevrimdışı açılış
 
-## ⬜ Adım 10 — Çok oyunculu (isteğe bağlı)
+## ⬜ Adım 13 — Çok oyunculu
 
 - [ ] Supabase: kimlik doğrulama, Postgres şeması, satır düzeyi güvenlik
 - [ ] Motoru sunucuya taşıma (Edge Functions): istemci yalnızca niyet gönderir
+- [ ] Ortak dünya, oyuncular arası saldırı ve ticaret
 - [ ] Klanlar, mesajlaşma, gerçek zamanlı bildirimler
 
 ## Bilinen sınırlamalar
@@ -144,3 +176,5 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - Barbar köyleri saldırmaz; yalnızca rakip beyler saldırır.
 - Oyuncu uzun süre uzak kaldıysa aradaki bey saldırıları açılışta sırayla işlenir (çevrimdışı ilerleme).
 - Kuşatma araçları yalnızca kazanılan savaştan sonra yıkım yapar ve sur savaştan önce değil sonra düşer.
+- Fethedilen köye yerleşen garnizon çiftlik sınırını aşabilir; çiftlik yükseltilene ya da askerler başka yere gönderilene kadar o köyde nüfus isteyen inşaat yapılamaz.
+- Oyuncunun köyleri henüz birbirine asker ve kaynak gönderemez (Adım 8b).

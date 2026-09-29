@@ -10,7 +10,7 @@ import {
   maxTrainable,
 } from '../js/systems/training.js';
 import { populationUsed, populationCap } from '../js/systems/economy.js';
-import { trainDuration } from '../js/core/formulas.js';
+import { trainDuration, storageCapacity } from '../js/core/formulas.js';
 import { UNITS, UNIT_IDS, TRAINING_BUILDINGS } from '../js/config/units.js';
 import { BUILDINGS } from '../js/config/buildings.js';
 import { GAME } from '../js/config/game.js';
@@ -27,13 +27,16 @@ function armyGame({ kisla = 1, resources = 900 } = {}) {
   return { state, village };
 }
 
-test('her birimin eğitim binası var ve maliyeti 1. seviye ambara sığar', () => {
+test('her birimin eğitim binası var; sıradan birimler 1. seviye ambara, Elçi 15. seviyeye sığar', () => {
   for (const id of UNIT_IDS) {
     const unit = UNITS[id];
     assert.ok(BUILDINGS[unit.building], `${id}: bilinmeyen bina ${unit.building}`);
     assert.ok(TRAINING_BUILDINGS.includes(unit.building));
-    for (const amount of Object.values(unit.cost)) assert.ok(amount <= 1000, `${id} maliyeti`);
+    const cap = unit.limitBy ? storageCapacity(15) : storageCapacity(1);
+    for (const amount of Object.values(unit.cost)) assert.ok(amount <= cap, `${id} maliyeti`);
     for (const building of Object.keys(unit.requires)) assert.ok(BUILDINGS[building], `${id} gereksinimi`);
+    for (const key of ['attack', 'speed', 'carry', 'pop', 'trainTime']) assert.ok(Number.isFinite(unit[key]), `${id}.${key}`);
+    assert.ok(['piyade', 'suvari', 'okcu'].includes(unit.type), `${id} türü`);
   }
 });
 
@@ -155,5 +158,5 @@ test('1. sürüm kayıt, asker alanlarıyla 2. sürüme taşınır', () => {
   assert.equal(village.buildings.konak, 4);
   assert.equal(village.buildings.ahir, 0);
   assert.equal(village.units.yaya, 0);
-  assert.deepEqual(village.trainQueues, { kisla: [], ahir: [], atolye: [] });
+  assert.deepEqual(village.trainQueues, Object.fromEntries(TRAINING_BUILDINGS.map((b) => [b, []])));
 });

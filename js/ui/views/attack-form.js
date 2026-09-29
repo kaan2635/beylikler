@@ -1,6 +1,7 @@
 import { UNITS, UNIT_IDS } from '../../config/units.js';
 import { BUILDINGS } from '../../config/buildings.js';
-import { CATAPULT_TARGETS } from '../../config/combat.js';
+import { CATAPULT_TARGETS, CONQUEST } from '../../config/combat.js';
+import { loyaltyOf } from '../../systems/barbarians.js';
 import { RESOURCE_IDS } from '../../config/resources.js';
 import { inspectAttack, totalUnits } from '../../systems/movements.js';
 import { h, setText } from '../dom.js';
@@ -36,6 +37,7 @@ export function createAttackForm({ game, refresh }) {
   const catapultRow = h('div', { class: 'form-row' }, h('label', { for: 'catapult-target' }, 'Mancınık hedefi'), catapultSelect);
 
   const empty = h('p', { class: 'muted' }, 'Köyde asker yok. Ordu sekmesinden asker eğitebilirsin.');
+  const envoyHint = h('p', { class: 'intel' });
   const lastAttack = h('p', { class: 'muted' });
   const intel = h('p', { class: 'intel' });
   const summary = h('div', { class: 'stats' });
@@ -54,6 +56,7 @@ export function createAttackForm({ game, refresh }) {
     empty,
     h('div', { class: 'send-grid' }, UNIT_IDS.map((id) => rows[id].row)),
     catapultRow,
+    envoyHint,
     h('p', { class: 'muted hint' }, 'Yalnız gözcü gönderirsen casusluk yapılır: köyün askerleri, kaynakları ve binaları görünür.'),
     summary,
     h('div', { class: 'form-row' }, submit, allButton, lastArmyButton, clearButton),
@@ -154,6 +157,16 @@ export function createAttackForm({ game, refresh }) {
 
       const check = inspectAttack(game.state, village, target.x, target.y, readUnits(), now, options());
       catapultRow.hidden = !check.units.mancinik;
+      const envoys = check.units.elci ?? 0;
+      envoyHint.hidden = !envoys;
+      if (envoys) {
+        const [min, max] = CONQUEST.loyaltyDrop;
+        setText(
+          envoyHint,
+          `${envoys} Elçi, saldırı kazanılırsa bağlılığı ${envoys * min}–${envoys * max} düşürür. ` +
+            `Köyün bağlılığı şu an ${fmtInt(loyaltyOf(game.state, target.id))}; sıfırlanınca köy senin olur.`,
+        );
+      }
       const chosen = totalUnits(check.units) > 0;
       summary.hidden = !chosen;
       if (chosen) {

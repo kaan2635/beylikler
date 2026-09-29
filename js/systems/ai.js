@@ -89,6 +89,11 @@ export function ensureLordSchedules(state, now) {
     entry.bonus ??= 0;
     entry.kills ??= 0;
     entry.loot ??= 0;
+    if (entry.defeated) {
+      entry.nextAttackAt = null; // hisarı fethedilen bey artık hareket etmez
+      entry.nextRaidAt = null;
+      continue;
+    }
     if (entry.nextRaidAt === undefined) {
       entry.nextRaidAt = difficulty.raids
         ? now + toReal(state.world, roll(state, lord, 50_000 + entry.raids) * raidInterval(state, lord, entry.raids))
@@ -253,8 +258,9 @@ function pickBarbarian(state, lord, n) {
 /** Savaşılacak beyi seçer; yakındakiler daha olasıdır. */
 function pickRival(state, lord, n) {
   const others = lordsOf(state.world.seed)
-    .filter((other) => other.id !== lord.id)
+    .filter((other) => other.id !== lord.id && !state.ai.lords[other.id]?.defeated)
     .sort((a, b) => distance(lord.x, lord.y, a.x, a.y) - distance(lord.x, lord.y, b.x, b.y));
+  if (!others.length) return null;
   const index = Math.floor(roll(state, lord, 70_000 + n) ** 2 * others.length);
   return lordVillage(state, others[index]);
 }

@@ -141,6 +141,8 @@ OGame tarzı tur tabanlı simülasyon daha derin olsa da hem daha yavaştır hem
 
 - **Yağma:** Her birimin bir taşıma kapasitesi var. Gizli depodaki miktar düşüldükten sonra kalan kaynak, kapasite dolana kadar eşit oranda alınır.
 - **Fetih:** Köyün sadakati 100'den başlar. Fetih birimi her saldırıda 20–35 puan düşürür. 0'a inince köy el değiştirir. Sadakat saatte yaklaşık 1 puan geri gelir.
+- **Beylikler'de uygulanan (8a):** Fetih birimi **Elçi**'dir. Saray'da yetişir ve köy başına sayısı Saray seviyesiyle sınırlıdır (en fazla 5). Yalnızca **kazanılan** saldırıdan sağ çıkan Elçiler bağlılığı düşürür; her biri için düşüş tohumdan ve hareket numarasından belirlenir (20–35). Bağlılık kayıtta `{değer, dünya saati}` olarak tutulur ve okunduğu anda oyun saati başına +1 eklenerek hesaplanır (tembel hesaplama). Sıfırlanan köy yeni bir oyuncu köyü olur: kuşatmadan sonraki binalar, yağmadan kalan kaynaklar ve sağ kalan saldırganlar (Elçiler hariç) oraya yerleşir, bağlılık 25'ten başlar. Bey hisarı fethedilirse bey oyundan çekilir.
+- **Birim çeşitliliği (8a):** Her bina iki rolü birbirinden ayıran birimler sunar. Kışla: Yaya, Kılıççı, Muhafız (savunma) ile Baltacı, Serdengeçti (saldırı) ve Okçu. Ahır: Gözcü, Deli (ucuz ve hızlı yağmacı), Akıncı, Atlı Okçu (süvari hızında okçu saldırısı; savunanın okçu savunmasına çarpar) ve Sipahi. Böylece savunan taraf tek bir savunma türüne yığılamaz.
 
 ## 5. Zaman ve simülasyon mimarisi
 

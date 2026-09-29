@@ -7,6 +7,7 @@ import { barbarianLive, recordBarbarian, recordDamage } from './barbarians.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { deposit } from './economy.js';
 import { provokeLord, recordPlayerAttackOnLord } from './ai.js';
+import { applyEnvoys } from './conquest.js';
 import {
   totalUnits,
   armySpeed,
@@ -153,7 +154,15 @@ function attack(state, village, movement, target) {
   recordBarbarian(state, target, subtractUnits(live.units, battle.defenderLosses), leftResources);
   const siege = battle.attackerWins ? besiege(state, target, survivors, movement.catapultTarget) : {};
 
-  if (target.kind === 'bey') provokeLord(state, target.id, movement.arriveAt);
+  // Elçiler: bağlılığı düşürür, sıfırlanırsa köy fethedilir (birlikler ve ganimet köyde kalır).
+  const afterSiege = {
+    ...target.buildings,
+    ...(siege.wall && { sur: siege.wall.to }),
+    ...(siege.catapult && { [siege.catapult.building]: siege.catapult.to }),
+  };
+  const conquest = battle.attackerWins ? applyEnvoys(state, village, movement, target, survivors, afterSiege, live.resources) : null;
+
+  if (target.kind === 'bey' && !conquest?.conquered) provokeLord(state, target.id, movement.arriveAt);
 
   const report = addReport(state, {
     type: 'saldiri',
@@ -171,13 +180,15 @@ function attack(state, village, movement, target) {
     defenderLosses: battle.defenderLosses,
     loot,
     siege,
+    ...(conquest && { conquest }),
     ...(movement.catapultTarget && { catapultTarget: movement.catapultTarget }),
   });
   state.stats.kills += battlePoints(battle.defenderLosses);
   state.stats.loot += resourceTotal(loot);
-  if (target.kind === 'bey') recordPlayerAttackOnLord(state, report);
+  if (target.kind === 'bey' && !conquest?.conquered) recordPlayerAttackOnLord(state, report);
 
-  if (totalUnits(survivors) > 0) turnBack(movement, survivors, loot);
+  // Fetihte birlikler yeni köyde kalır; aksi halde sağ kalanlar ganimetle döner.
+  if (totalUnits(survivors) > 0 && !conquest?.conquered) turnBack(movement, survivors, loot);
   else village.movements.splice(village.movements.indexOf(movement), 1);
 
   return {
@@ -188,6 +199,7 @@ function attack(state, village, movement, target) {
     attackerWins: battle.attackerWins,
     loot,
     siege,
+    conquest,
     at: movement.arriveAt,
   };
 }

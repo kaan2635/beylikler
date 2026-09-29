@@ -317,6 +317,15 @@ function renderAttackReport(report, now) {
           : h('span', { class: 'muted' }, 'yok'),
       ),
       siege.map((line) => h('p', { class: 'siege-line' }, line)),
+      report.conquest
+        ? h(
+            'p',
+            { class: `siege-line${report.conquest.conquered ? ' conquest' : ''}` },
+            report.conquest.conquered
+              ? `Köy fethedildi! Bağlılık ${report.conquest.from} → 0. Birlikler yeni köyde garnizon olarak kaldı.`
+              : `Elçiler bağlılığı düşürdü: ${report.conquest.from} → ${report.conquest.to}.`,
+          )
+        : null,
       actions,
     ),
   );

@@ -4,6 +4,7 @@ import { buildingPoints } from '../core/formulas.js';
 import { hash3, mulberry32, valueNoise } from '../core/random.js';
 import { MIN_BUILDING_LEVEL } from '../config/combat.js';
 import { LORD, LORD_NAMES, PERSONALITIES } from '../config/lords.js';
+import { START_VILLAGE_ID } from '../config/game.js';
 import { remainingDamage } from './barbarians.js';
 
 /**
@@ -80,9 +81,13 @@ function ownVillageAt(state, x, y) {
   return null;
 }
 
-/** Oyuncu köylerinin hemen çevresi boş kalır; barbar köyü kapıya dayanmasın. */
-function nearOwnVillage(state, x, y) {
-  return Object.values(state.villages).some((village) => distance(x, y, village.x, village.y) < WORLD.ownVillageClearance);
+/**
+ * Başlangıç köyünün hemen çevresi boş kalır; barbar köyü kapıya dayanmasın. Yalnızca başlangıç
+ * köyü için geçerlidir: fethedilen bir köyün komşusu olan barbar köyleri yerinde kalmalı.
+ */
+function nearStartVillage(state, x, y) {
+  const start = state.villages[START_VILLAGE_ID];
+  return !!start && distance(x, y, start.x, start.y) < WORLD.ownVillageClearance;
 }
 
 /**
@@ -94,7 +99,8 @@ export function barbarianAt(state, x, y) {
   const { seed } = state.world;
   const rng = mulberry32(hash3(seed ^ SALT.village, x, y));
   if (rng() >= barbarianChance(x, y)) return null;
-  if (terrainAt(seed, x, y) === 'gol' || nearOwnVillage(state, x, y) || lordTiles(seed).has(`${x}|${y}`)) return null;
+  if (terrainAt(seed, x, y) === 'gol' || lordTiles(seed).has(`${x}|${y}`)) return null;
+  if (nearStartVillage(state, x, y) || ownVillageAt(state, x, y)) return null; // fethedilen alan artık oyuncunun
 
   const { first, second } = VILLAGE_NAME_PARTS;
   const head = first[Math.floor(rng() * first.length)];
@@ -252,9 +258,16 @@ export function lordVillage(state, lord) {
   };
 }
 
+/** Hisarı fethedilmiş bey artık oyunda değildir. */
+export function lordDefeated(state, lordId) {
+  return !!state.ai?.lords?.[lordId]?.defeated;
+}
+
 export function lordAt(state, x, y) {
   if (!lordTiles(state.world.seed).has(`${x}|${y}`)) return null;
-  return lordVillage(state, lordsOf(state.world.seed).find((lord) => lord.x === x && lord.y === y));
+  const lord = lordsOf(state.world.seed).find((l) => l.x === x && l.y === y);
+  if (lordDefeated(state, lord.id) || ownVillageAt(state, x, y)) return null;
+  return lordVillage(state, lord);
 }
 
 /** Oyuncuya ait olmayan köy (bey hisarı ya da barbar köyü); yoksa null. */
