@@ -200,6 +200,17 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] 137 birim testi (çok oyunculu dünya, oyuncular arası savaş, fetih, kayıt/yükleme, şifreler, eylem denetimi)
 - [ ] Sonraki adımlar: klanlar (ittifak, ortak sohbet), oyuncular arası ticaret ve destek, özel mesajlar, yönetici paneli
 
+## ✅ Adım 14 — GitHub'dan çok oyunculu ve gerçekçi görseller (1.2.0)
+
+- [x] Oda modu: sunucu kurmadan, GitHub Pages'teki oyundan "Oda kur" → oda kodu ve davet bağlantısı (`#/katil/KOD`); dünya ev sahibinin tarayıcısında (`js/net/host.js`), bağlantı tarayıcılar arası doğrudan (WebRTC, PeerJS; `js/net/p2p.js`)
+- [x] Hesap yok: oyuncu adı + cihazda saklanan gizli anahtar; kopan bağlantı kendiliğinden yeniden kurulur; tepe çubuğunda oda ve oyuncu sayısı
+- [x] Sunucu ve oda aynı eylem denetimini kullanır (`js/net/actions.js`); 141 birim testi
+- [x] Önceden işlenmiş (Age of Empires tarzı) ücretsiz bina görselleri (OpenGameArt: feudalwars, Bleed, yd): bina kartları, köy sahnesi ve harita imleri
+- [x] Köy sahnesi yeniden: dokulu çimen ve toprak yollar, taş sur halkası ve köşe kuleleri, doğal ağaçlar; binalar seviye kademesiyle büyür
+- [x] game-icons.net simgeleri: 14 asker madalyonu ve kaynak simgeleri
+- [x] Harita: köyler bina görselleriyle, sahibinin renginde halka ve sancakla; barbar köyleri çeşitli
+- [x] Ayarlar → Emeği geçenler ve [EMEGI_GECENLER.md](EMEGI_GECENLER.md) (lisanslar ve atıflar)
+
 ## Bilinen sınırlamalar
 
 - Kayıt yalnızca o tarayıcıda durur. Başka cihaza geçmek için Ayarlar → Kayıt kodunu kullan.
@@ -212,3 +223,5 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - Günlük hazine UTC gece yarısında (Türkiye saatiyle 03.00) yenilenir.
 - Görevlerin ve başarımların ilerlemesi oyunun durumundan ölçülür; 9. sürümden önceki kayıtlarda saldırı, keşif ve savunma sayaçları sıfırdan başlar.
 - Yoldaki tüccarlar geri çağrılamaz.
+- Oda modunda dünya ev sahibinin tarayıcısında işler; ev sahibinin sekmesi kapalıyken diğer oyuncular bağlanamaz.
+- Demir madeni için bu tarzda ücretsiz bir maden görseli bulunamadı; en yakın yapı kullanıldı.

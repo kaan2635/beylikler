@@ -3,7 +3,7 @@ import { RESOURCES } from '../../config/resources.js';
 import { TRAINING_BUILDINGS } from '../../config/units.js';
 import { inspectUpgrade, maxBuildQueue } from '../../systems/construction.js';
 import { finishCost } from '../../systems/premium.js';
-import { buildingArt, tierOf } from '../art/buildings.js';
+import { buildingImage, tierOf } from '../art/sprites.js';
 import { sceneSvg } from '../art/scene.js';
 import { createQuestList } from './quests.js';
 
@@ -237,11 +237,11 @@ function createBuildingCard(buildingId) {
       const planned = plannedLevel(village, buildingId);
       const check = inspectUpgrade(village, world, buildingId, now);
 
-      // Çizim yalnızca kademe değişince yenilenir (1–4, 5–14, 15+).
+      // Görsel yalnızca kademe değişince yenilenir (1–4, 5–14, 15+); inşa edilmemişse soluk.
       const tier = `${tierOf(current)}`;
       if (tier !== artTier) {
         artTier = tier;
-        art.innerHTML = buildingArt(buildingId, current);
+        art.replaceChildren(h('img', { src: buildingImage(buildingId, current), alt: '', loading: 'lazy', decoding: 'async', class: current > 0 ? null : 'ghost' }));
       }
       setText(badge, current > 0 ? `${current}. seviye` : 'Yok');
       if (pageLink) pageLink.hidden = current === 0;

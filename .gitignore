@@ -1,6 +1,8 @@
 node_modules/
 # Çok oyunculu sunucunun kayıtları (hesaplar, dünya): depoya girmez
 data/
+# İndirilen ham görseller (işlenmiş hâlleri assets/ altında)
+tools/_ham/
 .DS_Store
 Thumbs.db
 *.log

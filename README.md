@@ -6,7 +6,7 @@ Saf HTML, CSS ve JavaScript ile yazıldı. Kurulum ya da derleme gerektirmez; Gi
 
 **Oyna:** https://kaan2635.github.io/beylikler/
 
-**Durum:** Yol haritasının 13 adımı tamamlandı. Tek oyunculu ya da **çok oyunculu** (kendi sunucunla, arkadaşlarınla aynı dünyada) oynanır → [Çok oyunculu sunucu rehberi](docs/COK_OYUNCULU.md). Görev zinciri, başarımlar, günlük hazine ve Sultanlık hedefi; telefona kurulabilir, internetsiz açılır (PWA). Özgün izometrik bina çizimleri, seviyeyle büyüyen köy sahnesi, birim portreleri ve yenilenen arayüz; OGame tarzı keşif seferleri (kaynak, paralı asker, Akçe ya da eşkıya ve fırtına), oyun başında sınıf seçimi (Tüccar Bey, Serdar, Kâşif), oyun içinde kazanılan premium para Akçe ile görevliler ve hızlandırmalar; kaynak ekonomisi, 14 bina, 14 asker türü, Demirci, Pazar ve Saray; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, Elçiyle köy fethi, çoklu köy yönetimi, köyler arası kaynak nakliyesi ve destek, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
+**Durum:** Yol haritasının 14 adımı tamamlandı. Tek oyunculu ya da **çok oyunculu** oynanır: GitHub'daki oyundan oda kurup arkadaşlarını davet et (sunucu gerekmez) ya da kendi sunucunu çalıştır → [Çok oyunculu rehberi](docs/COK_OYUNCULU.md). Görev zinciri, başarımlar, günlük hazine ve Sultanlık hedefi; telefona kurulabilir, internetsiz açılır (PWA). Ücretsiz lisanslı, Age of Empires tarzı bina görselleri, seviyeyle büyüyen köy sahnesi, asker madalyonları ve yenilenen arayüz ([emeği geçenler](docs/EMEGI_GECENLER.md)); OGame tarzı keşif seferleri (kaynak, paralı asker, Akçe ya da eşkıya ve fırtına), oyun başında sınıf seçimi (Tüccar Bey, Serdar, Kâşif), oyun içinde kazanılan premium para Akçe ile görevliler ve hızlandırmalar; kaynak ekonomisi, 14 bina, 14 asker türü, Demirci, Pazar ve Saray; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, Elçiyle köy fethi, çoklu köy yönetimi, köyler arası kaynak nakliyesi ve destek, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
 
 ## Yerelde çalıştırma
 
@@ -54,7 +54,7 @@ index.html              Tek sayfa; tüm ekranlar JavaScript ile çizilir
 manifest.webmanifest    Telefona kurulum bilgileri (PWA)
 sw.js                   Service worker: sürüm damgalı dosyaları önbelleğe alır, çevrimdışı açılış
 css/style.css           Arayüz stilleri (açık/koyu tema, telefon uyumu)
-assets/                 Simge ve görseller
+assets/                 Simge ve görseller (gorsel/binalar: bina görselleri, WebP)
 js/
   main.js               Başlangıç noktası
   game.js               Arayüz ile oyun durumu arasındaki tek kapı (eylemler)
@@ -63,7 +63,7 @@ js/
   systems/              Oyun kuralları: ekonomi, inşaat, asker eğitimi, dünya, barbar köyleri, savaş, hareketler
   storage/              Kayıt deposu (localStorage)
   ui/                   Arayüz: kaynak çubuğu, ekranlar, bildirimler
-  ui/art/               Özgün çizimler: izometrik binalar, köy sahnesi, birim portreleri (SVG)
+  ui/art/               Köy sahnesi (SVG), görsel ve simge eşlemeleri, emeği geçenler listesi
   net/                  Çok oyunculu istemci: sunucu API'si ve çevrimiçi oyun
 server/                 Çok oyunculu sunucu (Node.js, bağımlılıksız): API, hesaplar, kayıt
 tests/                  Node testleri (node --test)
@@ -89,6 +89,7 @@ Service worker (`sw.js`) damgalı dosyaları kendiliğinden önbelleğe alır ve
 
 - **Ayarlar → Dünya hızı** ile oyunu 100 kata kadar hızlandırabilirsin.
 - Tarayıcı konsolunda `beylikler.state` tüm oyun durumunu gösterir.
-- `http://localhost:8080/tools/sanat.html` tüm bina ve birim çizimlerini ve köy sahnesini tek sayfada gösterir.
+- `http://localhost:8080/tools/sanat.html` tüm bina görsellerini, simgeleri ve köy sahnesini tek sayfada gösterir.
+- Yeni bir hazır görsel eklerken lisansını [docs/EMEGI_GECENLER.md](docs/EMEGI_GECENLER.md) ve `js/ui/art/credits.js` dosyalarına yaz (CC-BY eserlerde atıf zorunludur).
 - Denge değerleri `js/core/formulas.js` ve `js/config/` klasöründedir (binalar, birimler, savaş, Demirci ve Pazar).
 - Kayıt şeması değişirse `js/config/game.js` içindeki `saveVersion` değerini artır ve `js/core/state.js` içine bir migrasyon ekle.

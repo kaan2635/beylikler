@@ -22,7 +22,7 @@ import { inspectAttack, isOutbound } from '../../systems/movements.js';
 import { fmtInt, fmtDecimal, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
 import { createAttackForm } from './attack-form.js';
-import { mapSpriteSvg } from '../art/buildings.js';
+import { villageImage } from '../art/sprites.js';
 
 const ZOOMS = [16, 24, 32, 44, 60, 80]; // alan başına piksel
 const DEFAULT_ZOOM = 3;
@@ -30,13 +30,13 @@ const NEARBY_RADIUS = 15;
 const NEARBY_LIMIT = 25;
 const RULER = 18; // üst ve sol kenardaki koordinat şeridinin kalınlığı (px)
 
-// Harita imleri SVG'den bir kez resme çevrilir; yüklenince harita yeniden çizilir.
+// Harita imleri bina görsellerinden bir kez yüklenir; yüklenince harita yeniden çizilir.
 const sprites = new Map();
 let onSpriteLoad = () => {};
 
-function mapSprite(kind, tier) {
-  const key = `${kind}:${tier}`;
-  let entry = sprites.get(key);
+function mapSprite(kind, tier, variant) {
+  const src = villageImage(kind, tier, variant);
+  let entry = sprites.get(src);
   if (!entry) {
     const img = new Image();
     entry = { img, ready: false };
@@ -44,8 +44,9 @@ function mapSprite(kind, tier) {
       entry.ready = true;
       onSpriteLoad();
     };
-    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(mapSpriteSvg(kind, tier))}`;
-    sprites.set(key, entry);
+    img.decoding = 'async';
+    img.src = src;
+    sprites.set(src, entry);
   }
   return entry.ready ? entry.img : null;
 }
@@ -793,22 +794,21 @@ function drawTerrain(ctx, c, kind, detail, sx, sy, t) {
  * her biri kendi rengindedir.
  */
 function drawVillage(ctx, c, village, sx, sy, t) {
-  // Yakın görünümde özgün çizimler; resim henüz yüklenmediyse ya da uzak görünümde basit ev.
-  if (t >= 24) {
-    const tier = village.points < 150 ? 1 : village.points < 500 ? 2 : 3;
-    const img = mapSprite(village.kind, tier);
-    if (img) {
-      const w = t * 1.35;
-      ctx.drawImage(img, sx + (t - w) / 2, sy + t * 1.02 - w * (100 / 92) * 0.92, w, w * (100 / 92));
-      return;
-    }
-  }
   const palette = {
     oyuncu: { body: c.own, roof: c.ownRoof, flag: c.flag },
     rakip: { body: c.own, roof: c.rival, flag: c.rival },
     bey: { body: c.lord, roof: c.lordRoof, flag: c.lordFlag },
     barbar: { body: c.barbar, roof: c.barbarRoof, flag: null },
   }[village.kind];
+  // Yakın görünümde bina görseli; resim henüz yüklenmediyse ya da uzak görünümde basit ev.
+  if (t >= 24) {
+    const tier = village.points < 150 ? 1 : village.points < 500 ? 2 : 3;
+    const img = mapSprite(village.kind, tier, village.x * 7 + village.y * 13);
+    if (img) {
+      drawVillageImage(ctx, c, img, palette.flag, village.kind === 'barbar' ? tier - 0.8 : tier, sx, sy, t);
+      return;
+    }
+  }
   const tier = village.points < 150 ? 0 : village.points < 500 ? 1 : 2;
   const size = t * (0.46 + tier * 0.12);
   const cx = sx + t / 2;
@@ -844,6 +844,60 @@ function drawVillage(ctx, c, village, sx, sy, t) {
     ctx.closePath();
     ctx.fill();
   }
+}
+
+/**
+ * Görselli köy imi: zeminde sahibinin renginde bir halka, üstünde bina görseli, sahipli köylerde
+ * görselin yanında sancak. Görsel alana en-boy oranı korunarak, tabanı alanın altına oturur;
+ * `grow` büyüdükçe (kademe) görsel de büyür.
+ */
+function drawVillageImage(ctx, c, img, flagColor, grow, sx, sy, t) {
+  const cx = sx + t / 2;
+  const base = sy + t * 0.9;
+  const boxW = t * (0.95 + grow * 0.12);
+  const boxH = t * (1 + grow * 0.12);
+  const scale = Math.min(boxW / img.naturalWidth, boxH / img.naturalHeight);
+  const w = img.naturalWidth * scale;
+  const h = img.naturalHeight * scale;
+
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = '#1c140a';
+  ctx.beginPath();
+  ctx.ellipse(cx, base - t * 0.02, w * 0.46, t * 0.13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  if (flagColor) {
+    ctx.strokeStyle = flagColor;
+    ctx.lineWidth = Math.max(1.5, t / 22);
+    ctx.beginPath();
+    ctx.ellipse(cx, base - t * 0.02, w * 0.5, t * 0.15, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.drawImage(img, cx - w / 2, base - h, w, h);
+  if (!flagColor) return;
+
+  const poleX = Math.min(sx + t - t * 0.08, cx + w / 2 - t * 0.04);
+  const top = Math.max(sy - t * 0.25, base - h - t * 0.05);
+  const size = t * 0.3;
+  ctx.strokeStyle = c.door;
+  ctx.lineWidth = Math.max(1, t / 30);
+  ctx.beginPath();
+  ctx.moveTo(poleX, top + size * 1.6);
+  ctx.lineTo(poleX, top);
+  ctx.stroke();
+  ctx.fillStyle = flagColor;
+  ctx.beginPath();
+  ctx.moveTo(poleX, top);
+  ctx.quadraticCurveTo(poleX + size * 0.6, top - size * 0.12, poleX + size * 1.1, top + size * 0.1);
+  ctx.lineTo(poleX + size * 0.9, top + size * 0.35);
+  ctx.lineTo(poleX + size * 1.1, top + size * 0.62);
+  ctx.quadraticCurveTo(poleX + size * 0.6, top + size * 0.45, poleX, top + size * 0.6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgb(0 0 0 / 0.45)';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
 }
 
 /** Üst ve sol kenarda koordinat cetveli. */

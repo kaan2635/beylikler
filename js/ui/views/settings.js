@@ -4,6 +4,43 @@ import { h, setText } from '../dom.js';
 import { toast } from '../toast.js';
 import { createMultiplayerChoices } from '../online-login.js';
 import { readOnlineConfig, writeOnlineConfig } from '../../net/api.js';
+import { CREDITS } from '../art/credits.js';
+
+const link = (href, text) => h('a', { href, target: '_blank', rel: 'noopener' }, text);
+
+/** Emeği geçenler: hazır görsellerin sahipleri ve lisansları (CC-BY atfı burada verilir). */
+function createCreditsPanel() {
+  return h(
+    'section',
+    { class: 'panel stack-sm credits-panel' },
+    h('h2', null, 'Emeği geçenler'),
+    h('p', { class: 'muted' }, 'Beylikler\'deki bina görselleri ve simgeler, cömert sanatçıların ücretsiz paylaştığı eserlerdir. Teşekkürler!'),
+    CREDITS.map((group) =>
+      h(
+        'details',
+        { class: 'credits-group' },
+        h('summary', null, group.title),
+        group.note ? h('p', { class: 'muted' }, group.note) : null,
+        h(
+          'ul',
+          { class: 'credits-list' },
+          group.items.map((item) =>
+            h(
+              'li',
+              null,
+              link(item.url, item.work),
+              ' — ',
+              item.authorUrl ? link(item.authorUrl, item.author) : item.author,
+              ' · ',
+              link(item.license.url, item.license.name),
+              h('span', { class: 'muted' }, ` (${item.for})`),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
 
 /** Ayarlar: köy adı, kaydı dışa/içe aktarma, dünya hızı ve sıfırlama. */
 export function createSettingsView({ game, refresh }) {
@@ -182,6 +219,7 @@ export function createSettingsView({ game, refresh }) {
           h('button', { class: 'btn btn-danger', type: 'button', onclick: onReset }, 'Oyunu sıfırla'),
         ),
       ),
+      createCreditsPanel(),
     ),
   );
 

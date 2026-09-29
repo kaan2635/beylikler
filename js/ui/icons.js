@@ -1,5 +1,6 @@
 import { h } from './dom.js';
 import { UNITS } from '../config/units.js';
+import { GAME_ICONS } from './art/game-icons.js';
 
 // Oyuna özgü basit SVG simgeler (harici dosya ya da font gerekmez).
 const ICONS = {
@@ -61,6 +62,13 @@ const ICONS = {
   tac: line('<path d="M3 18h18l1-11-5 4-5-7-5 7-5-4z"/><circle cx="12" cy="4" r="1" fill="currentColor"/><path d="M3 21h18"/>'),
   'nav-ayarlar': line('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'),
 };
+
+// Kaynak ve birim simgeleri: game-icons.net (CC BY 3.0). Kaynaklar kendi renginde, birimler
+// bulunduğu yerin rengini (currentColor) alır; madalyonda kategori rengine boyanır.
+const ICON_COLORS = { odun: '#c98a4b', kil: '#d9744c', demir: '#a9b4bf', nufus: '#d6b27a', ambar: '#c99a62', akce: '#e2b64c' };
+for (const [key, d] of Object.entries(GAME_ICONS)) {
+  ICONS[key] = `<svg viewBox="0 0 512 512"><path fill="${ICON_COLORS[key] ?? 'currentColor'}" d="${d}"/></svg>`;
+}
 
 /** Birim simgelerinin kategorisi: madalyon rengi için. */
 const UNIT_CATEGORY = {};
