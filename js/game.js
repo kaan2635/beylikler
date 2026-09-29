@@ -3,6 +3,7 @@ import { advance } from './core/engine.js';
 import { getVillage } from './core/village.js';
 import { encodeSave, decodeSave } from './core/save-codec.js';
 import { startUpgrade, cancelLastUpgrade } from './systems/construction.js';
+import { startTraining, cancelLastTraining } from './systems/training.js';
 
 /**
  * Oyun durumu ile arayüz arasındaki tek kapı. Arayüz durumu doğrudan değiştirmez:
@@ -58,6 +59,20 @@ export class Game {
     const job = cancelLastUpgrade(this.village);
     if (job) this.save();
     return job;
+  }
+
+  train(unitId, count, now) {
+    this.tick(now);
+    const result = startTraining(this.village, this.state.world, unitId, count, now);
+    if (result.ok) this.save();
+    return result;
+  }
+
+  cancelLastTraining(buildingId, now) {
+    this.tick(now);
+    const batch = cancelLastTraining(this.village, buildingId);
+    if (batch) this.save();
+    return batch;
   }
 
   renameVillage(name) {

@@ -56,6 +56,11 @@ export function buildingPopulation(def, level) {
   return Math.round(growth(def.pop.base, def.pop.factor, level));
 }
 
+/** Tek bir birimin eğitim süresi (saniye); eğiten binanın seviyesi süreyi kısaltır. */
+export function trainDuration(unit, buildingLevel, speed = 1) {
+  return Math.max(1, Math.round((unit.trainTime * trainingTimeFactor(buildingLevel)) / speed));
+}
+
 /** Binayı `level` seviyesine yükseltme süresi (saniye). */
 export function buildDuration(def, level, konakLevel, speed = 1) {
   const seconds = (growth(def.buildTime, def.timeFactor, level) * konakTimeFactor(konakLevel)) / speed;

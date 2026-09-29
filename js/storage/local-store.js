@@ -10,7 +10,13 @@ export const localStore = {
     let raw = null;
     try {
       raw = localStorage.getItem(GAME.saveKey);
-      return raw ? migrate(JSON.parse(raw)) : null;
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      const savedVersion = data.version;
+      const state = migrate(data);
+      // Taşınan kaydı hemen yeni biçimde yaz; her açılışta yeniden taşınmasın.
+      if (state.version !== savedVersion) this.save(state);
+      return state;
     } catch (err) {
       console.error('Kayıt okunamadı, yeni oyun başlatılıyor.', err);
       // Bozuk kaydı silmeden kenara al ki elle kurtarılabilsin.

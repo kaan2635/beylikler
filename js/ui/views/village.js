@@ -1,6 +1,7 @@
 import { GAME } from '../../config/game.js';
 import { BUILDINGS, BUILDING_IDS } from '../../config/buildings.js';
 import { RESOURCES } from '../../config/resources.js';
+import { TRAINING_BUILDINGS } from '../../config/units.js';
 import { inspectUpgrade } from '../../systems/construction.js';
 import { plannedLevel } from '../../core/village.js';
 import { h, setText } from '../dom.js';
@@ -118,6 +119,9 @@ function createBuildingCard(buildingId) {
   const effect = h('div', { class: 'card-effect' });
   const status = h('div', { class: 'card-status' });
   const button = h('button', { class: 'btn', dataset: { action: 'upgrade', building: buildingId } });
+  const trainLink = TRAINING_BUILDINGS.includes(buildingId)
+    ? h('a', { class: 'card-link', href: '#/ordu' }, 'Asker eğit →')
+    : null;
 
   const costItems = {};
   const costRow = h('div', { class: 'cost' });
@@ -141,7 +145,7 @@ function createBuildingCard(buildingId) {
     h('p', { class: 'card-desc' }, def.description),
     effect,
     costRow,
-    h('div', { class: 'card-actions' }, button, status),
+    h('div', { class: 'card-actions' }, button, status, trainLink),
   );
 
   return {
@@ -152,6 +156,7 @@ function createBuildingCard(buildingId) {
       const check = inspectUpgrade(village, world, buildingId, now);
 
       setText(badge, current > 0 ? `${current}. seviye` : 'Yok');
+      if (trainLink) trainLink.hidden = current === 0;
       badge.classList.toggle('badge-muted', current === 0);
       el.classList.toggle('locked', check.code === 'requires' && current === 0);
       el.classList.toggle('maxed', check.code === 'max');

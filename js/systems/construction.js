@@ -79,6 +79,9 @@ export function cancelLastUpgrade(village) {
   return job;
 }
 
-export function completeUpgrade(village, job) {
+/** Kuyruğun ilk işini tamamlar ve olayını döndürür. */
+export function completeNextUpgrade(village) {
+  const job = village.buildQueue.shift();
   village.buildings[job.building] = job.level;
+  return { type: 'build-complete', villageId: village.id, building: job.building, level: job.level, at: job.endAt };
 }

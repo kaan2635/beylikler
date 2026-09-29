@@ -1,5 +1,6 @@
 import { RESOURCES, RESOURCE_IDS } from '../config/resources.js';
 import { BUILDINGS, BUILDING_IDS } from '../config/buildings.js';
+import { UNITS, UNIT_IDS } from '../config/units.js';
 import {
   productionPerHour,
   storageCapacity,
@@ -27,10 +28,17 @@ export function populationCap(village) {
   return populationCapacity(village.buildings.ciftlik);
 }
 
-/** Kullanılan nüfus. Kuyruktaki binalar hedef seviyeleriyle sayılır, yani yer önceden ayrılır. */
+/**
+ * Kullanılan nüfus: binalar + askerler. Kuyruktaki işler de sayılır (binalar hedef
+ * seviyeleriyle, eğitimdeki askerler henüz yetişmemiş olanlarıyla); yani yer önceden ayrılır.
+ */
 export function populationUsed(village) {
   let used = 0;
   for (const id of BUILDING_IDS) used += buildingPopulation(BUILDINGS[id], plannedLevel(village, id));
+  for (const id of UNIT_IDS) used += village.units[id] * UNITS[id].pop;
+  for (const queue of Object.values(village.trainQueues)) {
+    for (const batch of queue) used += (batch.count - batch.trained) * UNITS[batch.unit].pop;
+  }
   return used;
 }
 

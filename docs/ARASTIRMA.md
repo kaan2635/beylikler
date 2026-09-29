@@ -171,11 +171,11 @@ Beylikler'de bu yapı `js/core/engine.js` içinde uygulandı ve testlerle doğru
 | Tohumlu rastgele sayı üreteci (harita adımında) | Aynı tohum aynı dünyayı üretir; kayıtta tüm haritayı saklamaya gerek kalmaz |
 | İleride PWA (manifest + service worker) | Telefona kurulabilir, çevrimdışı açılabilir |
 
-## 8. Veri modeli (Adım 1)
+## 8. Veri modeli (Adım 3, kayıt şeması 2. sürüm)
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "createdAt": 1790680000000,
   "world": { "speed": 1, "seed": 123456789 },
   "player": { "name": "Bey" },
@@ -184,17 +184,23 @@ Beylikler'de bu yapı `js/core/engine.js` içinde uygulandı ve testlerle doğru
     "v1": {
       "id": "v1", "name": "Beyliğim", "x": 500, "y": 500,
       "resources": { "odun": 500, "kil": 500, "demir": 500 },
-      "buildings": { "konak": 1, "oduncu": 1, "kilocagi": 1, "demirmadeni": 1, "ambar": 1, "ciftlik": 1, "gizlidepo": 0, "kisla": 0, "sur": 0 },
+      "buildings": { "konak": 3, "oduncu": 2, "kilocagi": 1, "demirmadeni": 1, "ambar": 1, "ciftlik": 1, "gizlidepo": 0, "kisla": 1, "ahir": 0, "atolye": 0, "sur": 0 },
       "buildQueue": [
-        { "building": "oduncu", "level": 2, "cost": { "odun": 63, "kil": 75, "demir": 50 }, "startAt": 0, "endAt": 70000 }
+        { "building": "oduncu", "level": 3, "cost": { "odun": 78, "kil": 94, "demir": 63 }, "startAt": 0, "endAt": 85000 }
       ],
+      "units": { "yaya": 12, "kilicci": 0, "baltaci": 0, "okcu": 0, "gozcu": 0, "akinci": 0, "sipahi": 0, "kocbasi": 0, "mancinik": 0 },
+      "trainQueues": {
+        "kisla": [{ "unit": "yaya", "count": 20, "trained": 3, "unitMs": 943000, "startAt": 0, "endAt": 18860000 }],
+        "ahir": [],
+        "atolye": []
+      },
       "lastUpdate": 1790680000000
     }
   }
 }
 ```
 
-Sonraki adımlarda köye `units` (asker sayıları) ve `trainQueue`, dünyaya `movements` (ordu hareketleri) ve `reports` eklenecek.
+Eğitim partisi (`trainQueues` içindeki kayıt) askerleri birer birer yetiştirir: sıradaki asker `startAt + (trained + 1) × unitMs` anında hazır olur. Sonraki adımlarda dünyaya `movements` (ordu hareketleri) ve `reports` (savaş raporları) eklenecek.
 
 ## 9. Beylikler'in oyun tasarımı
 

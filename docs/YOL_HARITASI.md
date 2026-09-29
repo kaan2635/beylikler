@@ -27,13 +27,16 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] GitHub Actions: her gönderimde testleri çalıştır
 - [x] GitHub Pages yayını → https://kaan2635.github.io/beylikler/
 
-## ⬜ Adım 3 — Ordu
+## ✅ Adım 3 — Ordu
 
-- [ ] Birim tanımları: Yaya, Kılıççı, Baltacı, Okçu, Gözcü, Akıncı, Sipahi, Koçbaşı, Mancınık
-- [ ] Ahır ve Atölye binaları
-- [ ] Eğitim kuyruğu (bina başına), nüfus kullanımı
-- [ ] Motor: inşaat ve eğitim olaylarını tek zaman çizelgesinde birleştirme
-- [ ] "Ordu" ekranı
+- [x] 9 birim: Yaya, Kılıççı, Baltacı, Okçu, Gözcü, Akıncı, Sipahi, Koçbaşı, Mancınık (saldırı, 3 tür savunma, hız, taşıma)
+- [x] Ahır ve Atölye binaları; birimlerin bina seviyesi gereksinimleri
+- [x] Bina başına eğitim kuyruğu (5 parti), askerler birer birer yetişir, son partiyi iptal edip yetişmeyenlerin parasını geri alma
+- [x] Askerler nüfus kullanır; "en fazla" düğmesi kaynak ve nüfusa göre hesaplar
+- [x] Motor: inşaat ve eğitim olayları tek zaman çizelgesinde sırayla işlenir
+- [x] Kayıt şeması 2. sürüm: eski kayıtlar otomatik taşınır
+- [x] "Ordu" ekranı: köydeki birlikler, toplam saldırı/savunma/taşıma, eğitim kartları
+- [x] 30 birim testi
 
 ## ⬜ Adım 4 — Dünya haritası
 
@@ -83,4 +86,5 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 
 - Kayıt yalnızca o tarayıcıda durur. Başka cihaza geçmek için Ayarlar → Kayıt kodunu kullan.
 - Sistem saati ileri alınarak zaman atlatılabilir. Tek oyunculuda bu bilerek kabul edildi.
-- Kuyrukta yalnızca son iş iptal edilebilir.
+- İnşaat ve eğitim kuyruklarında yalnızca son iş iptal edilebilir.
+- Askerler henüz köyden ayrılamaz; hareket ve savaş Adım 5'te gelecek.

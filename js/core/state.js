@@ -1,19 +1,17 @@
 import { GAME, START } from '../config/game.js';
 import { BUILDING_IDS } from '../config/buildings.js';
+import { UNIT_IDS, TRAINING_BUILDINGS } from '../config/units.js';
 
 export function createVillage({ id, name, x, y, now }) {
-  const buildings = {};
-  for (const buildingId of BUILDING_IDS) buildings[buildingId] = START.buildings[buildingId] ?? 0;
-  return {
+  return normalizeVillage({
     id,
     name,
     x,
     y,
     resources: { ...START.resources },
-    buildings,
-    buildQueue: [],
+    buildings: { ...START.buildings },
     lastUpdate: now,
-  };
+  });
 }
 
 export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSeed() }) {
@@ -33,9 +31,28 @@ function randomSeed() {
   return Math.floor(Math.random() * 2 ** 32);
 }
 
-// Kayıt şeması değiştiğinde buraya "sürüm N → N+1" dönüştürücüsü eklenir, ör.:
-//   1: (data) => { data.villages.v1.units = {}; data.version = 2; return data; },
-const MIGRATIONS = {};
+/**
+ * Eksik alanları varsayılanlarla doldurur. Sonradan eklenen binalar, birimler ve kuyruklar
+ * eski kayıtlarda böylece 0 / boş olarak başlar.
+ */
+function normalizeVillage(village) {
+  village.buildings ??= {};
+  for (const id of BUILDING_IDS) village.buildings[id] ??= 0;
+  village.buildQueue ??= [];
+  village.units ??= {};
+  for (const id of UNIT_IDS) village.units[id] ??= 0;
+  village.trainQueues ??= {};
+  for (const id of TRAINING_BUILDINGS) village.trainQueues[id] ??= [];
+  return village;
+}
+
+// Kayıt şeması değiştiğinde buraya "sürüm N → N+1" dönüştürücüsü eklenir.
+// Yalnızca yeni alan eklenen değişikliklerde normalizeVillage yeterlidir; dönüştürücü
+// alanları yeniden adlandırmak ya da veriyi dönüştürmek gerektiğinde işe yarar.
+const MIGRATIONS = {
+  // Adım 3: köylere asker sayıları (units) ve eğitim kuyrukları (trainQueues) eklendi.
+  1: (data) => ({ ...data, version: 2 }),
+};
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */
 export function migrate(data) {
@@ -53,10 +70,6 @@ export function migrate(data) {
   if (!data.villages || !data.villages[data.activeVillageId]) {
     throw new Error('Kayıtta köy bulunamadı');
   }
-  // Sonradan eklenen binalar eski kayıtlarda 0. seviyeden başlar.
-  for (const village of Object.values(data.villages)) {
-    village.buildQueue ??= [];
-    for (const buildingId of BUILDING_IDS) village.buildings[buildingId] ??= 0;
-  }
+  for (const village of Object.values(data.villages)) normalizeVillage(village);
   return data;
 }

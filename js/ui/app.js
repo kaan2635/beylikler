@@ -1,10 +1,13 @@
 import { GAME } from '../config/game.js';
 import { BUILDINGS } from '../config/buildings.js';
+import { UNITS } from '../config/units.js';
 import { createResourceBar } from './resource-bar.js';
 import { createVillageView } from './views/village.js';
+import { createArmyView } from './views/army.js';
 import { createSettingsView } from './views/settings.js';
 import { createPlaceholderView } from './views/placeholder.js';
 import { initToasts, toast } from './toast.js';
+import { fmtInt } from './format.js';
 
 // Adres çubuğundaki #/koy gibi yollar ve karşılık gelen ekranlar.
 const ROUTES = {
@@ -19,16 +22,7 @@ const ROUTES = {
         'Köy bilgisi, mesafe ve yolculuk süresi',
       ],
     }),
-  ordu: () =>
-    createPlaceholderView({
-      title: 'Ordu',
-      intro: 'Kışlada asker yetiştirip seferlere göndereceksin.',
-      items: [
-        'Yaya, Kılıççı, Baltacı, Okçu, Akıncı, Sipahi, Koçbaşı, Mancınık',
-        'Eğitim kuyruğu ve nüfus kullanımı',
-        'Saldırı, destek ve yağma seferleri',
-      ],
-    }),
+  ordu: (ctx) => createArmyView(ctx),
   raporlar: () =>
     createPlaceholderView({
       title: 'Raporlar',
@@ -82,12 +76,19 @@ export function mountApp(game, { isNew, events }) {
 }
 
 function announce(events, whileAway) {
-  const done = events.filter((event) => event.type === 'build-complete');
-  if (done.length > 3) {
-    toast(`${whileAway ? 'Sen yokken ' : ''}${done.length} inşaat tamamlandı.`, 'success', 6000);
+  const builds = events.filter((event) => event.type === 'build-complete');
+  const trainings = events.filter((event) => event.type === 'train-complete');
+  if (builds.length + trainings.length > 3) {
+    const parts = [];
+    if (builds.length) parts.push(`${builds.length} inşaat`);
+    if (trainings.length) parts.push(`${trainings.length} eğitim`);
+    toast(`${whileAway ? 'Sen yokken ' : ''}${parts.join(' ve ')} tamamlandı.`, 'success', 6000);
     return;
   }
-  for (const event of done) {
+  for (const event of builds) {
     toast(`${BUILDINGS[event.building].name} ${event.level}. seviyeye ulaştı.`, 'success');
+  }
+  for (const event of trainings) {
+    toast(`${fmtInt(event.count)} ${UNITS[event.unit].name} eğitildi ve köyde hazır.`, 'success');
   }
 }
