@@ -9,6 +9,7 @@ const BUILDING_PAGES = {
   ...Object.fromEntries(TRAINING_BUILDINGS.map((id) => [id, { href: '#/ordu', label: 'Asker eğit →' }])),
   demirci: { href: '#/demirci', label: 'Geliştirmeler →' },
   pazar: { href: '#/pazar', label: 'Takas yap →' },
+  kervansaray: { href: '#/kesif', label: 'Keşif seferi →' },
 };
 import { plannedLevel } from '../../core/village.js';
 import { villagePoints, continentOf } from '../../systems/world.js';

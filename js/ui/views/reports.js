@@ -2,6 +2,9 @@ import { UNITS, UNIT_IDS } from '../../config/units.js';
 import { RESOURCE_IDS, RESOURCES } from '../../config/resources.js';
 import { BUILDINGS } from '../../config/buildings.js';
 import { inspectAttack } from '../../systems/movements.js';
+import { inspectExpedition } from '../../systems/expedition.js';
+import { EXPEDITION_OUTCOMES } from '../../config/expedition.js';
+import { outcomeTone, expeditionSummary } from './expedition.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtClock } from '../format.js';
@@ -10,11 +13,14 @@ import { toast } from '../toast.js';
 const FILTERS = {
   tumu: { label: 'Tümü', match: () => true },
   okunmamis: { label: 'Okunmamış', match: (r) => !r.read },
-  zafer: { label: 'Zafer', match: (r) => r.type !== 'casus' && playerWon(r) },
-  yenilgi: { label: 'Yenilgi', match: (r) => r.type !== 'casus' && !playerWon(r) },
+  zafer: { label: 'Zafer', match: (r) => isBattle(r) && playerWon(r) },
+  yenilgi: { label: 'Yenilgi', match: (r) => isBattle(r) && !playerWon(r) },
   savunma: { label: 'Savunma', match: (r) => r.type === 'savunma' },
   casus: { label: 'Casusluk', match: (r) => r.type === 'casus' },
+  kesif: { label: 'Keşif', match: (r) => r.type === 'kesif' },
 };
+
+const isBattle = (report) => report.type === 'saldiri' || report.type === 'savunma';
 
 /**
  * Raporlar: her saldırının sonucu, kayıpları ve ganimeti. Açılan rapor okunmuş sayılır.
@@ -76,6 +82,10 @@ export function createReportsView({ game, refresh }) {
       const result = game.repeatAttack(id, now);
       if (result.ok) toast(`Ordu ${result.target.name} köyüne yeniden yola çıktı. Varış ${fmtClock(result.arriveAt, now)}.`, 'success');
       else toast(result.reason, 'error');
+    } else if (button.dataset.action === 'repeat-expedition') {
+      const result = game.repeatExpedition(id, now);
+      if (result.ok) toast(`Birlik yeniden keşfe çıktı. Keşif ${fmtClock(result.arriveAt, now)} tamamlanır.`, 'success');
+      else toast(result.reason, 'error');
     }
     refresh(now);
   });
@@ -128,9 +138,12 @@ export function createReportsView({ game, refresh }) {
         if (!entry) continue;
         entry.item.classList.toggle('unread', !report.read);
         if (!entry.repeat) continue; // savunma raporlarında tekrar yok
-        const check = inspectAttack(game.state, game.village, report.target.x, report.target.y, report.attackers, now);
+        const check =
+          report.type === 'kesif'
+            ? inspectExpedition(game.state, game.village, report.attackers, report.holdHours, now)
+            : inspectAttack(game.state, game.village, report.target.x, report.target.y, report.attackers, now);
         entry.repeat.disabled = !check.ok;
-        entry.repeat.title = check.ok ? 'Aynı orduyu aynı köye yeniden gönder' : check.reason;
+        entry.repeat.title = check.ok ? (report.type === 'kesif' ? 'Aynı birliği aynı süreyle yeniden keşfe gönder' : 'Aynı orduyu aynı köye yeniden gönder') : check.reason;
       }
       markAll.disabled = !all.some((r) => !r.read);
       deleteRead.disabled = !all.some((r) => r.read);
@@ -144,7 +157,64 @@ function playerWon(report) {
 }
 
 function renderReport(report, now) {
+  if (report.type === 'kesif') return renderExpeditionReport(report, now);
   return report.type === 'casus' ? renderSpyReport(report, now) : renderAttackReport(report, now);
+}
+
+/** Keşif seferi raporu: anlatı, bulunanlar, kayıplar ve varsa eşkıya savaşı. */
+function renderExpeditionReport(report, now) {
+  const outcome = EXPEDITION_OUTCOMES[report.outcome];
+  const tone = outcomeTone(report.outcome);
+  const lootTotal = RESOURCE_IDS.reduce((total, id) => total + report.loot[id], 0);
+  const repeat = h('button', { class: 'btn btn-small', type: 'button', dataset: { action: 'repeat-expedition', report: report.id } }, 'Tekrar keşfe çık');
+  const sent = UNIT_IDS.filter((id) => report.attackers[id]).map((id) => `${fmtInt(report.attackers[id])} ${UNITS[id].name}`);
+  const body = [
+    h('p', { class: 'expedition-text' }, report.text),
+    report.note ? h('p', { class: 'muted' }, report.note) : null,
+    h('p', { class: 'muted' }, `Sefer: ${sent.join(', ')} · ${report.holdHours} saat keşif`),
+  ];
+  if (lootTotal) {
+    body.push(
+      h(
+        'div',
+        { class: 'cost' },
+        h('span', { class: 'muted' }, 'Getirilen:'),
+        RESOURCE_IDS.map((id) => h('span', { class: 'cost-item', title: RESOURCES[id].name }, icon(id), fmtInt(report.loot[id]))),
+      ),
+    );
+  }
+  const found = Object.entries(report.found ?? {});
+  if (found.length) body.push(h('p', null, `Katılan: ${found.map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`).join(', ')}`));
+  if (report.akce) body.push(h('p', { class: 'cost' }, icon('akce'), h('strong', null, `${fmtInt(report.akce)} Akçe`), ' hazineye eklendi.'));
+  if (report.bandits) {
+    const bandits = Object.entries(report.bandits.units).filter(([, n]) => n > 0).map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`);
+    body.push(h('p', { class: 'muted' }, `Eşkıya: ${bandits.join(', ')}`));
+  }
+  const lost = Object.entries(report.attackerLosses ?? {}).filter(([, n]) => n > 0);
+  if (lost.length) body.push(h('p', { class: 'loss' }, `Kayıplar: ${lost.map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`).join(', ')}`));
+  body.push(
+    h(
+      'div',
+      { class: 'form-row' },
+      repeat,
+      h('a', { class: 'btn btn-small btn-ghost', href: '#/kesif' }, 'Keşif sayfası'),
+      h('button', { class: 'btn btn-small btn-ghost btn-quiet', type: 'button', dataset: { action: 'delete', report: report.id } }, 'Sil'),
+    ),
+  );
+
+  const item = h(
+    'details',
+    { class: 'panel report' },
+    h(
+      'summary',
+      null,
+      h('span', { class: `badge ${tone === 'good' ? 'badge-win' : tone === 'bad' ? 'badge-loss' : 'badge-neutral'}` }, outcome.name),
+      h('span', { class: 'report-title' }, `${report.origin.name} → ${report.target.name}`),
+      h('span', { class: 'muted report-meta' }, `${fmtClock(report.at, now)} ${expeditionSummary(report)}`),
+    ),
+    h('div', { class: 'report-body stack-sm' }, body),
+  );
+  return { item, repeat };
 }
 
 /** Köy adı; bey hisarlarında sahibiyle: "Germiyan Bey (Germiyan Hisarı)". */
@@ -322,7 +392,7 @@ function renderAttackReport(report, now) {
             'p',
             { class: `siege-line${report.conquest.conquered ? ' conquest' : ''}` },
             report.conquest.conquered
-              ? `Köy fethedildi! Bağlılık ${report.conquest.from} → 0. Birlikler yeni köyde garnizon olarak kaldı.`
+              ? `Köy fethedildi! Bağlılık ${report.conquest.from} → 0. Sağ kalan askerler yeni köyde destek olarak kaldı.`
               : `Elçiler bağlılığı düşürdü: ${report.conquest.from} → ${report.conquest.to}.`,
           )
         : null,

@@ -46,7 +46,7 @@ export function tileDetail(seed, x, y) {
 /** Binaların toplam puanı. */
 export function villagePoints(buildings) {
   let points = 0;
-  for (const [id, level] of Object.entries(buildings)) points += buildingPoints(BUILDINGS[id], level);
+  for (const [id, level] of Object.entries(buildings)) if (BUILDINGS[id]) points += buildingPoints(BUILDINGS[id], level);
   return points;
 }
 

@@ -50,6 +50,8 @@
   --map-return: #1f6a2b;
   --map-support: #1d5fa8;
   --map-transport: #7a4fb0;
+  --map-expedition: #0f7c83;
+  --map-wild: rgb(236 228 210 / 0.45);
   --map-lord: #e6dcf0;
   --map-lord-roof: #5b3a86;
   --map-lord-flag: #7c4dbb;
@@ -93,6 +95,8 @@
     --map-return: #7ddc86;
     --map-support: #7fb8ff;
     --map-transport: #c9a3ff;
+    --map-expedition: #5fd4dc;
+    --map-wild: rgb(15 12 8 / 0.45);
     --map-lord: #cdbfe0;
     --map-lord-roof: #6e4aa0;
     --map-lord-flag: #b28cf0;
@@ -899,6 +903,44 @@ input.coord-input {
 
 .movement.is-transport .unit-icon {
   color: var(--map-transport);
+}
+
+.movement.is-expedition .unit-icon {
+  color: var(--map-expedition);
+}
+
+.outcome {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.outcome-good {
+  background: color-mix(in srgb, var(--ok) 18%, transparent);
+  color: var(--ok);
+}
+
+.outcome-bad {
+  background: color-mix(in srgb, var(--bad) 16%, transparent);
+  color: var(--bad);
+}
+
+.outcome-neutral {
+  background: color-mix(in srgb, var(--ink-soft) 16%, transparent);
+  color: var(--ink-soft);
+}
+
+.expedition-text {
+  font-family: var(--font-title);
+  font-style: italic;
+  font-size: 1.02rem;
+}
+
+.badge-neutral {
+  background: var(--ink-soft);
 }
 
 .link-btn.strong {

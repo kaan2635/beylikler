@@ -155,11 +155,16 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Görevlinin süresi dolunca motor üretimi o ana kadar eski oranla hesaplar
 - [x] Kayıt şeması 8. sürüm; 115 birim testi
 
-## ⬜ Adım 10 — Keşif seferleri
+## ✅ Adım 10 — Keşif seferleri
 
-- [ ] Haritanın kenarındaki bilinmeyen topraklara OGame tarzı keşif birliği gönderme
-- [ ] Sonuçlar: kaynak, asker, Akçe, nadir eşya; ya da gecikme, pusu, kayıp
-- [ ] Keşif raporları; sınıfa ve Kâşif bonusuna göre olasılıklar
+- [x] Kervansaray binası: sefer hakkı 1 + her 5 seviyede 1 (Kâşif +1)
+- [x] Keşif sayfası: birlik ve keşif süresi (1–8 oyun saati) seçimi, yolculuk/dönüş önizlemesi, olasılık tablosu, yoldaki seferler
+- [x] OGame tarzı sonuçlar: boş dönüş, kaynak (taşıma sınırıyla), paralı asker, Akçe, gecikme, erken dönüş, eşkıya pususu (gerçek savaş), kaybolma
+- [x] Uzun keşif daha çok bulur ve boş dönmeyi azaltır; bulgular dünya günüyle büyür; Kâşif bulgular +%50, tehlike −%50
+- [x] Sonuç tohumdan belirlenir (aynı kayıt aynı sonucu verir); her sonuç için birkaç anlatım
+- [x] Keşif raporları ve "Keşif" süzgeci; rapordan "Tekrar keşfe çık"
+- [x] Haritada yerleşimin ötesi "Yabani topraklar" olarak sisle örtülü; seçilince keşif bağlantısı
+- [x] 120 birim testi
 
 ## ⬜ Adım 11 — Görsel yenileme
 

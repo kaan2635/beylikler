@@ -17,6 +17,7 @@ import {
   buyResourcePack,
 } from './systems/premium.js';
 import { bonusOf } from './systems/bonus.js';
+import { sendExpedition } from './systems/expedition.js';
 import { setDifficulty, rescaleLordSchedules } from './systems/ai.js';
 
 /**
@@ -145,6 +146,18 @@ export class Game {
     const report = this.state.reports.find((r) => r.id === reportId);
     if (!report) return { ok: false, reason: 'Rapor bulunamadı' };
     return this.sendAttack(report.target.x, report.target.y, report.attackers, now, { catapultTarget: report.catapultTarget });
+  }
+
+  /** Yönetilen köyden keşif seferi düzenler; `holdHours` bilinmeyen topraklarda geçecek oyun saati. */
+  sendExpedition(units, holdHours, now) {
+    return this.#act(now, () => sendExpedition(this.state, this.village, units, holdHours, now));
+  }
+
+  /** Keşif raporundaki birliği aynı süreyle yeniden sefere çıkarır. */
+  repeatExpedition(reportId, now) {
+    const report = this.state.reports.find((r) => r.id === reportId && r.type === 'kesif');
+    if (!report) return { ok: false, reason: 'Rapor bulunamadı' };
+    return this.sendExpedition(report.attackers, report.holdHours, now);
   }
 
   /** Yağma asistanı (Serasker): raporlardaki orduları kendi köylerine toplu olarak yeniden gönderir. */

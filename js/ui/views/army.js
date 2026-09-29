@@ -188,6 +188,7 @@ const MOVEMENT_KINDS = {
   casus: { label: 'Casusluk →', icon: 'gozcu', className: 'is-spy' },
   destek: { label: 'Destek →', icon: 'savunma', className: 'is-support' },
   nakliye: { label: 'Nakliye →', icon: 'tasima', className: 'is-transport' },
+  kesif: { label: 'Keşif →', icon: 'kasif', className: 'is-expedition' },
   donus: { label: 'Dönüş ←', icon: 'donus', className: 'is-return' },
 };
 

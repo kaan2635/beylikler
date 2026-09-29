@@ -11,6 +11,7 @@ import { applyEnvoys } from './conquest.js';
 import { deliverTransport } from './market.js';
 import { stationSupport } from './support.js';
 import { bonusOf } from './bonus.js';
+import { resolveExpedition } from './expedition.js';
 import {
   totalUnits,
   armySpeed,
@@ -144,6 +145,7 @@ export function completeMovement(state, village, movement) {
   if (movement.type === 'donus') return arriveHome(village, movement);
   if (movement.type === 'nakliye') return deliverTransport(state, village, movement);
   if (movement.type === 'destek') return arriveSupport(state, village, movement);
+  if (movement.type === 'kesif') return resolveExpedition(state, village, movement);
   const target = npcAt(state, movement.target.x, movement.target.y);
   if (!target) {
     // Hedef artık yok (ör. yanına köy kuruldu): bir şey yapmadan geri dön.

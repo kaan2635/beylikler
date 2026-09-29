@@ -66,6 +66,12 @@
 
 **Oyundan alınacak dersler:** Tur tabanlı simülasyon derin ama hesaplaması pahalı ve dengesi zor. Enkaz, savaşa ekonomik sonuç ekler. Araştırma ağacı uzun vadeli hedef sunar.
 
+**Beylikler'e uyarlanan OGame mekanikleri (Adım 9–10):**
+
+- **Sınıflar:** OGame'deki Toplayıcı / General / Kâşif üçlüsü, Tüccar Bey (ekonomi), Serdar (savaş) ve Kâşif (keşif) olarak uyarlandı. Etkiler çarpan olarak birleşir; sınıf Akçe karşılığında değiştirilir.
+- **Premium para:** Karanlık Madde'nin karşılığı **Akçe**'dir. Farkı: yalnızca oyun içinde kazanılır (başlangıç, fetih, savunma, keşif). Harcama yerleri OGame'dekilere benzer: görevliler (Komutan → Vezir, Jeolog → Defterdar, Mühendis → Mimarbaşı, Amiral → Serasker), anında bitirme ve sınıf değişimi.
+- **Keşif seferleri:** OGame'de filo 16. konuma gönderilir ve bekleme süresinin sonunda tek bir olay çekilir (kaynak, gemi, Karanlık Madde, korsan/uzaylı savaşı, gecikme, erken dönüş, kara delik). Beylikler'de birlik haritanın ötesindeki yabani topraklara gider; sonuçlar kaynak, paralı asker, Akçe, eşkıya pususu, gecikme, erken dönüş ve kaybolmadır. Bulunan kaynak birliğin taşıma kapasitesiyle sınırlıdır (OGame'deki yük sınırı gibi), bulgu ölçeği dünya günüyle büyür. Sefer sayısı Kervansaray seviyesine bağlıdır (OGame'de Astrofizik). Sonuç tohum ve hareket numarasından belirlenir; yeniden yüklemeyle "zar yeniden atılamaz".
+
 ## 3. Ortak çekirdek döngü
 
 ```

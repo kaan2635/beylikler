@@ -12,6 +12,8 @@ import { createRankingView } from './views/ranking.js';
 import { createSettingsView } from './views/settings.js';
 import { createOverviewView } from './views/overview.js';
 import { createTreasuryView } from './views/treasury.js';
+import { createExpeditionView } from './views/expedition.js';
+import { EXPEDITION_OUTCOMES } from '../config/expedition.js';
 import { openClassPicker } from './class-picker.js';
 import { CLASSES, OFFICERS } from '../config/classes.js';
 import { initToasts, toast } from './toast.js';
@@ -32,6 +34,7 @@ const ROUTES = {
   pazar: (ctx) => createMarketView(ctx),
   koyler: (ctx) => createOverviewView(ctx),
   hazine: (ctx) => createTreasuryView(ctx),
+  kesif: (ctx) => createExpeditionView(ctx),
 };
 
 // Sekmesi olmayan bina sayfalarında hangi sekme seçili görünsün.
@@ -155,6 +158,7 @@ function announce(events, whileAway) {
       'transport-arrived': 'nakliye',
       'support-arrived': 'destek',
       'officer-expired': 'görevli ayrılığı',
+      'expedition-result': 'keşif',
       return: 'dönüş',
     };
     const parts = Object.entries(counts).map(([type, n]) => `${n} ${labels[type]}`);
@@ -225,6 +229,21 @@ function describe(event) {
       const lost = total(event.resources) - total(event.stored);
       const overflow = lost > 0 ? ` Ambar dolu olduğu için ${fmtInt(lost)} kaynak kayboldu.` : '';
       return { text: `Tüccarlar ${event.target} köyüne ${fmtInt(total(event.stored))} kaynak ulaştırdı.${overflow}`, kind: 'success' };
+    }
+    case 'expedition-result': {
+      const name = EXPEDITION_OUTCOMES[event.outcome].name;
+      const extra =
+        event.outcome === 'akce'
+          ? ` ${fmtInt(event.akce)} Akçe bulundu!`
+          : total(event.loot)
+            ? ` ${fmtInt(total(event.loot))} kaynak yolda.`
+            : total(event.found)
+              ? ` ${fmtInt(total(event.found))} asker katıldı.`
+              : '';
+      return {
+        text: `Keşif seferi: ${name}.${extra}${event.survived ? '' : ' Birlik geri dönmeyecek.'} Ayrıntılar Raporlar'da.`,
+        kind: event.survived ? (EXPEDITION_OUTCOMES[event.outcome].good === false ? 'error' : 'success') : 'error',
+      };
     }
     case 'officer-expired':
       return { text: `${OFFICERS[event.officer].name} görevini tamamladı. Hazine'den yeniden tutabilirsin.`, kind: 'info' };

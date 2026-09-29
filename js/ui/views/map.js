@@ -29,6 +29,11 @@ const NEARBY_RADIUS = 15;
 const NEARBY_LIMIT = 25;
 const RULER = 18; // üst ve sol kenardaki koordinat şeridinin kalınlığı (px)
 
+/** Yerleşim sınırının ötesi: köy yok, keşif seferlerinin gittiği yabani topraklar. */
+function inWild(x, y) {
+  return inWorld(x, y) && distance(x, y, WORLD.center, WORLD.center) > WORLD.settledRadius;
+}
+
 /** Harita ekranı: tuval üzerinde sürüklenebilir dünya, seçili alanın bilgisi ve yakın köyler. */
 export function createMapView({ game, refresh }) {
   const attackForm = createAttackForm({ game, refresh });
@@ -373,6 +378,10 @@ export function createMapView({ game, refresh }) {
         const village = villageAt(state, x, y);
         drawTerrain(ctx, colors, village ? 'cayir' : terrainAt(seed, x, y), tileDetail(seed, x, y), sx, sy, t);
         if (village) drawVillage(ctx, colors, village, sx, sy, t);
+        else if (inWild(x, y)) {
+          ctx.fillStyle = colors.wild; // yabani topraklar: sisle örtülü
+          ctx.fillRect(sx, sy, t + 0.5, t + 0.5);
+        }
       }
     }
 
@@ -420,7 +429,14 @@ export function createMapView({ game, refresh }) {
       ctx.arc(from[0] + (to[0] - from[0]) * progress, from[1] + (to[1] - from[1]) * progress, Math.max(4, t / 7), 0, Math.PI * 2);
       ctx.fill();
     };
-    const movementColor = { saldiri: colors.attack, casus: colors.spy, destek: colors.support, nakliye: colors.transport, donus: colors.return };
+    const movementColor = {
+      saldiri: colors.attack,
+      casus: colors.spy,
+      destek: colors.support,
+      nakliye: colors.transport,
+      kesif: colors.expedition,
+      donus: colors.return,
+    };
     for (const own of Object.values(state.villages)) {
       const home = [toScreenX(own.x) + t / 2, toScreenY(own.y) + t / 2];
       for (const movement of own.movements) {
@@ -429,7 +445,9 @@ export function createMapView({ game, refresh }) {
         const turn = movement.turnAt ?? 1;
         const turnPoint = [home[0] + (away[0] - home[0]) * turn, home[1] + (away[1] - home[1]) * turn];
         const [from, to] = movement.type === 'donus' ? [turnPoint, home] : [home, away];
-        drawArmy(from, to, movementColor[movement.type], movement.departAt, movement.arriveAt);
+        // Keşif birliği sınıra varınca keşif süresi boyunca orada kalır.
+        const endAt = movement.type === 'kesif' ? movement.exploreAt : movement.arriveAt;
+        drawArmy(from, to, movementColor[movement.type], movement.departAt, endAt);
       }
       // Köye gelen bey orduları.
       for (const attack of own.incoming) {
@@ -453,7 +471,7 @@ export function createMapView({ game, refresh }) {
     const { x, y } = selected;
     const village = villageAt(state, x, y);
     const loyalty = village && village.kind !== 'oyuncu' ? Math.floor(loyaltyOf(state, village.id)) : '';
-    const signature = `${x}|${y}|${village?.kind}|${village?.points}|${loyalty}|${state.world.speed}|${own.id}`;
+    const signature = `${x}|${y}|${village?.kind}|${village?.points}|${loyalty}|${state.world.speed}|${own.id}|${bonusOf(own).travel}`;
     if (signature === infoSignature) return;
     infoSignature = signature;
 
@@ -467,6 +485,9 @@ export function createMapView({ game, refresh }) {
       rows.push(['Sahibi', owner], ['Puan', fmtInt(village.points)]);
       if (village.kind === 'bey') rows.push(['Kişilik', PERSONALITIES[village.personality].name]);
       if (village.kind !== 'oyuncu') rows.push(['Bağlılık', fmtInt(loyaltyOf(state, village.id))]);
+    } else if (inWild(x, y)) {
+      title = 'Yabani topraklar';
+      rows.push(['Arazi', TERRAIN[terrainAt(state.world.seed, x, y)].name], ['Durum', 'Kimsenin bilmediği topraklar']);
     } else {
       title = TERRAIN[terrainAt(state.world.seed, x, y)].name;
       rows.push(['Durum', 'Boş arazi']);
@@ -490,7 +511,7 @@ export function createMapView({ game, refresh }) {
               null,
               h('span', { class: 'unit-icon small' }, icon(id)),
               UNITS[id].name,
-              h('span', { class: 'time' }, fmtDuration(travelSeconds(dist, UNITS[id].speed, state.world.speed))),
+              h('span', { class: 'time' }, fmtDuration(Math.round(travelSeconds(dist, UNITS[id].speed, state.world.speed) * bonusOf(own).travel))),
             ),
           ),
         ),
@@ -505,6 +526,11 @@ export function createMapView({ game, refresh }) {
       );
     } else if (village?.kind === 'bey') {
       children.push(h('p', { class: 'muted' }, `Rakip bey. ${PERSONALITIES[village.personality].description}`));
+    } else if (inWild(x, y)) {
+      children.push(
+        h('p', { class: 'muted' }, 'Yerleşimin ötesi. Kervansaraydan buraya keşif seferi gönderirsen kaynak, asker ya da Akçe bulabilirsin; ama eşkıya ve fırtınalar da var.'),
+        h('a', { class: 'btn btn-small', href: '#/kesif' }, icon('kasif'), 'Keşif seferi düzenle'),
+      );
     } else if (inWorld(x, y) && !village && terrainAt(state.world.seed, x, y) === 'gol') {
       children.push(h('p', { class: 'muted' }, 'Göle köy kurulamaz.'));
     }
@@ -692,6 +718,8 @@ function readColors(el) {
     return: v('return'),
     support: v('support'),
     transport: v('transport'),
+    expedition: v('expedition'),
+    wild: v('wild'),
   };
 }
 
