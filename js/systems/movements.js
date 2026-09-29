@@ -10,6 +10,7 @@ import { provokeLord, recordPlayerAttackOnLord } from './ai.js';
 import { applyEnvoys } from './conquest.js';
 import { deliverTransport } from './market.js';
 import { stationSupport } from './support.js';
+import { bonusOf } from './bonus.js';
 import {
   totalUnits,
   armySpeed,
@@ -67,8 +68,9 @@ export function inspectAttack(state, village, x, y, requested, now, options = {}
   }
   const speed = armySpeed(units);
   const dist = distance(village.x, village.y, x, y);
-  const seconds = Math.max(1, travelSeconds(dist, speed, state.world.speed));
-  const attack = armyAttack(units, village.tech);
+  const bonus = bonusOf(village);
+  const seconds = Math.max(1, Math.round(travelSeconds(dist, speed, state.world.speed) * bonus.travel));
+  const attack = armyAttack(units, village.tech) * bonus.attack;
   const own = ownVillageAt(state, x, y);
   const info = {
     ok: false,
@@ -173,6 +175,7 @@ function attack(state, village, movement, target) {
     wallLevel: target.buildings.sur,
     luck: luckFor(state.world.seed, movement.id),
     attackerTech: village.tech,
+    attackerBonus: bonusOf(village).attack,
   });
   const survivors = subtractUnits(movement.units, battle.attackerLosses);
   const available = {};

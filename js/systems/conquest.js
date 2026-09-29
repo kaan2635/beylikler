@@ -5,6 +5,8 @@ import { createVillage } from '../core/state.js';
 import { loyaltyOf, setLoyalty } from './barbarians.js';
 import { addNews } from './army.js';
 import { stationSupport } from './support.js';
+import { grantAkce } from './premium.js';
+import { PREMIUM } from '../config/classes.js';
 
 /**
  * Fetih. Kazanılan bir saldırıda hayatta kalan her Elçi köyün bağlılığını 20–35 düşürür
@@ -54,6 +56,7 @@ function conquer(state, origin, target, survivors, buildings, resources, at) {
   stationSupport(origin, id, garrison);
   delete state.barbarians[target.id];
 
+  grantAkce(state, PREMIUM.rewards.conquest, `Fetih: ${target.name}`, at);
   if (target.kind === 'bey') {
     const entry = state.ai.lords[target.id];
     Object.assign(entry, { defeated: true, nextAttackAt: null, nextRaidAt: null });

@@ -2,6 +2,7 @@ import { GAME } from '../config/game.js';
 import { BUILDINGS } from '../config/buildings.js';
 import { upgradeCost, buildDuration, buildingPopulation } from '../core/formulas.js';
 import { plannedLevel } from '../core/village.js';
+import { bonusOf } from './bonus.js';
 import {
   canAfford,
   spend,
@@ -10,6 +11,11 @@ import {
   populationUsed,
   timeUntilAffordable,
 } from './economy.js';
+
+/** İnşaat kuyruğunun sıra sayısı (Vezir bir sıra ekler). */
+export function maxBuildQueue(village) {
+  return GAME.maxBuildQueue + bonusOf(village).buildQueue;
+}
 
 /**
  * Binanın bir sonraki seviyesine yükseltilip yükseltilemeyeceğini inceler.
@@ -25,11 +31,12 @@ export function inspectUpgrade(village, world, buildingId, now) {
   }
 
   const level = current + 1;
+  const bonus = bonusOf(village);
   const info = {
     ok: false,
     level,
     cost: upgradeCost(def, level),
-    duration: buildDuration(def, level, village.buildings.konak, world.speed),
+    duration: Math.max(1, Math.round(buildDuration(def, level, village.buildings.konak, world.speed) * bonus.buildTime)),
     popDelta: buildingPopulation(def, level) - buildingPopulation(def, current),
   };
 
@@ -38,7 +45,7 @@ export function inspectUpgrade(village, world, buildingId, now) {
     const list = missing.map(([id, lvl]) => `${BUILDINGS[id].name} ${lvl}. seviye`).join(', ');
     return { ...info, code: 'requires', reason: `Gerekli: ${list}` };
   }
-  if (village.buildQueue.length >= GAME.maxBuildQueue) {
+  if (village.buildQueue.length >= maxBuildQueue(village)) {
     return { ...info, code: 'queue', reason: 'İnşaat kuyruğu dolu' };
   }
   // Nüfus kullanmayan binalar (Çiftlik, Ambar) nüfus dolu olsa da yapılabilmeli, yoksa oyun kilitlenir.

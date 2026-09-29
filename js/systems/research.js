@@ -3,6 +3,7 @@ import { BUILDINGS } from '../config/buildings.js';
 import { UNITS } from '../config/units.js';
 import { trainingTimeFactor } from '../core/formulas.js';
 import { canAfford, spend, refund, timeUntilAffordable } from './economy.js';
+import { bonusOf } from './bonus.js';
 
 /**
  * Demirci geliştirmeleri. Her asker türü 0..3 seviye geliştirilebilir; köyün geliştirme
@@ -42,7 +43,7 @@ export function inspectResearch(village, world, unitId, now) {
     ok: false,
     level,
     cost: researchCost(unit, level),
-    duration: researchDuration(unit, level, village.buildings.demirci, world.speed),
+    duration: Math.max(1, Math.round(researchDuration(unit, level, village.buildings.demirci, world.speed) * bonusOf(village).researchTime)),
   };
 
   const needs = { ...unit.requires, demirci: RESEARCH.smithyLevelFor[level] };

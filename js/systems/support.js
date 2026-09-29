@@ -2,6 +2,7 @@ import { UNIT_IDS } from '../config/units.js';
 import { travelSeconds } from '../core/formulas.js';
 import { distance } from './world.js';
 import { armySpeed, totalUnits } from './army.js';
+import { bonusOf } from './bonus.js';
 
 /**
  * Destek: oyuncunun askerleri kendi başka köyünde durup onu savunur.
@@ -91,7 +92,8 @@ export function withdrawSupport(state, home, hostId, now) {
   if (!units || !totalUnits(units) || !host) return { ok: false, reason: 'Bu köyde destek askerin yok' };
   const moving = Object.fromEntries(Object.entries(units).filter(([, n]) => n > 0));
   delete home.stationed[hostId];
-  const seconds = Math.max(1, travelSeconds(distance(host.x, host.y, home.x, home.y), armySpeed(moving), state.world.speed));
+  const travel = travelSeconds(distance(host.x, host.y, home.x, home.y), armySpeed(moving), state.world.speed);
+  const seconds = Math.max(1, Math.round(travel * bonusOf(home).travel));
   const movement = {
     id: state.nextId++,
     type: 'donus',

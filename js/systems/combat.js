@@ -40,13 +40,14 @@ function scaleUnits(units, ratio) {
 /**
  * Tek hamlede savaş sonucu. Güçlü taraf kazanır; kaybedenin tüm askerleri ölür, kazananın
  * kayıp oranı (kaybeden güç / kazanan güç) ^ 1.5 olur. `luck` (−0.25..0.25) saldırı gücünü değiştirir;
- * `attackerTech` / `defenderTech` Demirci geliştirmeleridir.
+ * `attackerTech` / `defenderTech` Demirci geliştirmeleridir; `attackerBonus` / `defenderBonus`
+ * sınıf ve görevli çarpanlarıdır.
  */
-export function resolveBattle({ attackers, defenders, wallLevel = 0, luck = 0, attackerTech = {}, defenderTech = {} }) {
+export function resolveBattle({ attackers, defenders, wallLevel = 0, luck = 0, attackerTech = {}, defenderTech = {}, attackerBonus = 1, defenderBonus = 1 }) {
   const power = attackByType(attackers, attackerTech);
-  const attack = sum(power) * (1 + luck);
+  const attack = sum(power) * attackerBonus * (1 + luck);
   const defense =
-    weightedDefense(defenders, power, defenderTech) * (1 + wallBonus(wallLevel)) +
+    weightedDefense(defenders, power, defenderTech) * defenderBonus * (1 + wallBonus(wallLevel)) +
     COMBAT.villageDefense +
     COMBAT.wallDefensePerLevel * wallLevel;
   const attackerWins = attack > defense;

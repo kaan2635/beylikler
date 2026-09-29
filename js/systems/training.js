@@ -2,6 +2,7 @@ import { GAME } from '../config/game.js';
 import { BUILDINGS } from '../config/buildings.js';
 import { UNITS } from '../config/units.js';
 import { trainDuration } from '../core/formulas.js';
+import { bonusOf } from './bonus.js';
 import {
   canAfford,
   spend,
@@ -65,8 +66,9 @@ export function maxTrainable(village, unitId) {
  */
 export function inspectTraining(village, world, unitId, count, now) {
   const unit = UNITS[unitId];
-  const unitSeconds = trainDuration(unit, village.buildings[unit.building], world.speed);
-  const valid = Number.isInteger(count) && count >= 1 && count <= GAME.maxTrainBatch;
+  const bonus = bonusOf(village);
+  const unitSeconds = Math.max(1, Math.round(trainDuration(unit, village.buildings[unit.building], world.speed) * bonus.trainTime));
+  const valid =Number.isInteger(count) && count >= 1 && count <= GAME.maxTrainBatch;
   const n = valid ? count : 1;
   const info = {
     ok: false,
@@ -84,7 +86,7 @@ export function inspectTraining(village, world, unitId, count, now) {
     const limit = village.buildings[unit.limitBy];
     return { ...info, code: 'limit', reason: `En fazla ${limit} ${unit.name} (${BUILDINGS[unit.limitBy].name} seviyesi kadar)` };
   }
-  if (village.trainQueues[unit.building].length >= GAME.maxTrainQueue) {
+  if (village.trainQueues[unit.building].length >= GAME.maxTrainQueue + bonus.trainQueue) {
     return { ...info, code: 'queue', reason: `${BUILDINGS[unit.building].name} kuyruğu dolu` };
   }
   if (populationUsed(village) + info.popNeeded > populationCap(village)) {

@@ -5,6 +5,7 @@ import { completeMovement } from '../systems/movements.js';
 import { completeResearch } from '../systems/research.js';
 import { ensureLordSchedules, launchLordAttack, lordRaid, resolveIncoming } from '../systems/ai.js';
 import { advanceClock, lordsOf } from '../systems/world.js';
+import { syncBonuses, expireOfficer } from '../systems/premium.js';
 
 /**
  * Oyun dünyasını `now` anına kadar ilerletir ve bu sırada gerçekleşen olayları döndürür.
@@ -21,12 +22,14 @@ import { advanceClock, lordsOf } from '../systems/world.js';
  */
 export function advance(state, now) {
   ensureLordSchedules(state, now);
+  syncBonuses(state);
   const events = [];
   for (let next = nextEvent(state, now); next; next = nextEvent(state, now)) {
     advanceClock(state.world, next.at);
     produce(next.village, state.world, next.at);
     const event = next.run();
     if (event) events.push(event);
+    syncBonuses(state); // fetihle yeni köy gelmiş ya da bir görevli ayrılmış olabilir
   }
   for (const village of Object.values(state.villages)) produce(village, state.world, now);
   advanceClock(state.world, now);
@@ -60,6 +63,9 @@ function nextEvent(state, now) {
     if (attackAt != null) consider(attackAt, villages[0], () => launchLordAttack(state, lord, attackAt));
     const raidAt = entry?.nextRaidAt;
     if (raidAt != null) consider(raidAt, villages[0], () => lordRaid(state, lord, raidAt));
+  }
+  for (const [officer, until] of Object.entries(state.player?.officers ?? {})) {
+    consider(until, villages[0], () => expireOfficer(state, officer, until));
   }
   return next;
 }

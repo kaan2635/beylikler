@@ -1,7 +1,7 @@
 // Oyun ve dünya ayarları. Dünya hızı tüm üretim ve inşaat sürelerini ölçekler.
 export const GAME = Object.freeze({
   title: 'Beylikler',
-  saveVersion: 7,
+  saveVersion: 8,
   saveKey: 'beylikler:kayit',
   defaultSpeed: 1,
   defaultDifficulty: 'normal', // rakip beyler: baris | kolay | normal | zor

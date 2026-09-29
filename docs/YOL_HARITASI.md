@@ -142,11 +142,18 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Haritada tüm köylerin hareketleri; nakliye ve destek ayrı renkte
 - [x] 104 birim testi
 
-## ⬜ Adım 9 — Sınıf seçimi ve premium
+## ✅ Adım 9 — Sınıf seçimi ve premium
 
-- [ ] Oyun başında sınıf seçimi (OGame benzeri): ör. Tüccar (üretim ve tüccar), Sipahi Beyi (ordu hızı ve gücü), Kâşif (keşif seferleri)
-- [ ] Premium para birimi "Akçe": oyun içinde kazanılır (keşif, görev, başarım); gerçek para yok
-- [ ] Premium özellikler: inşaatı hızlandırma, ek kuyruk sırası, üretim bonusu, yağma asistanı eklentileri
+- [x] Oyun başında sınıf seçimi penceresi (bey adı ve köy adıyla birlikte); eski kayıtlarda da bir kez açılır
+- [x] Tüccar Bey: üretim +%20, tüccar kapasitesi +%50, tüccarlar 2 kat hızlı
+- [x] Serdar: ordu yolculuğu −%25, eğitim −%15, saldırı +%10
+- [x] Kâşif: keşif hakkı +1, bulgular +%50, tehlike −%50 (Adım 10), Demirci süresi −%25
+- [x] Premium para "Akçe": başlangıçta 250; fetih +100, savunma zaferi +20; gerçek parayla satılmaz
+- [x] Hazine sayfası ve tepe çubuğunda Akçe göstergesi; hesap dökümü
+- [x] Görevliler (7 gün): Vezir (+1 inşaat, +2 eğitim sırası), Defterdar (üretim +%10), Mimarbaşı (inşaat −%15), Serasker (yolculuk −%10, yağma asistanında "Tümüne tekrar saldır")
+- [x] Anında bitirme (inşaat ve Demirci; kalan her 3 oyun dakikası 1 Akçe), kaynak paketi, sınıf değiştirme (500 Akçe)
+- [x] Görevlinin süresi dolunca motor üretimi o ana kadar eski oranla hesaplar
+- [x] Kayıt şeması 8. sürüm; 115 birim testi
 
 ## ⬜ Adım 10 — Keşif seferleri
 

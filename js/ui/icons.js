@@ -30,6 +30,20 @@ const ICONS = {
   donus: line('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>'),
   konum: line('<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'),
   tasima: line('<path d="M9 3h6l-2 4h-2z"/><path d="M8 8h8c3 3 4 6 3 9a3 3 0 0 1-3 2.5H8A3 3 0 0 1 5 17c-1-3 0-6 3-9z"/>'),
+
+  // Akçe: delikli Osmanlı sikkesi.
+  akce: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#e0b54a" stroke="#8a6414" stroke-width="1.2"/><circle cx="12" cy="12" r="7" fill="none" stroke="#a87c1c" stroke-width=".8" stroke-dasharray="1.2 1.4"/><rect x="10" y="10" width="4" height="4" rx=".6" fill="#8a6414"/></svg>',
+  simsek: line('<path d="M13 2L5 13h6l-1 9 8-11h-6z" fill="currentColor"/>'),
+  paket: line('<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>'),
+
+  // Sınıflar ve görevliler.
+  tuccar: line('<path d="M12 3v18M5 21h14"/><path d="M4 7h16"/><path d="M4 7l-2.5 6a2.5 2.5 0 0 0 5 0z"/><path d="M20 7l-2.5 6a2.5 2.5 0 0 0 5 0z"/>'),
+  serdar: line('<path d="M12 2v14"/><path d="M8 16h8"/><path d="M12 16v5"/><path d="M9.5 2.8L12 2l2.5.8"/><path d="M5 9c2 1 2 5 0 6M19 9c-2 1-2 5 0 6"/>'),
+  kasif: line('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>'),
+  vezir: line('<path d="M6 4h11a2 2 0 0 1 2 2v12"/><path d="M6 4a2 2 0 0 0-2 2v1h4"/><path d="M8 7v11a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1H10"/><path d="M11 9h5M11 12h5"/>'),
+  defterdar: line('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7M8 10h7M8 13h4"/>'),
+  mimarbasi: line('<path d="M4 20l9-9"/><path d="M12 4l6 6-3 3-6-6z"/><path d="M14 20h7M14 20v-6"/>'),
+  serasker: line('<path d="M5 21V3"/><path d="M5 4h12l-3 4 3 4H5"/>'),
 };
 
 function line(paths) {

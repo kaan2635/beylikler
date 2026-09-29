@@ -8,6 +8,15 @@ import { sendAttack, recallAttack } from './systems/movements.js';
 import { startResearch, cancelResearch } from './systems/research.js';
 import { trade, sendTransport } from './systems/market.js';
 import { withdrawSupport } from './systems/support.js';
+import {
+  chooseClass,
+  changeClass,
+  hireOfficer,
+  finishBuilding,
+  finishResearch,
+  buyResourcePack,
+} from './systems/premium.js';
+import { bonusOf } from './systems/bonus.js';
 import { setDifficulty, rescaleLordSchedules } from './systems/ai.js';
 
 /**
@@ -138,6 +147,19 @@ export class Game {
     return this.sendAttack(report.target.x, report.target.y, report.attackers, now, { catapultTarget: report.catapultTarget });
   }
 
+  /** Yağma asistanı (Serasker): raporlardaki orduları kendi köylerine toplu olarak yeniden gönderir. */
+  repeatAttacks(reportIds, now) {
+    if (!bonusOf(this.village).farmAssistant) return { ok: false, sent: 0, reason: 'Toplu yağma için Serasker görevde olmalı' };
+    let sent = 0;
+    const failed = [];
+    for (const id of reportIds) {
+      const result = this.repeatAttack(id, now);
+      if (result.ok) sent += 1;
+      else failed.push(result.reason);
+    }
+    return { ok: sent > 0, sent, failed, reason: failed[0] ?? 'Gönderilecek ordu yok' };
+  }
+
   recallAttack(movementId, now) {
     this.tick(now);
     const result = recallAttack(this.village, movementId, now);
@@ -162,10 +184,58 @@ export class Game {
     if (changed) this.save();
   }
 
+  // ---------- Sınıf ve Akçe ----------
+
+  /** Oyun başında sınıf seçimi; bey ve köy adı da verilebilir. */
+  chooseClass(classId, names, now) {
+    return this.#act(now, () => chooseClass(this.state, classId, names, now));
+  }
+
+  changeClass(classId, now) {
+    return this.#act(now, () => changeClass(this.state, classId, now));
+  }
+
+  hireOfficer(officerId, now) {
+    return this.#act(now, () => hireOfficer(this.state, officerId, now));
+  }
+
+  /** Yönetilen köyün sıradaki inşaatını Akçe ile anında bitirir. */
+  finishBuilding(now) {
+    const result = this.#act(now, () => finishBuilding(this.state, this.village, now));
+    if (result.ok) this.tick(now);
+    return result;
+  }
+
+  finishResearch(now) {
+    const result = this.#act(now, () => finishResearch(this.state, this.village, now));
+    if (result.ok) this.tick(now);
+    return result;
+  }
+
+  buyResourcePack(now) {
+    return this.#act(now, () => buyResourcePack(this.state, this.village, now));
+  }
+
+  /** Önce zamanı ilerletir, eylemi uygular, başarılıysa kaydeder. */
+  #act(now, action) {
+    this.tick(now);
+    const result = action();
+    if (result.ok) this.save();
+    return result;
+  }
+
   /** Yönetilen köyü değiştirir (fethedilen köyler arasında geçiş). */
   setActiveVillage(id) {
     if (!this.state.villages[id] || this.state.activeVillageId === id) return false;
     this.state.activeVillageId = id;
+    this.save();
+    return true;
+  }
+
+  renamePlayer(name) {
+    const clean = name.trim().slice(0, 24);
+    if (!clean) return false;
+    this.state.player.name = clean;
     this.save();
     return true;
   }

@@ -1,6 +1,7 @@
 import { GAME, START } from '../config/game.js';
 import { BUILDING_IDS } from '../config/buildings.js';
 import { UNIT_IDS, TRAINING_BUILDINGS } from '../config/units.js';
+import { PREMIUM } from '../config/classes.js';
 
 export function createVillage({ id, name, x, y, now }) {
   return normalizeVillage({
@@ -20,7 +21,7 @@ export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSee
     createdAt: now,
     // clock: dünya saati (oyun zamanı, ms); dünya hızıyla işler. Barbar köylerinin büyümesi buna bağlıdır.
     world: { speed, seed, clock: { time: 0, at: now } },
-    player: { name: 'Bey' },
+    player: newPlayer(),
     activeVillageId: 'v1',
     villages: {
       v1: createVillage({ id: 'v1', name: START.villageName, x: 500, y: 500, now }),
@@ -32,6 +33,11 @@ export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSee
     stats: { kills: 0, loot: 0 }, // oyuncunun savaş puanı ve toplam ganimeti (sıralama)
     news: [], // dünya olayları, en yeni başta
   };
+}
+
+/** Oyuncu: sınıf oyun başında seçilir (null iken arayüz seçim penceresini açar). */
+function newPlayer(name = 'Bey') {
+  return { name, class: null, akce: PREMIUM.startAkce, officers: {}, akceLog: [] };
 }
 
 function randomSeed() {
@@ -76,6 +82,8 @@ const MIGRATIONS = {
   5: (data) => ({ ...data, ai: { difficulty: 'normal', lords: {} }, version: 6 }),
   // Adım 7b: sıralama istatistikleri ve dünya olayları; beylerin hareket takvimi motorca kurulur.
   6: (data) => ({ ...data, stats: { kills: 0, loot: 0 }, news: [], version: 7 }),
+  // Adım 9: sınıf ve Akçe. Mevcut oyuncular da sınıflarını seçer ve başlangıç Akçesini alır.
+  7: (data) => ({ ...data, player: newPlayer(data.player?.name), version: 8 }),
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */
@@ -95,5 +103,9 @@ export function migrate(data) {
     throw new Error('Kayıtta köy bulunamadı');
   }
   for (const village of Object.values(data.villages)) normalizeVillage(village);
+  data.player ??= newPlayer();
+  data.player.officers ??= {};
+  data.player.akceLog ??= [];
+  data.player.akce ??= 0;
   return data;
 }

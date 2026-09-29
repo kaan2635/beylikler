@@ -6,6 +6,7 @@ import { toast } from '../toast.js';
 /** Ayarlar: köy adı, kaydı dışa/içe aktarma, dünya hızı ve sıfırlama. */
 export function createSettingsView({ game, refresh }) {
   const nameInput = h('input', { type: 'text', maxlength: 32, id: 'village-name', autocomplete: 'off' });
+  const playerInput = h('input', { type: 'text', maxlength: 24, id: 'player-name', autocomplete: 'off' });
   const exportArea = h('textarea', { rows: 4, readonly: true, placeholder: 'Önce "Kodu oluştur"a bas.' });
   const importArea = h('textarea', { rows: 4, placeholder: 'BEY1: ile başlayan kayıt kodunu buraya yapıştır.' });
   const speedSelect = h(
@@ -32,6 +33,13 @@ export function createSettingsView({ game, refresh }) {
         'section',
         { class: 'panel stack-sm' },
         h('h2', null, 'Beylik'),
+        h(
+          'form',
+          { class: 'form-row', onsubmit: onRenamePlayer },
+          h('label', { for: 'player-name' }, 'Bey adı'),
+          playerInput,
+          h('button', { class: 'btn', type: 'submit' }, 'Kaydet'),
+        ),
         h(
           'form',
           { class: 'form-row', onsubmit: onRename },
@@ -106,6 +114,13 @@ export function createSettingsView({ game, refresh }) {
     refresh();
   });
 
+  function onRenamePlayer(event) {
+    event.preventDefault();
+    if (game.renamePlayer(playerInput.value)) toast('Bey adı kaydedildi.', 'success');
+    else toast('Bey adı boş olamaz.', 'error');
+    refresh();
+  }
+
   function onRename(event) {
     event.preventDefault();
     if (game.renameVillage(nameInput.value)) toast('Köy adı kaydedildi.', 'success');
@@ -135,9 +150,9 @@ export function createSettingsView({ game, refresh }) {
     try {
       game.importSave(importArea.value, Date.now());
       importArea.value = '';
-      toast('Kayıt yüklendi.', 'success');
-      onShow();
-      refresh();
+      // Ekranlar yeni kayıtla baştan kurulsun (sınıfı seçilmemiş eski bir kayıtsa seçim penceresi açılır).
+      location.hash = '#/koy';
+      location.reload();
     } catch (err) {
       toast(`Kayıt yüklenemedi: ${err.message}`, 'error', 6000);
     }
@@ -146,14 +161,14 @@ export function createSettingsView({ game, refresh }) {
   function onReset() {
     if (!confirm('Tüm ilerleme silinecek. Oyunu sıfırlamak istediğine emin misin?')) return;
     game.reset(Date.now());
-    toast('Yeni bir beylik kuruldu.', 'success');
-    onShow();
-    refresh();
+    location.hash = '#/koy';
+    location.reload(); // yeni oyun sınıf seçimiyle başlar
   }
 
   // Form alanları yalnızca görünüm açılırken doldurulur; saniyelik yenileme yazılanı ezmesin.
   function onShow() {
     nameInput.value = game.village.name;
+    playerInput.value = game.state.player.name;
     speedSelect.value = String(game.state.world.speed);
     difficultySelect.value = game.state.ai.difficulty;
     difficultyInfo.textContent = DIFFICULTIES[game.state.ai.difficulty].description;

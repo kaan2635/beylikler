@@ -1,6 +1,6 @@
 import { RESOURCES, RESOURCE_IDS } from '../../config/resources.js';
 import { MARKET } from '../../config/tech.js';
-import { inspectTrade, marketFee, inspectTransport } from '../../systems/market.js';
+import { inspectTrade, marketFee, inspectTransport, merchantCapacity } from '../../systems/market.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
@@ -48,6 +48,7 @@ export function createMarketView({ game, refresh }) {
   );
 
   const transport = createTransportPanel({ game, refresh });
+  const capacityNote = h('p', { class: 'muted' });
 
   const el = h(
     'section',
@@ -57,7 +58,7 @@ export function createMarketView({ game, refresh }) {
     h(
       'div',
       { class: 'settings-grid' },
-      h('section', { class: 'panel stack-sm' }, h('h2', null, 'Takas'), h('p', { class: 'muted' }, `Her tüccar ${fmtInt(MARKET.merchantCapacity)} kaynak taşır. Tüccarlar takastan sonra bir süre yolda kalır.`), form),
+      h('section', { class: 'panel stack-sm' }, h('h2', null, 'Takas'), capacityNote, form),
       transport.el,
       h('section', { class: 'panel stack-sm' }, h('h2', null, 'Tüccarlar'), merchants),
     ),
@@ -118,6 +119,7 @@ export function createMarketView({ game, refresh }) {
       setText(badge, level ? `${level}. seviye` : 'Yok');
       badge.classList.toggle('badge-muted', !level);
       setText(info, level ? `Komisyon ${percent(marketFee(level))}` : '');
+      setText(capacityNote, `Her tüccar ${fmtInt(merchantCapacity(village))} kaynak taşır. Tüccarlar takastan sonra bir süre yolda kalır.`);
       notBuilt.hidden = level > 0;
 
       const check = inspectTrade(village, give.value, take.value, Number(amount.value), now);

@@ -1,8 +1,8 @@
-import { GAME } from '../../config/game.js';
 import { BUILDINGS, BUILDING_IDS } from '../../config/buildings.js';
 import { RESOURCES } from '../../config/resources.js';
 import { TRAINING_BUILDINGS } from '../../config/units.js';
-import { inspectUpgrade } from '../../systems/construction.js';
+import { inspectUpgrade, maxBuildQueue } from '../../systems/construction.js';
+import { finishCost } from '../../systems/premium.js';
 
 // Kendi sayfası olan binalar: kart üzerinde, bina inşa edilince görünen bağlantı.
 const BUILDING_PAGES = {
@@ -48,6 +48,9 @@ export function createVillageView({ game, refresh }) {
     } else if (button.dataset.action === 'cancel') {
       const job = game.cancelLastUpgrade(now);
       if (job) toast(`${BUILDINGS[job.building].name} yükseltmesi iptal edildi, kaynaklar iade edildi.`);
+    } else if (button.dataset.action === 'finish') {
+      const result = game.finishBuilding(now);
+      if (!result.ok) toast(result.reason, 'error');
     }
     refresh(now);
   });
@@ -59,7 +62,7 @@ export function createVillageView({ game, refresh }) {
       setText(name, village.name);
       const points = fmtInt(villagePoints(village.buildings));
       setText(coords, `(${village.x}|${village.y}) · ${continentOf(village.x, village.y)} · ${points} puan`);
-      queue.update(village, now);
+      queue.update(village, now, game.state);
       for (const card of cards) card.update(village, game.state.world, now);
     },
   };
@@ -82,15 +85,25 @@ function createQueuePanel() {
       const remaining = h('span', { class: 'queue-remaining' });
       const bar = h('span');
       const isLast = index === jobs.length - 1;
+      const finishText = h('span');
+      const finish =
+        index === 0
+          ? h('button', { class: 'btn btn-small btn-gold', dataset: { action: 'finish' }, title: 'Akçe ile anında bitir' }, icon('simsek'), finishText)
+          : null;
       const row = h(
         'div',
         { class: 'queue-row' },
         h('div', null, h('strong', null, BUILDINGS[job.building].name), ` → ${job.level}. seviye`),
         h('div', { class: 'queue-time' }, remaining, h('span', { class: 'muted' }, `bitiş ${fmtClock(job.endAt, now)}`)),
-        isLast ? h('button', { class: 'btn btn-small btn-ghost', dataset: { action: 'cancel' } }, 'İptal') : h('span'),
+        h(
+          'div',
+          { class: 'queue-actions' },
+          finish,
+          isLast ? h('button', { class: 'btn btn-small btn-ghost', dataset: { action: 'cancel' } }, 'İptal') : null,
+        ),
         index === 0 ? h('div', { class: 'progress' }, bar) : null,
       );
-      return { row, remaining, bar, job };
+      return { row, remaining, bar, job, finish, finishText };
     });
     body.replaceChildren(
       ...(rows.length
@@ -101,19 +114,23 @@ function createQueuePanel() {
 
   return {
     el,
-    update(village, now) {
+    update(village, now, state) {
       const jobs = village.buildQueue;
-      setText(count, `${jobs.length}/${GAME.maxBuildQueue}`);
+      setText(count, `${jobs.length}/${maxBuildQueue(village)}`);
       const next = jobs.map((j) => `${j.building}:${j.level}:${j.endAt}`).join('|');
       if (next !== signature) {
         signature = next;
         rebuild(jobs, now);
       }
-      rows.forEach(({ remaining, bar, job }, index) => {
+      rows.forEach(({ remaining, bar, job, finish, finishText }, index) => {
         if (index === 0) {
           setText(remaining, fmtDuration((job.endAt - now) / 1000));
           const progress = (now - job.startAt) / (job.endAt - job.startAt);
           bar.style.width = `${Math.min(100, Math.max(0, progress * 100))}%`;
+          const cost = finishCost(job.endAt - now, state.world);
+          setText(finishText, `${fmtInt(cost)}`);
+          finish.disabled = (state.player.akce ?? 0) < cost;
+          finish.title = `${fmtInt(cost)} Akçe ile anında bitir`;
         } else {
           setText(remaining, `sırada · ${fmtDuration((job.endAt - job.startAt) / 1000)}`);
         }

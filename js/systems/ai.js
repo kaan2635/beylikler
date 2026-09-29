@@ -9,6 +9,9 @@ import { lordsOf, lordPowerIn, lordVillage, distance, nearbyBarbarians } from '.
 import { barbarianLive, recordBarbarian } from './barbarians.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { defendersOf, applyDefenderLosses } from './support.js';
+import { bonusOf } from './bonus.js';
+import { grantAkce } from './premium.js';
+import { PREMIUM } from '../config/classes.js';
 import {
   totalUnits,
   armySpeed,
@@ -289,6 +292,7 @@ export function resolveIncoming(state, village, attack) {
     luck: luckFor(state.world.seed, attack.id),
     attackerTech: attack.tech,
     defenderTech: village.tech,
+    defenderBonus: bonusOf(village).defense,
   });
   applyDefenderLosses(state, village, defenders, battle.defenderLosses);
 
@@ -315,6 +319,7 @@ export function resolveIncoming(state, village, attack) {
   entry.loot += resourceTotal(loot);
   adjustBonus(state, attack.lordId, battle.attackerWins ? LORD.bonus.raidWin : LORD.bonus.warLoss);
   addNews(state, attack.arriveAt, `${attack.from.owner} → ${village.name}: ${battle.attackerWins ? 'köy yağmalandı' : 'saldırı püskürtüldü'}.`);
+  if (!battle.attackerWins) grantAkce(state, PREMIUM.rewards.defense, `Savunma zaferi: ${village.name}`, attack.arriveAt);
 
   const report = addReport(state, {
     type: 'savunma',

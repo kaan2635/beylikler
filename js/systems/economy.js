@@ -8,14 +8,16 @@ import {
   buildingPopulation,
 } from '../core/formulas.js';
 import { plannedLevel } from '../core/village.js';
+import { bonusOf } from './bonus.js';
 
 const HOUR = 3_600_000;
 
-/** Kaynak başına saatlik üretim. */
+/** Kaynak başına saatlik üretim (sınıf ve görevli etkisi dahil). */
 export function productionRates(village, world) {
   const rates = {};
+  const factor = bonusOf(village).production;
   for (const id of RESOURCE_IDS) {
-    rates[id] = productionPerHour(village.buildings[RESOURCES[id].producer], world.speed);
+    rates[id] = productionPerHour(village.buildings[RESOURCES[id].producer], world.speed) * factor;
   }
   return rates;
 }

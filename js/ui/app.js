@@ -11,6 +11,9 @@ import { createMarketView } from './views/market.js';
 import { createRankingView } from './views/ranking.js';
 import { createSettingsView } from './views/settings.js';
 import { createOverviewView } from './views/overview.js';
+import { createTreasuryView } from './views/treasury.js';
+import { openClassPicker } from './class-picker.js';
+import { CLASSES, OFFICERS } from '../config/classes.js';
 import { initToasts, toast } from './toast.js';
 import { h } from './dom.js';
 import { icon } from './icons.js';
@@ -28,6 +31,7 @@ const ROUTES = {
   demirci: (ctx) => createSmithyView(ctx),
   pazar: (ctx) => createMarketView(ctx),
   koyler: (ctx) => createOverviewView(ctx),
+  hazine: (ctx) => createTreasuryView(ctx),
 };
 
 // Sekmesi olmayan bina sayfalarında hangi sekme seçili görünsün.
@@ -44,6 +48,9 @@ export function mountApp(game, { isNew, events }) {
   incomingAlert.append(icon('saldiri'), alertText);
   const villageSwitch = document.getElementById('village-switch');
   const overviewTab = document.querySelector('[data-route="koyler"]');
+  const akceChip = document.getElementById('akce-chip');
+  const akceText = h('span', { class: 'akce-amount' });
+  akceChip.append(icon('akce'), akceText);
   let switchSignature = null;
   villageSwitch.addEventListener('change', () => {
     if (game.setActiveVillage(villageSwitch.value)) toast(`${game.village.name} köyünü yönetiyorsun.`);
@@ -69,6 +76,7 @@ export function mountApp(game, { isNew, events }) {
     game.tick(now);
     updateVillageSwitch();
     resourceBar.update(game);
+    akceText.textContent = fmtInt(game.state.player.akce ?? 0);
     current?.update(now);
     const unread = game.state.reports.filter((report) => !report.read).length;
     reportsBadge.hidden = unread === 0;
@@ -119,7 +127,16 @@ export function mountApp(game, { isNew, events }) {
   setInterval(refresh, GAME.tickMs);
   route();
 
-  if (isNew) toast('Beyliğine hoş geldin! İşe kaynak binalarını yükselterek başla.', 'success', 7000);
+  const welcome = () => toast('Beyliğine hoş geldin! İşe kaynak binalarını yükselterek başla.', 'success', 7000);
+  if (!game.state.player.class) {
+    openClassPicker(game, (classId) => {
+      refresh();
+      if (isNew) welcome();
+      else toast(`Sınıfın: ${CLASSES[classId].name}. Başlangıç Akçen Hazine'de seni bekliyor.`, 'success', 7000);
+    });
+  } else if (isNew) {
+    welcome();
+  }
   announce(events, true);
 }
 
@@ -137,6 +154,7 @@ function announce(events, whileAway) {
       'defense-result': 'savunma',
       'transport-arrived': 'nakliye',
       'support-arrived': 'destek',
+      'officer-expired': 'görevli ayrılığı',
       return: 'dönüş',
     };
     const parts = Object.entries(counts).map(([type, n]) => `${n} ${labels[type]}`);
@@ -208,6 +226,8 @@ function describe(event) {
       const overflow = lost > 0 ? ` Ambar dolu olduğu için ${fmtInt(lost)} kaynak kayboldu.` : '';
       return { text: `Tüccarlar ${event.target} köyüne ${fmtInt(total(event.stored))} kaynak ulaştırdı.${overflow}`, kind: 'success' };
     }
+    case 'officer-expired':
+      return { text: `${OFFICERS[event.officer].name} görevini tamamladı. Hazine'den yeniden tutabilirsin.`, kind: 'info' };
     case 'support-arrived':
       return { text: `${fmtInt(total(event.units))} asker destek olarak ${event.target} köyüne vardı.`, kind: 'success' };
     default:

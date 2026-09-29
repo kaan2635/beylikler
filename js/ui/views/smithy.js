@@ -3,6 +3,7 @@ import { UNITS, UNIT_IDS } from '../../config/units.js';
 import { RESEARCH } from '../../config/tech.js';
 import { trainingTimeFactor } from '../../core/formulas.js';
 import { inspectResearch } from '../../systems/research.js';
+import { finishCost } from '../../systems/premium.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
@@ -68,7 +69,22 @@ function createCurrentPanel({ game, refresh }) {
   const finish = h('span', { class: 'muted' });
   const bar = h('span');
   const cancel = h('button', { class: 'btn btn-small btn-ghost', type: 'button' }, 'İptal');
-  const row = h('div', { class: 'queue-row' }, text, h('div', { class: 'queue-time' }, remaining, finish), cancel, h('div', { class: 'progress' }, bar));
+  const speedText = h('span');
+  const speed = h('button', { class: 'btn btn-small btn-gold', type: 'button', title: 'Akçe ile anında bitir' }, icon('simsek'), speedText);
+  const row = h(
+    'div',
+    { class: 'queue-row' },
+    text,
+    h('div', { class: 'queue-time' }, remaining, finish),
+    h('div', { class: 'queue-actions' }, speed, cancel),
+    h('div', { class: 'progress' }, bar),
+  );
+  speed.addEventListener('click', () => {
+    const now = Date.now();
+    const result = game.finishResearch(now);
+    if (!result.ok) toast(result.reason, 'error');
+    refresh(now);
+  });
   const idle = h('p', { class: 'muted' }, 'Demircide şu anda geliştirme yok.');
   const el = h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, h('h2', null, 'Süren geliştirme')), row, idle);
   let shown = null;
@@ -98,6 +114,10 @@ function createCurrentPanel({ game, refresh }) {
         setText(finish, `bitiş ${fmtClock(research.endAt, now)}`);
       }
       setText(remaining, fmtDuration((research.endAt - now) / 1000));
+      const cost = finishCost(research.endAt - now, game.state.world);
+      setText(speedText, fmtInt(cost));
+      speed.disabled = (game.state.player.akce ?? 0) < cost;
+      speed.title = `${fmtInt(cost)} Akçe ile anında bitir`;
       const done = (now - research.startAt) / (research.endAt - research.startAt);
       bar.style.width = `${Math.min(100, Math.max(0, done * 100))}%`;
     },

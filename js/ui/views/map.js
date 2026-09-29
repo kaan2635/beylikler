@@ -15,6 +15,7 @@ import {
   lordDefeated,
 } from '../../systems/world.js';
 import { loyaltyOf } from '../../systems/barbarians.js';
+import { bonusOf } from '../../systems/bonus.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { inspectAttack, isOutbound } from '../../systems/movements.js';
@@ -51,6 +52,8 @@ export function createMapView({ game, refresh }) {
   const info = h('div', { class: 'stack-sm' });
   const nearbyBody = h('tbody');
   const lordsBody = h('tbody');
+  const bulkButton = h('button', { type: 'button', class: 'btn btn-small btn-gold', onclick: onBulk }, icon('serasker'), 'Tümüne tekrar saldır');
+  const bulkHint = h('a', { class: 'card-link muted', href: '#/hazine' }, 'Serasker ile tümüne tek tıkla saldır →');
   let lordsSignature = null;
 
   const el = h(
@@ -93,6 +96,8 @@ export function createMapView({ game, refresh }) {
         { class: 'panel-head' },
         h('h2', null, 'Yakındaki barbar köyleri'),
         h('span', { class: 'muted' }, `${NEARBY_RADIUS} alan içinde, en yakın ${NEARBY_LIMIT} · "Tekrar" son orduyu yeniden gönderir`),
+        bulkButton,
+        bulkHint,
       ),
       h(
         'div',
@@ -580,11 +585,30 @@ export function createMapView({ game, refresh }) {
         }),
       );
     }
+    let ready = 0;
     for (const { report, repeat } of nearbyRows) {
       const check = inspectAttack(state, own, report.target.x, report.target.y, report.attackers, now);
       repeat.disabled = !check.ok;
       repeat.title = check.ok ? `Gönder: ${armyText(report.attackers)}` : check.reason;
+      if (check.ok && report.attackerWins && !underway.has(report.target.id)) ready += 1;
     }
+    const assistant = bonusOf(own).farmAssistant > 0;
+    bulkButton.hidden = !assistant;
+    bulkHint.hidden = assistant;
+    bulkButton.disabled = ready === 0;
+    bulkButton.title = ready ? `Son saldırısı zaferle biten ${ready} köye aynı orduları gönder` : 'Gönderilebilecek ordu yok';
+  }
+
+  /** Serasker: son saldırısı zaferle biten, yolda ordusu olmayan köylere son orduları yeniden yollar. */
+  function onBulk() {
+    const now = Date.now();
+    const own = game.village;
+    const underway = new Set(own.movements.filter(isOutbound).map((m) => m.target.id));
+    const ids = nearbyRows.filter(({ report }) => report.attackerWins && !underway.has(report.target.id)).map(({ report }) => report.id);
+    const result = game.repeatAttacks(ids, now);
+    if (result.sent) toast(`${result.sent} köye yağma seferi yola çıktı.${result.failed.length ? ` ${result.failed.length} köye asker yetmedi.` : ''}`, 'success');
+    else toast(result.reason, 'error');
+    refresh(now);
   }
 
   return {

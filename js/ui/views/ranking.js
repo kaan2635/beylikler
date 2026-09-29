@@ -3,6 +3,11 @@ import { ranking } from '../../systems/ranking.js';
 import { h } from '../dom.js';
 import { fmtInt, fmtClock } from '../format.js';
 
+/** "Osman" → "Osman Bey"; ad zaten "Bey" ile bitiyorsa olduğu gibi. */
+function lordTitle(name) {
+  return /\bbey$/i.test(name.trim()) ? name.trim() : `${name.trim()} Bey`;
+}
+
 /** Sıralama: oyuncu ve rakip beyler; altta dünya olayları. */
 export function createRankingView({ game }) {
   const body = h('tbody');
@@ -52,7 +57,7 @@ export function createRankingView({ game }) {
     el,
     update(now) {
       const table = ranking(game.state);
-      const signature = table.map((e) => `${e.id}:${e.points}:${e.kills}:${e.loot}`).join('|');
+      const signature = game.state.player.name + table.map((e) => `${e.id}:${e.points}:${e.kills}:${e.loot}`).join('|');
       if (signature !== tableSignature) {
         tableSignature = signature;
         body.replaceChildren(
@@ -65,7 +70,7 @@ export function createRankingView({ game }) {
                 'td',
                 { class: 'wrap' },
                 e.kind === 'oyuncu'
-                  ? h('strong', null, 'Sen')
+                  ? h('strong', null, `${lordTitle(game.state.player.name)} (sen)`)
                   : e.defeated
                     ? h('s', { class: 'muted' }, e.name)
                     : h('a', { class: 'card-link', href: `#/harita/${e.x}/${e.y}` }, e.name),

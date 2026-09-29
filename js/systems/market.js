@@ -3,6 +3,7 @@ import { RESOURCES, RESOURCE_IDS } from '../config/resources.js';
 import { travelSeconds } from '../core/formulas.js';
 import { deposit, storageCap, produce } from './economy.js';
 import { distance } from './world.js';
+import { bonusOf } from './bonus.js';
 
 /**
  * Pazar: tüccarlar bir kaynağı başka bir kaynağa anında takas eder, komisyonu alıp giderler.
@@ -13,6 +14,11 @@ import { distance } from './world.js';
 /** Pazar seviyesine göre komisyon oranı (0,2875 = %28,75). */
 export function marketFee(level) {
   return Math.max(MARKET.feeMin, MARKET.feeStart - MARKET.feePerLevel * level);
+}
+
+/** Bir tüccarın taşıdığı kaynak (Tüccar Bey sınıfı artırır). */
+export function merchantCapacity(village) {
+  return Math.floor(MARKET.merchantCapacity * bonusOf(village).merchantCapacity);
 }
 
 /** Şu an köyde bekleyen tüccar sayısı. */
@@ -29,7 +35,8 @@ export function inspectTrade(village, give, take, amount, now) {
   const level = village.buildings.pazar;
   const fee = marketFee(level);
   const valid = Number.isInteger(amount) && amount >= 1;
-  const merchants = valid ? Math.ceil(amount / MARKET.merchantCapacity) : 0;
+  const capacity = merchantCapacity(village);
+  const merchants = valid ? Math.ceil(amount / capacity) : 0;
   const receive = valid ? Math.floor(amount * (1 - fee)) : 0;
   const room = Math.max(0, storageCap(village) - (village.resources[take] ?? 0));
   const info = {
@@ -39,7 +46,7 @@ export function inspectTrade(village, give, take, amount, now) {
     receive,
     lost: Math.max(0, receive - room), // ambara sığmayacak kısım
     available: merchantsAvailable(village, now),
-    max: Math.min(Math.floor(village.resources[give] ?? 0), merchantsAvailable(village, now) * MARKET.merchantCapacity),
+    max: Math.min(Math.floor(village.resources[give] ?? 0), merchantsAvailable(village, now) * capacity),
   };
 
   if (level < 1) return { ...info, code: 'market', reason: 'Takas için Pazar inşa et' };
@@ -58,7 +65,8 @@ export function trade(village, world, give, take, amount, now) {
   village.resources[give] -= amount;
   const stored = deposit(village, { [take]: check.receive });
   village.merchants = village.merchants.filter((m) => m.returnAt > now);
-  village.merchants.push({ count: check.merchants, returnAt: now + (MARKET.tripSeconds / world.speed) * 1000 });
+  const trip = (MARKET.tripSeconds / world.speed) * bonusOf(village).merchantTime;
+  village.merchants.push({ count: check.merchants, returnAt: now + trip * 1000 });
   return { ...check, stored: stored[take] };
 }
 
@@ -82,10 +90,9 @@ export function inspectTransport(state, village, targetId, requested, now) {
       total += n;
     }
   }
-  const merchants = Math.ceil(total / MARKET.merchantCapacity);
-  const seconds = target
-    ? Math.max(1, travelSeconds(distance(village.x, village.y, target.x, target.y), MARKET.merchantSpeed, state.world.speed))
-    : 0;
+  const merchants = Math.ceil(total / merchantCapacity(village));
+  const travel = target ? travelSeconds(distance(village.x, village.y, target.x, target.y), MARKET.merchantSpeed, state.world.speed) : 0;
+  const seconds = target ? Math.max(1, Math.round(travel * bonusOf(village).merchantTime)) : 0;
   const room = target ? storageCap(target) : 0;
   const info = {
     ok: false,
