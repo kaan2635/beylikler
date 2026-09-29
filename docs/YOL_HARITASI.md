@@ -21,11 +21,11 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Telefon uyumlu arayüz, açık/koyu tema
 - [x] 19 birim testi (`npm test`)
 
-## ⬜ Adım 2 — GitHub'da yayın
+## ✅ Adım 2 — GitHub'da yayın
 
 - [x] Depo oluşturma ve dosyaları yükleme → [github.com/kaan2635/beylikler](https://github.com/kaan2635/beylikler)
 - [x] GitHub Actions: her gönderimde testleri çalıştır
-- [ ] GitHub Pages'i açma → `https://kaan2635.github.io/beylikler/`
+- [x] GitHub Pages yayını → https://kaan2635.github.io/beylikler/
 
 ## ⬜ Adım 3 — Ordu
 
