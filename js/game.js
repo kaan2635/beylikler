@@ -18,6 +18,7 @@ import {
 } from './systems/premium.js';
 import { bonusOf } from './systems/bonus.js';
 import { sendExpedition } from './systems/expedition.js';
+import { claimQuest, claimDaily } from './systems/quests.js';
 import { setDifficulty, rescaleLordSchedules } from './systems/ai.js';
 
 /**
@@ -227,6 +228,16 @@ export class Game {
 
   buyResourcePack(now) {
     return this.#act(now, () => buyResourcePack(this.state, this.village, now));
+  }
+
+  // ---------- Görevler ----------
+
+  claimQuest(questId, now) {
+    return this.#act(now, () => claimQuest(this.state, this.village, questId, now));
+  }
+
+  claimDaily(now) {
+    return this.#act(now, () => claimDaily(this.state, this.village, now));
   }
 
   /** Önce zamanı ilerletir, eylemi uygular, başarılıysa kaydeder. */

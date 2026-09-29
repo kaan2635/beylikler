@@ -30,14 +30,21 @@ export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSee
     reports: [], // en yeni başta
     nextId: 1, // hareket ve rapor numaraları için sayaç
     ai: { difficulty, lords: {} }, // rakip beylerin saldırı takvimi (motor ilk ilerlemede kurar)
-    stats: { kills: 0, loot: 0 }, // oyuncunun savaş puanı ve toplam ganimeti (sıralama)
+    stats: newStats(), // savaş puanı, ganimet ve görev/başarım sayaçları
     news: [], // dünya olayları, en yeni başta
+    quests: { claimed: [] }, // ödülü alınan görevler
+    achievements: {}, // başarım → ulaşılan kademe
+    victory: null, // Sultanlık ilan edildiyse { at }
   };
 }
 
 /** Oyuncu: sınıf oyun başında seçilir (null iken arayüz seçim penceresini açar). */
 function newPlayer(name = 'Bey') {
   return { name, class: null, akce: PREMIUM.startAkce, officers: {}, akceLog: [] };
+}
+
+function newStats() {
+  return { kills: 0, loot: 0, attacks: 0, attacksWon: 0, spies: 0, expeditions: 0, defenses: 0 };
 }
 
 function randomSeed() {
@@ -84,6 +91,9 @@ const MIGRATIONS = {
   6: (data) => ({ ...data, stats: { kills: 0, loot: 0 }, news: [], version: 7 }),
   // Adım 9: sınıf ve Akçe. Mevcut oyuncular da sınıflarını seçer ve başlangıç Akçesini alır.
   7: (data) => ({ ...data, player: newPlayer(data.player?.name), version: 8 }),
+  // Adım 12: görevler, başarımlar ve Sultanlık. Sayaçlar sıfırdan başlar; ödülü alınmamış
+  // görevler, şartları zaten sağlanıyorsa hemen tamamlanmış görünür.
+  8: (data) => ({ ...data, stats: { ...newStats(), ...data.stats }, quests: { claimed: [] }, achievements: {}, victory: null, version: 9 }),
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */
@@ -107,5 +117,9 @@ export function migrate(data) {
   data.player.officers ??= {};
   data.player.akceLog ??= [];
   data.player.akce ??= 0;
+  data.stats = { ...newStats(), ...data.stats };
+  data.quests ??= { claimed: [] };
+  data.achievements ??= {};
+  data.victory ??= null;
   return data;
 }

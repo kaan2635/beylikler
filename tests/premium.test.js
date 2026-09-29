@@ -24,6 +24,7 @@ import { inspectAttack, sendAttack } from '../js/systems/movements.js';
 import { merchantCapacity } from '../js/systems/market.js';
 import { nearbyBarbarians } from '../js/systems/world.js';
 import { PREMIUM, CLASSES, OFFICERS } from '../js/config/classes.js';
+import { GAME } from '../js/config/game.js';
 
 const T0 = Date.UTC(2026, 0, 1);
 const HOUR = 3_600_000;
@@ -178,8 +179,8 @@ test('fetih ve savunma zaferi Akçe kazandırır', () => {
   const target = nearbyBarbarians(state, village.x, village.y, 10)[0];
   const sent = sendAttack(state, village, target.x, target.y, { elci: 5, baltaci: 500 }, T0);
   advance(state, sent.arriveAt);
-  assert.equal(state.player.akce, PREMIUM.startAkce + PREMIUM.rewards.conquest);
-  assert.match(state.player.akceLog[0].reason, /Fetih/);
+  const conquest = state.player.akceLog.find((e) => /Fetih/.test(e.reason));
+  assert.equal(conquest.amount, PREMIUM.rewards.conquest);
 });
 
 test('eski kayıt 8. sürüme taşınır: sınıf seçilmemiş, başlangıç Akçesi verilmiş', () => {
@@ -188,7 +189,7 @@ test('eski kayıt 8. sürüme taşınır: sınıf seçilmemiş, başlangıç Ak�
   old.version = 7;
   old.player = { name: 'Orhan' };
   const migrated = migrate(old);
-  assert.equal(migrated.version, 8);
+  assert.equal(migrated.version, GAME.saveVersion);
   assert.equal(migrated.player.name, 'Orhan');
   assert.equal(migrated.player.class, null);
   assert.equal(migrated.player.akce, PREMIUM.startAkce);

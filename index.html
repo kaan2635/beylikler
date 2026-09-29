@@ -2,14 +2,20 @@
 <html lang="tr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Beylikler</title>
     <meta name="description" content="Tarayıcıda oynanan ortaçağ strateji oyunu: köyünü büyüt, kaynak topla, beyliğini kur." />
     <meta name="theme-color" content="#35261a" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Beylikler" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <!-- Aşağıdaki blok tools/stamp.js ile üretilir; elle düzenleme, npm run stamp çalıştır. -->
     <!-- sürüm-damgası:başla -->
-    <link rel="stylesheet" href="css/style.css?v=eab5db52e5" />
+    <link rel="stylesheet" href="css/style.css?v=bb04ebc893" />
     <script type="importmap">
       {
         "imports": {
@@ -17,22 +23,23 @@
           "./js/config/classes.js": "./js/config/classes.js?v=86fc5acfb3",
           "./js/config/combat.js": "./js/config/combat.js?v=8a60c6ae55",
           "./js/config/expedition.js": "./js/config/expedition.js?v=0f36b6f170",
-          "./js/config/game.js": "./js/config/game.js?v=611addac55",
+          "./js/config/game.js": "./js/config/game.js?v=8114c2c5e0",
           "./js/config/lords.js": "./js/config/lords.js?v=09469449ce",
+          "./js/config/quests.js": "./js/config/quests.js?v=b964edf057",
           "./js/config/resources.js": "./js/config/resources.js?v=cb79e93d26",
           "./js/config/tech.js": "./js/config/tech.js?v=15752493b4",
           "./js/config/units.js": "./js/config/units.js?v=2bc4b2bcc9",
           "./js/config/world.js": "./js/config/world.js?v=075c2eb978",
-          "./js/core/engine.js": "./js/core/engine.js?v=8c6af44dea",
+          "./js/core/engine.js": "./js/core/engine.js?v=2e55c8c06b",
           "./js/core/formulas.js": "./js/core/formulas.js?v=b39d4aa8b3",
           "./js/core/random.js": "./js/core/random.js?v=8b15337135",
           "./js/core/save-codec.js": "./js/core/save-codec.js?v=bfba8eba96",
-          "./js/core/state.js": "./js/core/state.js?v=f38f390e9f",
+          "./js/core/state.js": "./js/core/state.js?v=dc779dc017",
           "./js/core/village.js": "./js/core/village.js?v=43b0118869",
-          "./js/game.js": "./js/game.js?v=cce506b15b",
-          "./js/main.js": "./js/main.js?v=406d73cbb2",
+          "./js/game.js": "./js/game.js?v=6bff08fe5a",
+          "./js/main.js": "./js/main.js?v=232c330ab7",
           "./js/storage/local-store.js": "./js/storage/local-store.js?v=32dd81302d",
-          "./js/systems/ai.js": "./js/systems/ai.js?v=9e63d82a7b",
+          "./js/systems/ai.js": "./js/systems/ai.js?v=3cd110fdd2",
           "./js/systems/army.js": "./js/systems/army.js?v=e1854e9858",
           "./js/systems/barbarians.js": "./js/systems/barbarians.js?v=3625757644",
           "./js/systems/bonus.js": "./js/systems/bonus.js?v=e30406b689",
@@ -40,16 +47,17 @@
           "./js/systems/conquest.js": "./js/systems/conquest.js?v=47901e3761",
           "./js/systems/construction.js": "./js/systems/construction.js?v=b7f6f483b2",
           "./js/systems/economy.js": "./js/systems/economy.js?v=d5584ac93d",
-          "./js/systems/expedition.js": "./js/systems/expedition.js?v=726f1d1f18",
+          "./js/systems/expedition.js": "./js/systems/expedition.js?v=514d14d9e5",
           "./js/systems/market.js": "./js/systems/market.js?v=68c1200b89",
-          "./js/systems/movements.js": "./js/systems/movements.js?v=91e9bf2e69",
+          "./js/systems/movements.js": "./js/systems/movements.js?v=d811f175da",
           "./js/systems/premium.js": "./js/systems/premium.js?v=8537c5d20f",
+          "./js/systems/quests.js": "./js/systems/quests.js?v=7e58c0d7bc",
           "./js/systems/ranking.js": "./js/systems/ranking.js?v=18bad2b297",
           "./js/systems/research.js": "./js/systems/research.js?v=f141919ed7",
           "./js/systems/support.js": "./js/systems/support.js?v=3b4c02a925",
           "./js/systems/training.js": "./js/systems/training.js?v=26efcdb8e8",
           "./js/systems/world.js": "./js/systems/world.js?v=7268620a69",
-          "./js/ui/app.js": "./js/ui/app.js?v=4aca9e8e85",
+          "./js/ui/app.js": "./js/ui/app.js?v=75546e10e6",
           "./js/ui/art/buildings.js": "./js/ui/art/buildings.js?v=94d9b1ac2b",
           "./js/ui/art/iso.js": "./js/ui/art/iso.js?v=a613796ed2",
           "./js/ui/art/scene.js": "./js/ui/art/scene.js?v=502c557c84",
@@ -57,25 +65,27 @@
           "./js/ui/class-picker.js": "./js/ui/class-picker.js?v=6fdbd98cb4",
           "./js/ui/dom.js": "./js/ui/dom.js?v=99613f402c",
           "./js/ui/format.js": "./js/ui/format.js?v=423ebdf8a0",
-          "./js/ui/icons.js": "./js/ui/icons.js?v=e593d680f7",
+          "./js/ui/icons.js": "./js/ui/icons.js?v=61ff3dd434",
           "./js/ui/resource-bar.js": "./js/ui/resource-bar.js?v=ff89b2f72e",
           "./js/ui/toast.js": "./js/ui/toast.js?v=1cd41d825e",
+          "./js/ui/victory.js": "./js/ui/victory.js?v=bf17d58e35",
           "./js/ui/views/army.js": "./js/ui/views/army.js?v=87cce865a5",
           "./js/ui/views/attack-form.js": "./js/ui/views/attack-form.js?v=16afc22d3a",
           "./js/ui/views/expedition.js": "./js/ui/views/expedition.js?v=3a4d07255b",
           "./js/ui/views/map.js": "./js/ui/views/map.js?v=689d172bf8",
           "./js/ui/views/market.js": "./js/ui/views/market.js?v=a3e6a723cf",
           "./js/ui/views/overview.js": "./js/ui/views/overview.js?v=94c9be63bf",
+          "./js/ui/views/quests.js": "./js/ui/views/quests.js?v=6b3cd57469",
           "./js/ui/views/ranking.js": "./js/ui/views/ranking.js?v=8a6c40c48a",
           "./js/ui/views/reports.js": "./js/ui/views/reports.js?v=056172b25b",
-          "./js/ui/views/settings.js": "./js/ui/views/settings.js?v=5c0b259586",
+          "./js/ui/views/settings.js": "./js/ui/views/settings.js?v=ec875e5a0b",
           "./js/ui/views/smithy.js": "./js/ui/views/smithy.js?v=2bea12776b",
           "./js/ui/views/treasury.js": "./js/ui/views/treasury.js?v=d028da7ab0",
-          "./js/ui/views/village.js": "./js/ui/views/village.js?v=ca1eb1efbe"
+          "./js/ui/views/village.js": "./js/ui/views/village.js?v=088072e519"
         }
       }
     </script>
-    <script type="module" src="js/main.js?v=406d73cbb2"></script>
+    <script type="module" src="js/main.js?v=232c330ab7"></script>
     <!-- sürüm-damgası:bitir -->
   </head>
   <body>
@@ -99,6 +109,9 @@
       <a href="#/raporlar" data-route="raporlar">
         Raporlar <span id="reports-badge" class="nav-badge" hidden aria-label="okunmamış rapor"></span>
       </a>
+      <a href="#/gorevler" data-route="gorevler">
+        Görevler <span id="quests-badge" class="nav-badge" hidden aria-label="ödülü bekleyen görev"></span>
+      </a>
       <a href="#/siralama" data-route="siralama">Sıralama</a>
       <a href="#/ayarlar" data-route="ayarlar">Ayarlar</a>
     </nav>
@@ -114,7 +127,7 @@
     <div id="toasts" class="toasts" aria-live="polite"></div>
 
     <footer class="footer">
-      Beylikler v0.14 · Adım 11: Görsel yenileme ·
+      Beylikler v0.15 · Adım 12: Görevler ve PWA ·
       <a href="https://github.com/kaan2635/beylikler">Kaynak kod</a>
     </footer>
 

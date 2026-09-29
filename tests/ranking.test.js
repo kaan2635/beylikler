@@ -115,6 +115,8 @@ test('6. sürüm kayda istatistik ve haberler eklenir', () => {
   delete v6.news;
   const migrated = migrate(v6);
   assert.equal(migrated.version, GAME.saveVersion);
-  assert.deepEqual(migrated.stats, { kills: 0, loot: 0 });
+  assert.equal(migrated.stats.kills, 0);
+  assert.equal(migrated.stats.loot, 0);
+  assert.equal(migrated.stats.attacksWon, 0);
   assert.deepEqual(migrated.news, []);
 });

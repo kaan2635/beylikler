@@ -319,7 +319,10 @@ export function resolveIncoming(state, village, attack) {
   entry.loot += resourceTotal(loot);
   adjustBonus(state, attack.lordId, battle.attackerWins ? LORD.bonus.raidWin : LORD.bonus.warLoss);
   addNews(state, attack.arriveAt, `${attack.from.owner} → ${village.name}: ${battle.attackerWins ? 'köy yağmalandı' : 'saldırı püskürtüldü'}.`);
-  if (!battle.attackerWins) grantAkce(state, PREMIUM.rewards.defense, `Savunma zaferi: ${village.name}`, attack.arriveAt);
+  if (!battle.attackerWins) {
+    grantAkce(state, PREMIUM.rewards.defense, `Savunma zaferi: ${village.name}`, attack.arriveAt);
+    state.stats.defenses = (state.stats.defenses ?? 0) + 1;
+  }
 
   const report = addReport(state, {
     type: 'savunma',

@@ -6,7 +6,7 @@ Saf HTML, CSS ve JavaScript ile yazıldı. Kurulum ya da derleme gerektirmez; Gi
 
 **Oyna:** https://kaan2635.github.io/beylikler/
 
-**Durum:** Adım 11 (görsel yenileme) tamamlandı: özgün izometrik bina çizimleri, seviyeyle büyüyen köy sahnesi, birim portreleri ve yenilenen arayüz; OGame tarzı keşif seferleri (kaynak, paralı asker, Akçe ya da eşkıya ve fırtına), oyun başında sınıf seçimi (Tüccar Bey, Serdar, Kâşif), oyun içinde kazanılan premium para Akçe ile görevliler ve hızlandırmalar; kaynak ekonomisi, 14 bina, 14 asker türü, Demirci, Pazar ve Saray; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, Elçiyle köy fethi, çoklu köy yönetimi, köyler arası kaynak nakliyesi ve destek, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
+**Durum:** Adım 12 tamamlandı: görev zinciri, başarımlar, günlük hazine ve Sultanlık hedefi; telefona kurulabilir, internetsiz açılır (PWA). Özgün izometrik bina çizimleri, seviyeyle büyüyen köy sahnesi, birim portreleri ve yenilenen arayüz; OGame tarzı keşif seferleri (kaynak, paralı asker, Akçe ya da eşkıya ve fırtına), oyun başında sınıf seçimi (Tüccar Bey, Serdar, Kâşif), oyun içinde kazanılan premium para Akçe ile görevliler ve hızlandırmalar; kaynak ekonomisi, 14 bina, 14 asker türü, Demirci, Pazar ve Saray; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, Elçiyle köy fethi, çoklu köy yönetimi, köyler arası kaynak nakliyesi ve destek, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
 
 ## Yerelde çalıştırma
 
@@ -39,6 +39,8 @@ Motor tarayıcıya bağımlı olmadığı için testler doğrudan Node'da çalı
 
 ```
 index.html              Tek sayfa; tüm ekranlar JavaScript ile çizilir
+manifest.webmanifest    Telefona kurulum bilgileri (PWA)
+sw.js                   Service worker: sürüm damgalı dosyaları önbelleğe alır, çevrimdışı açılış
 css/style.css           Arayüz stilleri (açık/koyu tema, telefon uyumu)
 assets/                 Simge ve görseller
 js/
@@ -66,6 +68,8 @@ npm run stamp
 ```
 
 Damga eskiyse `npm test` bunu yakalar ve başarısız olur.
+
+Service worker (`sw.js`) damgalı dosyaları kendiliğinden önbelleğe alır ve eski sürümlerini siler; oyuncular güncellemeyi bir sonraki açılışta alır. Yalnızca `sw.js`'nin kendi mantığı değişirse içindeki `CACHE` adını artır.
 
 ## Geliştirici ipuçları
 

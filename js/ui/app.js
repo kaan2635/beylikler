@@ -14,6 +14,8 @@ import { createOverviewView } from './views/overview.js';
 import { createTreasuryView } from './views/treasury.js';
 import { createExpeditionView } from './views/expedition.js';
 import { EXPEDITION_OUTCOMES } from '../config/expedition.js';
+import { createQuestsView, claimableQuests } from './views/quests.js';
+import { openVictory } from './victory.js';
 import { openClassPicker } from './class-picker.js';
 import { CLASSES, OFFICERS } from '../config/classes.js';
 import { initToasts, toast } from './toast.js';
@@ -35,6 +37,7 @@ const ROUTES = {
   koyler: (ctx) => createOverviewView(ctx),
   hazine: (ctx) => createTreasuryView(ctx),
   kesif: (ctx) => createExpeditionView(ctx),
+  gorevler: (ctx) => createQuestsView(ctx),
 };
 
 // Sekmesi olmayan bina sayfalarında hangi sekme seçili görünsün.
@@ -46,6 +49,7 @@ export function mountApp(game, { isNew, events }) {
   const resourceBar = createResourceBar(document.getElementById('resource-bar'));
   const viewRoot = document.getElementById('view');
   const reportsBadge = document.getElementById('reports-badge');
+  const questsBadge = document.getElementById('quests-badge');
   const incomingAlert = document.getElementById('incoming-alert');
   const alertText = h('span');
   incomingAlert.append(icon('saldiri'), alertText);
@@ -86,6 +90,9 @@ export function mountApp(game, { isNew, events }) {
     const unread = game.state.reports.filter((report) => !report.read).length;
     reportsBadge.hidden = unread === 0;
     reportsBadge.textContent = String(unread);
+    const claimable = claimableQuests(game.state);
+    questsBadge.hidden = claimable === 0;
+    questsBadge.textContent = String(claimable);
 
     // Köye gelen bey saldırıları: tepe çubuğunda her sayfadan görünen uyarı.
     const incoming = Object.values(game.state.villages).flatMap((village) => village.incoming);
@@ -124,7 +131,10 @@ export function mountApp(game, { isNew, events }) {
     refresh();
   }
 
-  game.on((newEvents) => announce(newEvents, false));
+  game.on((newEvents) => {
+    announce(newEvents, false);
+    if (newEvents.some((event) => event.type === 'victory')) openVictory(game);
+  });
   window.addEventListener('hashchange', route);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) refresh();
@@ -143,6 +153,7 @@ export function mountApp(game, { isNew, events }) {
     welcome();
   }
   announce(events, true);
+  if (events.some((event) => event.type === 'victory')) openVictory(game);
 }
 
 function announce(events, whileAway) {
@@ -161,6 +172,8 @@ function announce(events, whileAway) {
       'support-arrived': 'destek',
       'officer-expired': 'görevli ayrılığı',
       'expedition-result': 'keşif',
+      achievement: 'başarım',
+      victory: 'zafer',
       return: 'dönüş',
     };
     const parts = Object.entries(counts).map(([type, n]) => `${n} ${labels[type]}`);
@@ -232,6 +245,10 @@ function describe(event) {
       const overflow = lost > 0 ? ` Ambar dolu olduğu için ${fmtInt(lost)} kaynak kayboldu.` : '';
       return { text: `Tüccarlar ${event.target} köyüne ${fmtInt(total(event.stored))} kaynak ulaştırdı.${overflow}`, kind: 'success' };
     }
+    case 'achievement':
+      return { text: `Başarım: ${event.title} ${'★'.repeat(event.tier)} · +${event.akce} Akçe`, kind: 'success' };
+    case 'victory':
+      return { text: 'Bütün beyler diz çöktü. Sultanlık ilan edildi!', kind: 'success' };
     case 'expedition-result': {
       const name = EXPEDITION_OUTCOMES[event.outcome].name;
       const extra =

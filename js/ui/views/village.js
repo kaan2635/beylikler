@@ -5,6 +5,7 @@ import { inspectUpgrade, maxBuildQueue } from '../../systems/construction.js';
 import { finishCost } from '../../systems/premium.js';
 import { buildingArt, tierOf } from '../art/buildings.js';
 import { sceneSvg } from '../art/scene.js';
+import { createQuestList } from './quests.js';
 
 // Kendi sayfası olan binalar: kart üzerinde, bina inşa edilince görünen bağlantı.
 const BUILDING_PAGES = {
@@ -35,11 +36,20 @@ export function createVillageView({ game, refresh }) {
     card.classList.add('flash');
   });
 
+  const quests = createQuestList({ game, refresh, compact: true });
+  const questPanel = h(
+    'section',
+    { class: 'panel quest-panel' },
+    h('div', { class: 'panel-head' }, h('h2', null, 'Görevler'), h('a', { class: 'card-link', href: '#/gorevler' }, 'Tüm görevler ve başarımlar →')),
+    quests.el,
+  );
+
   const el = h(
     'section',
     { class: 'stack' },
     h('header', { class: 'view-header' }, name, coords),
     scene.el,
+    questPanel,
     queue.el,
     h(
       'section',
@@ -75,6 +85,7 @@ export function createVillageView({ game, refresh }) {
       const points = fmtInt(villagePoints(village.buildings));
       setText(coords, `(${village.x}|${village.y}) · ${continentOf(village.x, village.y)} · ${points} puan`);
       scene.update(village);
+      quests.update();
       queue.update(village, now, game.state);
       for (const card of cards) card.update(village, game.state.world, now);
     },

@@ -219,6 +219,7 @@ export function resolveExpedition(state, village, movement) {
       break;
   }
 
+  state.stats.expeditions = (state.stats.expeditions ?? 0) + 1;
   const texts = EXPEDITION_TEXTS[outcome];
   const text = texts[Math.floor(roll(1) * texts.length)];
   const survived = totalUnits(units) > 0;

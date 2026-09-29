@@ -6,6 +6,7 @@ import { completeResearch } from '../systems/research.js';
 import { ensureLordSchedules, launchLordAttack, lordRaid, resolveIncoming } from '../systems/ai.js';
 import { advanceClock, lordsOf } from '../systems/world.js';
 import { syncBonuses, expireOfficer } from '../systems/premium.js';
+import { checkAchievements, checkVictory } from '../systems/quests.js';
 
 /**
  * Oyun dünyasını `now` anına kadar ilerletir ve bu sırada gerçekleşen olayları döndürür.
@@ -33,6 +34,7 @@ export function advance(state, now) {
   }
   for (const village of Object.values(state.villages)) produce(village, state.world, now);
   advanceClock(state.world, now);
+  events.push(...checkAchievements(state, now), ...checkVictory(state, now));
   return events;
 }
 

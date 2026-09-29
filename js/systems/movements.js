@@ -222,6 +222,8 @@ function attack(state, village, movement, target) {
   });
   state.stats.kills += battlePoints(battle.defenderLosses);
   state.stats.loot += resourceTotal(loot);
+  state.stats.attacks = (state.stats.attacks ?? 0) + 1;
+  if (battle.attackerWins) state.stats.attacksWon = (state.stats.attacksWon ?? 0) + 1;
   if (target.kind === 'bey' && !conquest?.conquered) recordPlayerAttackOnLord(state, report);
 
   // Fetihte birlikler yeni köyde kalır; aksi halde sağ kalanlar ganimetle döner.
@@ -295,6 +297,7 @@ function spyOn(state, village, movement, target) {
       : null,
   });
 
+  if (success) state.stats.spies = (state.stats.spies ?? 0) + 1;
   if (scouts - lost > 0) turnBack(movement, { gozcu: scouts - lost }, null);
   else village.movements.splice(village.movements.indexOf(movement), 1);
 

@@ -16,3 +16,19 @@ window.addEventListener('storage', (event) => {
 
 // Tarayıcı konsolundan inceleme için: beylikler.state
 window.beylikler = game;
+
+// Telefona kurulum ve çevrimdışı açılış (PWA). Yalnızca güvenli bağlamda (https ya da localhost).
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {
+      // Kayıt başarısızsa oyun yine çalışır; yalnızca çevrimdışı açılış olmaz.
+    });
+  });
+}
+
+// "Ana ekrana ekle" isteği: Ayarlar'daki kurulum düğmesi kullanır.
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  window.beylikKurulum = event;
+  window.dispatchEvent(new Event('beylik-kurulabilir'));
+});

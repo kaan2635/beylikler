@@ -21,6 +21,31 @@ export function createSettingsView({ game, refresh }) {
     Object.entries(DIFFICULTIES).map(([key, d]) => h('option', { value: key }, d.name)),
   );
   const difficultyInfo = h('p', { class: 'muted' });
+  const installText = h('p', { class: 'muted' });
+  const installButton = h('button', { class: 'btn', type: 'button' }, 'Ana ekrana ekle');
+  installButton.addEventListener('click', async () => {
+    const prompt = window.beylikKurulum;
+    if (!prompt) return;
+    prompt.prompt();
+    const choice = await prompt.userChoice.catch(() => null);
+    window.beylikKurulum = null;
+    if (choice?.outcome === 'accepted') toast('Beylikler ana ekrana eklendi.', 'success');
+    updateInstall();
+  });
+  window.addEventListener('beylik-kurulabilir', () => updateInstall());
+
+  function updateInstall() {
+    const standalone = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone;
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    installButton.hidden = !window.beylikKurulum;
+    installText.textContent = standalone
+      ? 'Oyun uygulama olarak açık. İnternet olmadan da açılır; kaydın bu cihazda durur.'
+      : window.beylikKurulum
+        ? 'Beylikler\'i telefonuna ya da bilgisayarına uygulama gibi kurabilirsin; internet olmadan da açılır.'
+        : ios
+          ? 'iPhone/iPad: Safari\'de Paylaş düğmesine dokun, "Ana Ekrana Ekle"yi seç.'
+          : 'Tarayıcının menüsünden "Uygulamayı yükle" ya da "Ana ekrana ekle" seçeneğini kullanabilirsin. Oyun bir kez açıldıktan sonra internetsiz de açılır.';
+  }
 
   const el = h(
     'section',
@@ -86,6 +111,13 @@ export function createSettingsView({ game, refresh }) {
         exportArea,
         importArea,
         h('div', { class: 'form-row' }, h('button', { class: 'btn', type: 'button', onclick: onImport }, 'İçe aktar')),
+      ),
+      h(
+        'section',
+        { class: 'panel stack-sm' },
+        h('h2', null, 'Uygulama olarak kur'),
+        installText,
+        h('div', { class: 'form-row' }, installButton),
       ),
       h(
         'section',
@@ -173,6 +205,7 @@ export function createSettingsView({ game, refresh }) {
     difficultySelect.value = game.state.ai.difficulty;
     difficultyInfo.textContent = DIFFICULTIES[game.state.ai.difficulty].description;
     exportArea.value = '';
+    updateInstall();
     const created = new Date(game.state.createdAt).toLocaleString('tr-TR');
     createdAt.textContent = `Kuruluş: ${created} · Harita tohumu: ${game.state.world.seed}`;
   }

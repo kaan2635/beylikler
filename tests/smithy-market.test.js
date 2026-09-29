@@ -57,8 +57,9 @@ test('geliştirme kaynağı düşer, süre dolunca seviye artar ve olay üretir;
   assert.equal(inspectResearch(v, state.world, 'yaya', T0).code, 'busy');
 
   const end = T0 + result.duration * 1000;
-  assert.deepEqual(advance(state, end - 1), []);
-  const [event] = advance(state, end);
+  const gameplay = (events) => events.filter((e) => e.type !== 'achievement'); // başarımlar ayrı test edilir
+  assert.deepEqual(gameplay(advance(state, end - 1)), []);
+  const [event] = gameplay(advance(state, end));
   assert.deepEqual([event.type, event.unit, event.level], ['research-complete', 'baltaci', 1]);
   assert.equal(v.tech.baltaci, 1);
   assert.equal(v.research, null);

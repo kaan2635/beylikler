@@ -2048,6 +2048,160 @@ body {
   padding-bottom: 24px;
 }
 
+/* Görevler ve başarımlar */
+.quest-list {
+  display: grid;
+  gap: 10px;
+}
+
+.quest {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-2);
+}
+
+.quest.done {
+  border-color: color-mix(in srgb, var(--gold) 70%, var(--border));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 14%, var(--panel-2)), var(--panel-2));
+}
+
+.quest-seal {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--turq) 14%, var(--panel));
+  color: var(--turq);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--turq) 45%, transparent);
+}
+
+.quest.done .quest-seal {
+  background: color-mix(in srgb, var(--gold) 22%, var(--panel));
+  color: var(--gold);
+  box-shadow: inset 0 0 0 1.5px var(--gold);
+}
+
+.quest-seal .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.quest-body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.quest-progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--border);
+}
+
+.quest-progress.large {
+  height: 10px;
+  border-radius: 5px;
+}
+
+.quest-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--turq), var(--gold));
+}
+
+.quest-reward {
+  font-size: 0.82rem;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: 10px;
+}
+
+.achievement {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-2);
+}
+
+.achievement .quest-progress,
+.achievement-next {
+  grid-column: 1 / -1;
+}
+
+.achievement-next {
+  font-size: 0.8rem;
+}
+
+.achievement-medal {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3cf, #d9b25a 60%, #9c7420);
+  color: #5a3f0d;
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.4), 0 1px 3px rgb(0 0 0 / 0.2);
+}
+
+.achievement.tier-0 .achievement-medal {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.achievement-medal .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.achievement-stars {
+  margin-top: -4px;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+}
+
+.victory {
+  align-items: center;
+  width: min(560px, 100%);
+  text-align: center;
+}
+
+.victory-crown {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3cf, #d9b25a 60%, #9c7420);
+  color: #5a3f0d;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--gold) 30%, transparent), 0 10px 30px rgb(0 0 0 / 0.3);
+}
+
+.victory-crown .icon {
+  width: 44px;
+  height: 44px;
+}
+
+.victory-stats {
+  justify-content: center;
+  gap: 8px 18px;
+}
+
 .splash {
   display: grid;
   place-items: center;

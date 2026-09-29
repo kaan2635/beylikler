@@ -178,11 +178,14 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Gece teması: akşam gökyüzü altında köy
 - [x] Çizim galerisi: `tools/sanat.html` (geliştirme için)
 
-## ⬜ Adım 12 — Oyunlaştırma ve PWA
+## ✅ Adım 12 — Oyunlaştırma ve PWA
 
-- [ ] Görevler ve oyun içi eğitim
-- [ ] Başarımlar, oyun sonu hedefi
-- [ ] PWA: telefona kurulum, çevrimdışı açılış
+- [x] 21 adımlık görev zinciri (oyun içi eğitim): ilk binalardan fethe; ödül kaynak ve Akçe; Köy ekranında görev kutusu, sekmede rozet
+- [x] 8 başarım, her biri üç kademe (puan, ganimet, savaş, savunma, keşif, fetih, Demirci, casusluk); kademeler kendiliğinden Akçe verir
+- [x] Günlük hazine: günde bir kez Akçe ve ambarın %10'u kadar kaynak
+- [x] Oyun sonu hedefi: bütün beylerin hisarlarını fethet → Sultanlık ilanı ve kutlama penceresi (sonra oynamaya devam)
+- [x] PWA: manifest, telefon simgeleri, service worker; ilk açılıştan sonra internetsiz açılır; Ayarlar'da "Ana ekrana ekle"
+- [x] Kayıt şeması 9. sürüm; 126 birim testi
 
 ## ⬜ Adım 13 — Çok oyunculu
 
@@ -200,4 +203,6 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - Oyuncu uzun süre uzak kaldıysa aradaki bey saldırıları açılışta sırayla işlenir (çevrimdışı ilerleme).
 - Kuşatma araçları yalnızca kazanılan savaştan sonra yıkım yapar ve sur savaştan önce değil sonra düşer.
 - Destek birlikleri savunulan köyün Demirci geliştirmeleriyle savaşır.
+- Günlük hazine UTC gece yarısında (Türkiye saatiyle 03.00) yenilenir.
+- Görevlerin ve başarımların ilerlemesi oyunun durumundan ölçülür; 9. sürümden önceki kayıtlarda saldırı, keşif ve savunma sayaçları sıfırdan başlar.
 - Yoldaki tüccarlar geri çağrılamaz.
