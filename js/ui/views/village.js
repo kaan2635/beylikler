@@ -4,6 +4,7 @@ import { RESOURCES } from '../../config/resources.js';
 import { TRAINING_BUILDINGS } from '../../config/units.js';
 import { inspectUpgrade } from '../../systems/construction.js';
 import { plannedLevel } from '../../core/village.js';
+import { villagePoints, continentOf } from '../../systems/world.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock, fmtEffect } from '../format.js';
@@ -49,7 +50,8 @@ export function createVillageView({ game, refresh }) {
     update(now) {
       const village = game.village;
       setText(name, village.name);
-      setText(coords, `(${village.x}|${village.y})`);
+      const points = fmtInt(villagePoints(village.buildings));
+      setText(coords, `(${village.x}|${village.y}) · ${continentOf(village.x, village.y)} · ${points} puan`);
       queue.update(village, now);
       for (const card of cards) card.update(village, game.state.world, now);
     },

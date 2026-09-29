@@ -18,7 +18,8 @@ export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSee
   return {
     version: GAME.saveVersion,
     createdAt: now,
-    world: { speed, seed },
+    // clock: dünya saati (oyun zamanı, ms); dünya hızıyla işler. Barbar köylerinin büyümesi buna bağlıdır.
+    world: { speed, seed, clock: { time: 0, at: now } },
     player: { name: 'Bey' },
     activeVillageId: 'v1',
     villages: {
@@ -52,6 +53,8 @@ function normalizeVillage(village) {
 const MIGRATIONS = {
   // Adım 3: köylere asker sayıları (units) ve eğitim kuyrukları (trainQueues) eklendi.
   1: (data) => ({ ...data, version: 2 }),
+  // Adım 4: dünya saati eklendi. Kuruluştan bu yana geçen süre ilk ilerlemede eklenir.
+  2: (data) => ({ ...data, world: { ...data.world, clock: { time: 0, at: data.createdAt } }, version: 3 }),
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */

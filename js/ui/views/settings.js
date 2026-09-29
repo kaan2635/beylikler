@@ -135,7 +135,7 @@ export function createSettingsView({ game, refresh }) {
     speedSelect.value = String(game.state.world.speed);
     exportArea.value = '';
     const created = new Date(game.state.createdAt).toLocaleString('tr-TR');
-    createdAt.textContent = `Kuruluş: ${created}`;
+    createdAt.textContent = `Kuruluş: ${created} · Harita tohumu: ${game.state.world.seed}`;
   }
 
   return { el, onShow, update() {} };

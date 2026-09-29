@@ -14,6 +14,7 @@ import {
  * cost, costFactor       1. seviyenin maliyeti; sonraki her seviye costFactor kat pahalı.
  * buildTime, timeFactor  1. seviyenin süresi (saniye, dünya hızı 1); sonraki seviyeler üstel uzar.
  * pop                    o seviyede kullanılan toplam nüfus (taban, çarpan); yoksa nüfus kullanmaz.
+ * points                 1. seviyenin köy puanına katkısı; sonraki seviyelerde 1.2 kat artar.
  * requires               inşaata başlamak için gereken (tamamlanmış) bina seviyeleri.
  * effect                 arayüzde gösterilen etki: value(seviye, dünya) → sayı, format ile biçimlenir
  *                        ('rate' = /saat, 'number', 'percent' = %86, 'bonus' = +%12).
@@ -21,6 +22,7 @@ import {
 export const BUILDINGS = {
   konak: {
     name: 'Konak',
+    points: 10,
     description: 'Beyliğin yönetim merkezi. Her seviye tüm inşaatları hızlandırır.',
     maxLevel: 30,
     cost: { odun: 90, kil: 80, demir: 70 },
@@ -33,6 +35,7 @@ export const BUILDINGS = {
   },
   oduncu: {
     name: 'Oduncu',
+    points: 6,
     description: 'Ormandan odun keser. Odun hemen her yapının temelidir.',
     maxLevel: 30,
     cost: { odun: 50, kil: 60, demir: 40 },
@@ -45,6 +48,7 @@ export const BUILDINGS = {
   },
   kilocagi: {
     name: 'Kil Ocağı',
+    points: 6,
     description: 'Kil çıkarır; tuğla, sur ve ağır yapılar için gereklidir.',
     maxLevel: 30,
     cost: { odun: 65, kil: 50, demir: 40 },
@@ -57,6 +61,7 @@ export const BUILDINGS = {
   },
   demirmadeni: {
     name: 'Demir Madeni',
+    points: 6,
     description: 'Demir cevheri çıkarır; silah ve zırh yapımında vazgeçilmezdir.',
     maxLevel: 30,
     cost: { odun: 75, kil: 65, demir: 70 },
@@ -69,6 +74,7 @@ export const BUILDINGS = {
   },
   ambar: {
     name: 'Ambar',
+    points: 6,
     description: 'Kaynakların saklandığı yer. Ambar dolunca o kaynağın üretimi durur.',
     maxLevel: 30,
     cost: { odun: 60, kil: 50, demir: 40 },
@@ -80,6 +86,7 @@ export const BUILDINGS = {
   },
   ciftlik: {
     name: 'Çiftlik',
+    points: 5,
     description: 'Köy halkını besler ve nüfus sınırını belirler. Binalar ve askerler nüfus kullanır.',
     maxLevel: 30,
     cost: { odun: 45, kil: 40, demir: 30 },
@@ -91,6 +98,7 @@ export const BUILDINGS = {
   },
   gizlidepo: {
     name: 'Gizli Depo',
+    points: 5,
     description: 'Yağmacıların bulamayacağı bir mahzen. Buradaki kaynaklar yağmalanamaz.',
     maxLevel: 10,
     cost: { odun: 50, kil: 60, demir: 50 },
@@ -103,6 +111,7 @@ export const BUILDINGS = {
   },
   kisla: {
     name: 'Kışla',
+    points: 16,
     description: 'Piyade askerlerini yetiştirir. Her seviye eğitimi hızlandırır.',
     maxLevel: 25,
     cost: { odun: 200, kil: 170, demir: 90 },
@@ -115,6 +124,7 @@ export const BUILDINGS = {
   },
   ahir: {
     name: 'Ahır',
+    points: 20,
     description: 'Süvari ve gözcü yetiştirir. Her seviye eğitimi hızlandırır.',
     maxLevel: 20,
     cost: { odun: 270, kil: 240, demir: 260 },
@@ -127,6 +137,7 @@ export const BUILDINGS = {
   },
   atolye: {
     name: 'Atölye',
+    points: 24,
     description: 'Koçbaşı ve mancınık gibi kuşatma makineleri yapar.',
     maxLevel: 15,
     cost: { odun: 300, kil: 240, demir: 260 },
@@ -139,6 +150,7 @@ export const BUILDINGS = {
   },
   sur: {
     name: 'Sur',
+    points: 8,
     description: 'Köyü çevreleyen taş duvar. Savunan askerlere güç katar.',
     maxLevel: 20,
     cost: { odun: 50, kil: 100, demir: 20 },

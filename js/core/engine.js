@@ -1,6 +1,7 @@
 import { produce } from '../systems/economy.js';
 import { completeNextUpgrade } from '../systems/construction.js';
 import { completeNextUnit, nextUnitAt } from '../systems/training.js';
+import { advanceClock } from '../systems/world.js';
 
 /**
  * Oyun dünyasını `now` anına kadar ilerletir ve bu sırada gerçekleşen olayları döndürür.
@@ -22,6 +23,7 @@ export function advance(state, now) {
     if (event) events.push(event);
   }
   for (const village of Object.values(state.villages)) produce(village, state.world, now);
+  advanceClock(state.world, now);
   return events;
 }
 

@@ -1,7 +1,13 @@
 const intFormat = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 });
+const decimalFormat = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 export function fmtInt(n) {
   return intFormat.format(Math.floor(n));
+}
+
+/** Tek ondalıklı sayı: 12,4 */
+export function fmtDecimal(n) {
+  return decimalFormat.format(n);
 }
 
 /** Saniyeyi "1:02:03" ya da "2g 1:02:03" biçimine çevirir. */

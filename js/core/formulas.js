@@ -56,6 +56,19 @@ export function buildingPopulation(def, level) {
   return Math.round(growth(def.pop.base, def.pop.factor, level));
 }
 
+/** Binanın `level` seviyesinde köye kattığı puan. */
+export function buildingPoints(def, level) {
+  return level > 0 ? Math.round(growth(def.points, 1.2, level)) : 0;
+}
+
+/**
+ * `distance` alanlık yolun kaç saniyede alındığı. `minutesPerField` birimin hızıdır;
+ * ordu en yavaş biriminin hızıyla ilerler.
+ */
+export function travelSeconds(distance, minutesPerField, speed = 1) {
+  return Math.round((distance * minutesPerField * 60) / speed);
+}
+
 /** Tek bir birimin eğitim süresi (saniye); eğiten binanın seviyesi süreyi kısaltır. */
 export function trainDuration(unit, buildingLevel, speed = 1) {
   return Math.max(1, Math.round((unit.trainTime * trainingTimeFactor(buildingLevel)) / speed));

@@ -38,11 +38,17 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] "Ordu" ekranı: köydeki birlikler, toplam saldırı/savunma/taşıma, eğitim kartları
 - [x] 30 birim testi
 
-## ⬜ Adım 4 — Dünya haritası
+## ✅ Adım 4 — Dünya haritası
 
-- [ ] Tohumlu rastgele sayı üreteciyle dünya üretimi (aynı tohum → aynı harita)
-- [ ] Barbar köyleri (zamanla büyüyen)
-- [ ] Harita görünümü (sürükle, yakınlaştır), köy bilgi kartı, mesafe
+- [x] Tohumlu rastgele sayı üreteci; harita kayda yazılmaz, tohumdan her seferinde aynen üretilir
+- [x] Arazi: çayır, orman, tepelik, göl (kümeler hâlinde, göle köy kurulamaz)
+- [x] Barbar köyleri: merkezden uzaklaştıkça seyrekleşir ve güçlenir, oyuncu köyünün dibinde çıkmaz
+- [x] Dünya saati: barbar köyleri dünya hızıyla büyür, hız değişince geçmiş korunur
+- [x] Köy puanı ve kıtalar (K55); köy başlığında gösterilir
+- [x] Harita ekranı: sürükle, tekerlek ve düğmelerle yakınlaştır, ok tuşları, koordinata git, köyüne dön
+- [x] Seçili alan kartı: sahibi, puan, mesafe, her birim için yolculuk süresi
+- [x] Yakındaki barbar köyleri tablosu (tıklayınca haritada gösterir)
+- [x] Kayıt şeması 3. sürüm; 39 birim testi
 
 ## ⬜ Adım 5 — Hareket ve savaş
 

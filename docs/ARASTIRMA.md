@@ -171,13 +171,13 @@ Beylikler'de bu yapı `js/core/engine.js` içinde uygulandı ve testlerle doğru
 | Tohumlu rastgele sayı üreteci (harita adımında) | Aynı tohum aynı dünyayı üretir; kayıtta tüm haritayı saklamaya gerek kalmaz |
 | İleride PWA (manifest + service worker) | Telefona kurulabilir, çevrimdışı açılabilir |
 
-## 8. Veri modeli (Adım 3, kayıt şeması 2. sürüm)
+## 8. Veri modeli (Adım 4, kayıt şeması 3. sürüm)
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "createdAt": 1790680000000,
-  "world": { "speed": 1, "seed": 123456789 },
+  "world": { "speed": 1, "seed": 123456789, "clock": { "time": 259200000, "at": 1790940000000 } },
   "player": { "name": "Bey" },
   "activeVillageId": "v1",
   "villages": {
@@ -201,6 +201,17 @@ Beylikler'de bu yapı `js/core/engine.js` içinde uygulandı ve testlerle doğru
 ```
 
 Eğitim partisi (`trainQueues` içindeki kayıt) askerleri birer birer yetiştirir: sıradaki asker `startAt + (trained + 1) × unitMs` anında hazır olur. Sonraki adımlarda dünyaya `movements` (ordu hareketleri) ve `reports` (savaş raporları) eklenecek.
+
+### 8.1 Harita neden kayıtta yok?
+
+Harita **prosedürel** üretilir: bir alanın arazisi ve orada barbar köyü olup olmadığı yalnızca `(tohum, x, y)` üçlüsünden hesaplanır. Böylece:
+
+- Kayıt dosyası küçük kalır; 1000×1000'lik dünyanın tek bir alanı bile saklanmaz.
+- Aynı tohum her cihazda aynı dünyayı verir. Çok oyunculu sürümde sunucu ve istemci aynı haritayı ayrı ayrı üretebilir.
+- Göl, orman ve tepeler "değer gürültüsü" (value noise) ile üretilir. Yakın alanlar benzer değer aldığı için araziler tek tek dağılmaz, kümeler oluşturur.
+- Barbar köylerinin gelişmişliği `başlangıç + günlük artış × dünya günü` formülüyle bulunur. Dünya günü, dünya hızıyla işleyen `world.clock` saatinden gelir.
+
+Oyuncu bir barbar köyünü değiştirdiğinde (yağmaladığında, askerlerini öldürdüğünde) yalnızca bu **fark** kayda yazılacak (Adım 5).
 
 ## 9. Beylikler'in oyun tasarımı
 

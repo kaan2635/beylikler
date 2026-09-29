@@ -23,6 +23,28 @@
   --radius: 10px;
   --font-ui: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-title: Georgia, "Palatino Linotype", "Book Antiqua", Palatino, serif;
+
+  /* Harita renkleri (tuval bunları okur) */
+  --map-outside: #2b2217;
+  --map-cayir: #bcc78e;
+  --map-cayir-2: #b3bf84;
+  --map-orman: #93a86b;
+  --map-agac: #52703a;
+  --map-tepe: #cdbb8e;
+  --map-tepe-2: #a8946a;
+  --map-gol: #82abc6;
+  --map-gol-2: #b7d3e4;
+  --map-grid: rgb(60 45 20 / 0.12);
+  --map-hover: rgb(255 255 255 / 0.22);
+  --map-select: #b5852a;
+  --map-own: #fff4dc;
+  --map-own-roof: #a63d27;
+  --map-flag: #c0392b;
+  --map-barbar: #d9ccb2;
+  --map-barbar-roof: #6d5b42;
+  --map-door: #35261a;
+  --map-ruler-bg: rgb(53 38 26 / 0.8);
+  --map-ruler-ink: #f1e3c2;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,6 +64,22 @@
     --bad: #e0735d;
     --bar: #120e0a;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.25);
+
+    --map-outside: #0f0c08;
+    --map-cayir: #5f6d40;
+    --map-cayir-2: #59673b;
+    --map-orman: #475b30;
+    --map-agac: #2b3c1c;
+    --map-tepe: #716449;
+    --map-tepe-2: #564a35;
+    --map-gol: #33566f;
+    --map-gol-2: #5c7f97;
+    --map-grid: rgb(0 0 0 / 0.22);
+    --map-hover: rgb(255 255 255 / 0.12);
+    --map-select: #d6a84a;
+    --map-own: #f1e3c2;
+    --map-barbar: #b3a587;
+    --map-barbar-roof: #4b3d2b;
   }
 }
 
@@ -535,6 +573,197 @@ code {
   gap: 8px;
 }
 
+/* ---------- Harita ---------- */
+
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: 16px;
+}
+
+.map-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.map-wrap {
+  position: relative;
+}
+
+.map-canvas {
+  display: block;
+  width: 100%;
+  height: clamp(320px, 62vh, 640px);
+  border-radius: 8px;
+  background: var(--map-outside);
+  touch-action: none;
+  cursor: grab;
+}
+
+.map-canvas:active {
+  cursor: grabbing;
+}
+
+.map-canvas:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.map-controls {
+  position: absolute;
+  top: 28px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.map-btn:hover {
+  background: var(--panel-2);
+}
+
+.map-btn:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.map-btn .icon {
+  width: 22px;
+  height: 22px;
+}
+
+input.coord-input {
+  flex: 0 0 auto;
+  width: 110px;
+  min-width: 0;
+}
+
+.map-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.info-title {
+  font-size: 1.2rem;
+}
+
+.info-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 12px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.kv dt {
+  color: var(--ink-soft);
+}
+
+.kv dd {
+  margin: 0;
+}
+
+.travel-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.travel-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.travel-list .time {
+  margin-left: auto;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table th,
+.data-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.data-table th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.data-table .num {
+  text-align: right;
+}
+
+.data-table tbody tr:hover {
+  background: var(--panel-2);
+}
+
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .map-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Düğmeler ve formlar ---------- */
 
 .btn {
@@ -548,6 +777,7 @@ code {
   background: var(--accent);
   color: var(--accent-ink);
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
@@ -738,6 +968,12 @@ textarea {
 
   .queue-row {
     grid-template-columns: 1fr auto;
+  }
+
+  /* Harita parmakla sürüklenir; sayfayı kaydırmak için altında yer kalsın. */
+  .map-canvas {
+    height: 48vh;
+    min-height: 280px;
   }
 }
 

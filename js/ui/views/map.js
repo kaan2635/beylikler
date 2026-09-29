@@ -1,0 +1,558 @@
+import { UNITS, UNIT_IDS } from '../../config/units.js';
+import { TERRAIN, WORLD } from '../../config/world.js';
+import { travelSeconds } from '../../core/formulas.js';
+import {
+  villageAt,
+  terrainAt,
+  tileDetail,
+  inWorld,
+  distance,
+  continentOf,
+  nearbyBarbarians,
+} from '../../systems/world.js';
+import { h, setText } from '../dom.js';
+import { icon } from '../icons.js';
+import { fmtInt, fmtDecimal, fmtDuration } from '../format.js';
+import { toast } from '../toast.js';
+
+const ZOOMS = [16, 24, 32, 44, 60, 80]; // alan başına piksel
+const DEFAULT_ZOOM = 3;
+const NEARBY_RADIUS = 15;
+const NEARBY_LIMIT = 25;
+const RULER = 18; // üst ve sol kenardaki koordinat şeridinin kalınlığı (px)
+
+/** Harita ekranı: tuval üzerinde sürüklenebilir dünya, seçili alanın bilgisi ve yakın köyler. */
+export function createMapView({ game }) {
+  const canvas = h('canvas', {
+    class: 'map-canvas',
+    tabindex: 0,
+    role: 'img',
+    'aria-label': 'Dünya haritası. Sürükleyerek ya da ok tuşlarıyla gezin, bir alana tıklayarak bilgisini gör.',
+  });
+  const ctx = canvas.getContext('2d');
+  const position = h('span', { class: 'muted' });
+  const coordInput = h('input', {
+    type: 'text',
+    id: 'map-coord',
+    class: 'coord-input',
+    placeholder: '500|500',
+    inputmode: 'numeric',
+    autocomplete: 'off',
+    'aria-label': 'Gidilecek koordinat',
+  });
+  const info = h('div', { class: 'stack-sm' });
+  const nearbyBody = h('tbody');
+
+  const el = h(
+    'section',
+    { class: 'stack' },
+    h('header', { class: 'view-header' }, h('h1', null, 'Harita'), position),
+    h(
+      'div',
+      { class: 'map-layout' },
+      h(
+        'section',
+        { class: 'panel map-panel' },
+        h(
+          'form',
+          { class: 'form-row', onsubmit: onJump },
+          h('label', { for: 'map-coord' }, 'Koordinata git'),
+          coordInput,
+          h('button', { class: 'btn btn-small', type: 'submit' }, 'Git'),
+        ),
+        h(
+          'div',
+          { class: 'map-wrap' },
+          canvas,
+          h(
+            'div',
+            { class: 'map-controls' },
+            mapButton('+', 'Yakınlaştır', () => zoomBy(1)),
+            mapButton('−', 'Uzaklaştır', () => zoomBy(-1)),
+            mapButton(icon('konum'), 'Köyüme dön', () => centerOnOwn()),
+          ),
+        ),
+      ),
+      h('section', { class: 'panel map-side' }, h('h2', null, 'Seçili alan'), info),
+    ),
+    h(
+      'section',
+      { class: 'panel' },
+      h(
+        'div',
+        { class: 'panel-head' },
+        h('h2', null, 'Yakındaki barbar köyleri'),
+        h('span', { class: 'muted' }, `${NEARBY_RADIUS} alan içinde, en yakın ${NEARBY_LIMIT}`),
+      ),
+      h(
+        'div',
+        { class: 'table-wrap' },
+        h(
+          'table',
+          { class: 'data-table' },
+          h(
+            'thead',
+            null,
+            h('tr', null, h('th', null, 'Köy'), h('th', null, 'Koordinat'), h('th', { class: 'num' }, 'Puan'), h('th', { class: 'num' }, 'Mesafe')),
+          ),
+          nearbyBody,
+        ),
+      ),
+    ),
+  );
+
+  const cam = { cx: WORLD.center + 0.5, cy: WORLD.center + 0.5, zoom: DEFAULT_ZOOM };
+  let selected = null;
+  let hover = null;
+  let drag = null;
+  let centered = false;
+  let frame = 0;
+  let infoSignature = null;
+  let nearbySignature = null;
+
+  // ---------- Kamera ----------
+
+  const tileSize = () => ZOOMS[cam.zoom];
+
+  function centerOn(x, y) {
+    cam.cx = x + 0.5;
+    cam.cy = y + 0.5;
+    clampCamera();
+    requestDraw();
+  }
+
+  function centerOnOwn() {
+    const own = game.village;
+    centerOn(own.x, own.y);
+    select({ x: own.x, y: own.y });
+  }
+
+  function clampCamera() {
+    cam.cx = Math.min(WORLD.size, Math.max(0, cam.cx));
+    cam.cy = Math.min(WORLD.size, Math.max(0, cam.cy));
+    setText(position, `Merkez (${Math.floor(cam.cx)}|${Math.floor(cam.cy)}) · ${continentOf(Math.floor(cam.cx), Math.floor(cam.cy))}`);
+  }
+
+  /** Yakınlaştırırken imlecin altındaki nokta yerinde kalsın. */
+  function zoomBy(step, px = canvas.clientWidth / 2, py = canvas.clientHeight / 2) {
+    const next = Math.min(ZOOMS.length - 1, Math.max(0, cam.zoom + step));
+    if (next === cam.zoom) return;
+    const before = tileSize();
+    const wx = cam.cx + (px - canvas.clientWidth / 2) / before;
+    const wy = cam.cy + (py - canvas.clientHeight / 2) / before;
+    cam.zoom = next;
+    cam.cx = wx - (px - canvas.clientWidth / 2) / tileSize();
+    cam.cy = wy - (py - canvas.clientHeight / 2) / tileSize();
+    clampCamera();
+    requestDraw();
+  }
+
+  function tileAtPoint(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const t = tileSize();
+    return {
+      x: Math.floor(cam.cx + (clientX - rect.left - rect.width / 2) / t),
+      y: Math.floor(cam.cy + (clientY - rect.top - rect.height / 2) / t),
+    };
+  }
+
+  function select(tile) {
+    selected = tile;
+    infoSignature = null;
+    renderInfo();
+    requestDraw();
+  }
+
+  // ---------- Girdi ----------
+
+  canvas.addEventListener('pointerdown', (event) => {
+    canvas.setPointerCapture(event.pointerId);
+    drag = { x: event.clientX, y: event.clientY, cx: cam.cx, cy: cam.cy, moved: false };
+  });
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (drag) {
+      const dx = event.clientX - drag.x;
+      const dy = event.clientY - drag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 5) drag.moved = true;
+      cam.cx = drag.cx - dx / tileSize();
+      cam.cy = drag.cy - dy / tileSize();
+      clampCamera();
+    } else if (event.pointerType === 'mouse') {
+      hover = tileAtPoint(event.clientX, event.clientY);
+    }
+    requestDraw();
+  });
+
+  canvas.addEventListener('pointerup', (event) => {
+    if (drag && !drag.moved) select(tileAtPoint(event.clientX, event.clientY));
+    drag = null;
+  });
+  canvas.addEventListener('pointercancel', () => (drag = null));
+  canvas.addEventListener('pointerleave', () => {
+    hover = null;
+    requestDraw();
+  });
+
+  canvas.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      zoomBy(event.deltaY < 0 ? 1 : -1, event.clientX - rect.left, event.clientY - rect.top);
+    },
+    { passive: false },
+  );
+
+  canvas.addEventListener('keydown', (event) => {
+    const step = event.shiftKey ? 5 : 1;
+    const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+    if (moves[event.key]) {
+      cam.cx += moves[event.key][0];
+      cam.cy += moves[event.key][1];
+      clampCamera();
+      requestDraw();
+    } else if (event.key === '+' || event.key === '=') zoomBy(1);
+    else if (event.key === '-') zoomBy(-1);
+    else if (event.key === 'Enter' || event.key === ' ') select({ x: Math.floor(cam.cx), y: Math.floor(cam.cy) });
+    else return;
+    event.preventDefault();
+  });
+
+  function onJump(event) {
+    event.preventDefault();
+    const match = coordInput.value.match(/^\s*(\d{1,3})\s*[|,;\s]\s*(\d{1,3})\s*$/);
+    if (!match) {
+      toast('Koordinatı 500|500 biçiminde yaz.', 'error');
+      return;
+    }
+    const x = Number(match[1]);
+    const y = Number(match[2]);
+    centerOn(x, y);
+    select({ x, y });
+  }
+
+  nearbyBody.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-x]');
+    if (!button) return;
+    const x = Number(button.dataset.x);
+    const y = Number(button.dataset.y);
+    centerOn(x, y);
+    select({ x, y });
+    canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  new ResizeObserver(() => resize()).observe(canvas);
+
+  // ---------- Çizim ----------
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    const width = Math.round(canvas.clientWidth * dpr);
+    const height = Math.round(canvas.clientHeight * dpr);
+    if (!width || !height) return;
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+    draw();
+  }
+
+  function requestDraw() {
+    if (!frame) {
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        draw();
+      });
+    }
+  }
+
+  function draw() {
+    const w = canvas.clientWidth;
+    const hgt = canvas.clientHeight;
+    if (!w || !hgt || !canvas.width) return;
+    const dpr = canvas.width / w;
+    const state = game.state;
+    const seed = state.world.seed;
+    const colors = readColors(canvas);
+    const t = tileSize();
+    const toScreenX = (x) => (x - cam.cx) * t + w / 2;
+    const toScreenY = (y) => (y - cam.cy) * t + hgt / 2;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = colors.outside;
+    ctx.fillRect(0, 0, w, hgt);
+
+    const x0 = Math.floor(cam.cx - w / 2 / t);
+    const x1 = Math.floor(cam.cx + w / 2 / t);
+    const y0 = Math.floor(cam.cy - hgt / 2 / t);
+    const y1 = Math.floor(cam.cy + hgt / 2 / t);
+
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        if (!inWorld(x, y)) continue;
+        const sx = toScreenX(x);
+        const sy = toScreenY(y);
+        const village = villageAt(state, x, y);
+        drawTerrain(ctx, colors, village ? 'cayir' : terrainAt(seed, x, y), tileDetail(seed, x, y), sx, sy, t);
+        if (village) drawVillage(ctx, colors, village, sx, sy, t);
+      }
+    }
+
+    if (t >= 24) {
+      ctx.strokeStyle = colors.grid;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let x = x0; x <= x1 + 1; x++) {
+        const sx = Math.round(toScreenX(x)) + 0.5;
+        ctx.moveTo(sx, 0);
+        ctx.lineTo(sx, hgt);
+      }
+      for (let y = y0; y <= y1 + 1; y++) {
+        const sy = Math.round(toScreenY(y)) + 0.5;
+        ctx.moveTo(0, sy);
+        ctx.lineTo(w, sy);
+      }
+      ctx.stroke();
+    }
+
+    if (hover && !drag) {
+      ctx.fillStyle = colors.hover;
+      ctx.fillRect(toScreenX(hover.x), toScreenY(hover.y), t, t);
+    }
+    if (selected) {
+      ctx.strokeStyle = colors.select;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(toScreenX(selected.x) + 1.5, toScreenY(selected.y) + 1.5, t - 3, t - 3);
+    }
+
+    drawRulers(ctx, colors, { x0, x1, y0, y1, t, w, hgt, toScreenX, toScreenY });
+  }
+
+  // ---------- Bilgi paneli ----------
+
+  function renderInfo() {
+    if (!selected) {
+      info.replaceChildren(h('p', { class: 'muted' }, 'Bilgi için haritada bir alana tıkla.'));
+      return;
+    }
+    const state = game.state;
+    const own = game.village;
+    const { x, y } = selected;
+    const village = villageAt(state, x, y);
+    const signature = `${x}|${y}|${village?.points}|${state.world.speed}|${own.id}`;
+    if (signature === infoSignature) return;
+    infoSignature = signature;
+
+    const rows = [['Koordinat', `(${x}|${y}) · ${continentOf(x, y)}`]];
+    let title;
+    if (!inWorld(x, y)) {
+      title = 'Dünyanın sınırı';
+    } else if (village) {
+      title = village.name;
+      rows.push(['Sahibi', village.kind === 'oyuncu' ? 'Sen' : 'Barbar köyü'], ['Puan', fmtInt(village.points)]);
+    } else {
+      title = TERRAIN[terrainAt(state.world.seed, x, y)].name;
+      rows.push(['Durum', 'Boş arazi']);
+    }
+    const dist = distance(own.x, own.y, x, y);
+    if (dist > 0) rows.push(['Mesafe', `${fmtDecimal(dist)} alan (${own.name} köyünden)`]);
+
+    const children = [
+      h('h3', { class: 'info-title' }, title),
+      h('dl', { class: 'kv' }, rows.flatMap(([key, value]) => [h('dt', null, key), h('dd', null, value)])),
+    ];
+    if (dist > 0 && inWorld(x, y)) {
+      children.push(
+        h('h4', { class: 'info-subtitle' }, 'Yolculuk süresi'),
+        h(
+          'ul',
+          { class: 'travel-list' },
+          UNIT_IDS.map((id) =>
+            h(
+              'li',
+              null,
+              h('span', { class: 'unit-icon small' }, icon(id)),
+              UNITS[id].name,
+              h('span', { class: 'time' }, fmtDuration(travelSeconds(dist, UNITS[id].speed, state.world.speed))),
+            ),
+          ),
+        ),
+      );
+    }
+    if (village?.kind === 'oyuncu') {
+      children.push(h('a', { class: 'btn btn-small', href: '#/koy' }, 'Köye git'));
+    } else if (village) {
+      children.push(h('p', { class: 'muted' }, 'Saldırı, yağma ve casusluk sonraki adımlarda eklenecek.'));
+    } else if (inWorld(x, y) && terrainAt(state.world.seed, x, y) === 'gol') {
+      children.push(h('p', { class: 'muted' }, 'Göle köy kurulamaz.'));
+    }
+    info.replaceChildren(...children);
+  }
+
+  function renderNearby() {
+    const own = game.village;
+    const list = nearbyBarbarians(game.state, own.x, own.y, NEARBY_RADIUS).slice(0, NEARBY_LIMIT);
+    const signature = list.map((v) => `${v.id}:${v.points}`).join('|');
+    if (signature === nearbySignature) return;
+    nearbySignature = signature;
+    nearbyBody.replaceChildren(
+      ...list.map((v) =>
+        h(
+          'tr',
+          null,
+          h('td', null, h('button', { type: 'button', class: 'link-btn', dataset: { x: v.x, y: v.y } }, v.name)),
+          h('td', null, `(${v.x}|${v.y})`),
+          h('td', { class: 'num' }, fmtInt(v.points)),
+          h('td', { class: 'num' }, fmtDecimal(v.distance)),
+        ),
+      ),
+    );
+  }
+
+  return {
+    el,
+    onShow() {
+      if (!centered) {
+        centered = true;
+        if (canvas.clientWidth < 500) cam.zoom = DEFAULT_ZOOM - 1; // dar ekranda daha geniş alan göster
+        centerOnOwn();
+      }
+      clampCamera();
+      resize();
+    },
+    update() {
+      renderInfo();
+      renderNearby();
+      requestDraw(); // barbar köyleri zamanla büyür
+    },
+  };
+}
+
+function mapButton(content, label, onClick) {
+  return h('button', { type: 'button', class: 'map-btn', title: label, 'aria-label': label, onclick: onClick }, content);
+}
+
+/** Harita renkleri CSS değişkenlerinden okunur; açık/koyu tema kendiliğinden uyar. */
+function readColors(el) {
+  const style = getComputedStyle(el);
+  const v = (name) => style.getPropertyValue(`--map-${name}`).trim();
+  return {
+    outside: v('outside'),
+    cayir: v('cayir'),
+    cayir2: v('cayir-2'),
+    orman: v('orman'),
+    agac: v('agac'),
+    tepe: v('tepe'),
+    tepe2: v('tepe-2'),
+    gol: v('gol'),
+    gol2: v('gol-2'),
+    grid: v('grid'),
+    hover: v('hover'),
+    select: v('select'),
+    own: v('own'),
+    ownRoof: v('own-roof'),
+    flag: v('flag'),
+    barbar: v('barbar'),
+    barbarRoof: v('barbar-roof'),
+    door: v('door'),
+    rulerBg: v('ruler-bg'),
+    rulerInk: v('ruler-ink'),
+  };
+}
+
+function drawTerrain(ctx, c, kind, detail, sx, sy, t) {
+  const fill = { gol: c.gol, tepe: c.tepe, orman: c.orman, cayir: detail & 1 ? c.cayir : c.cayir2 };
+  ctx.fillStyle = fill[kind];
+  ctx.fillRect(sx, sy, t + 0.5, t + 0.5);
+  if (t < 24) return;
+
+  if (kind === 'orman') {
+    ctx.fillStyle = c.agac;
+    for (let i = 0; i < 3; i++) {
+      const px = sx + t * (0.2 + 0.6 * (((detail >>> (i * 8)) & 255) / 255));
+      const py = sy + t * (0.2 + 0.6 * (((detail >>> (i * 8 + 4)) & 255) / 255));
+      ctx.beginPath();
+      ctx.arc(px, py, t * 0.14, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (kind === 'tepe') {
+    ctx.fillStyle = c.tepe2;
+    ctx.beginPath();
+    ctx.moveTo(sx + t * 0.15, sy + t * 0.78);
+    ctx.lineTo(sx + t * 0.45, sy + t * 0.3);
+    ctx.lineTo(sx + t * 0.75, sy + t * 0.78);
+    ctx.closePath();
+    ctx.fill();
+  } else if (kind === 'gol' && detail & 2) {
+    ctx.strokeStyle = c.gol2;
+    ctx.lineWidth = Math.max(1, t / 24);
+    ctx.beginPath();
+    ctx.moveTo(sx + t * 0.25, sy + t * 0.5);
+    ctx.quadraticCurveTo(sx + t * 0.375, sy + t * 0.4, sx + t * 0.5, sy + t * 0.5);
+    ctx.quadraticCurveTo(sx + t * 0.625, sy + t * 0.6, sx + t * 0.75, sy + t * 0.5);
+    ctx.stroke();
+  }
+}
+
+/** Köy simgesi: puanı büyüdükçe ev de büyür. Oyuncunun köyü bayraklı ve farklı renkte. */
+function drawVillage(ctx, c, village, sx, sy, t) {
+  const own = village.kind === 'oyuncu';
+  const tier = village.points < 150 ? 0 : village.points < 500 ? 1 : 2;
+  const size = t * (0.46 + tier * 0.12);
+  const cx = sx + t / 2;
+  const base = sy + t * 0.82;
+  const bodyH = size * 0.55;
+
+  ctx.fillStyle = own ? c.own : c.barbar;
+  ctx.fillRect(cx - size / 2, base - bodyH, size, bodyH);
+  ctx.fillStyle = own ? c.ownRoof : c.barbarRoof;
+  ctx.beginPath();
+  ctx.moveTo(cx - size / 2 - size * 0.1, base - bodyH);
+  ctx.lineTo(cx, base - bodyH - size * 0.45);
+  ctx.lineTo(cx + size / 2 + size * 0.1, base - bodyH);
+  ctx.closePath();
+  ctx.fill();
+  if (t >= 24) {
+    ctx.fillStyle = c.door;
+    ctx.fillRect(cx - size * 0.1, base - bodyH * 0.6, size * 0.2, bodyH * 0.6);
+  }
+  if (own) {
+    const top = base - bodyH - size * 0.45;
+    ctx.strokeStyle = c.door;
+    ctx.lineWidth = Math.max(1, t / 30);
+    ctx.beginPath();
+    ctx.moveTo(cx, top);
+    ctx.lineTo(cx, top - size * 0.4);
+    ctx.stroke();
+    ctx.fillStyle = c.flag;
+    ctx.beginPath();
+    ctx.moveTo(cx, top - size * 0.4);
+    ctx.lineTo(cx + size * 0.32, top - size * 0.3);
+    ctx.lineTo(cx, top - size * 0.2);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+/** Üst ve sol kenarda koordinat cetveli. */
+function drawRulers(ctx, c, { x0, x1, y0, y1, t, w, hgt, toScreenX, toScreenY }) {
+  const step = t < 24 ? 10 : t < 44 ? 5 : 1;
+  ctx.fillStyle = c.rulerBg;
+  ctx.fillRect(0, 0, w, RULER);
+  ctx.fillRect(0, RULER, RULER + 12, hgt - RULER);
+  ctx.fillStyle = c.rulerInk;
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let x = x0; x <= x1; x++) {
+    if (x % step !== 0 || !inWorld(x, 0)) continue;
+    const sx = toScreenX(x) + t / 2;
+    if (sx > RULER + 20) ctx.fillText(String(x), sx, RULER / 2);
+  }
+  for (let y = y0; y <= y1; y++) {
+    if (y % step !== 0 || !inWorld(0, y)) continue;
+    const sy = toScreenY(y) + t / 2;
+    if (sy > RULER + 8) ctx.fillText(String(y), (RULER + 12) / 2, sy);
+  }
+}

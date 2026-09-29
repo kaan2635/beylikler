@@ -4,6 +4,7 @@ import { UNITS } from '../config/units.js';
 import { createResourceBar } from './resource-bar.js';
 import { createVillageView } from './views/village.js';
 import { createArmyView } from './views/army.js';
+import { createMapView } from './views/map.js';
 import { createSettingsView } from './views/settings.js';
 import { createPlaceholderView } from './views/placeholder.js';
 import { initToasts, toast } from './toast.js';
@@ -12,16 +13,7 @@ import { fmtInt } from './format.js';
 // Adres çubuğundaki #/koy gibi yollar ve karşılık gelen ekranlar.
 const ROUTES = {
   koy: (ctx) => createVillageView(ctx),
-  harita: () =>
-    createPlaceholderView({
-      title: 'Harita',
-      intro: 'Beyliğinin çevresindeki toprakları burada göreceksin.',
-      items: [
-        'Tohumlu rastgele üretilen dünya haritası',
-        'Barbar köyleri ve rakip beylikler',
-        'Köy bilgisi, mesafe ve yolculuk süresi',
-      ],
-    }),
+  harita: (ctx) => createMapView(ctx),
   ordu: (ctx) => createArmyView(ctx),
   raporlar: () =>
     createPlaceholderView({
