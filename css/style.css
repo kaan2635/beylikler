@@ -1,0 +1,615 @@
+/* Beylikler — arayüz stilleri. Renkler :root değişkenlerinde; karanlık tema aşağıda. */
+
+:root {
+  color-scheme: light;
+  --bg: #eee3c9;
+  --bg-dot: #e2d3b0;
+  --panel: #fbf6ea;
+  --panel-2: #f4ebd7;
+  --border: #d4bf95;
+  --ink: #2e2316;
+  --ink-soft: #6d5b42;
+  --accent: #8e3320;
+  --accent-hover: #a63d27;
+  --accent-ink: #fff8ea;
+  --gold: #b5852a;
+  --ok: #2e6b33;
+  --bad: #a3321f;
+  --bar: #35261a;
+  --bar-ink: #f1e3c2;
+  --bar-soft: #c9b48b;
+  --bar-full: #ff9b7f;
+  --shadow: 0 1px 2px rgb(46 35 22 / 0.12), 0 4px 14px rgb(46 35 22 / 0.08);
+  --radius: 10px;
+  --font-ui: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-title: Georgia, "Palatino Linotype", "Book Antiqua", Palatino, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #1b1610;
+    --bg-dot: #241d15;
+    --panel: #29221a;
+    --panel-2: #231d16;
+    --border: #4b3d2b;
+    --ink: #eee2c9;
+    --ink-soft: #b4a384;
+    --accent: #b9533a;
+    --accent-hover: #cc6248;
+    --gold: #c99a3e;
+    --ok: #6cbf73;
+    --bad: #e0735d;
+    --bar: #120e0a;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.25);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font: 15px/1.5 var(--font-ui);
+  color: var(--ink);
+  background: var(--bg) radial-gradient(var(--bg-dot) 1px, transparent 1px) 0 0 / 18px 18px;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-title);
+  line-height: 1.2;
+}
+
+p {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--panel-2);
+}
+
+.muted {
+  color: var(--ink-soft);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stack-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- Üst çubuk ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 8px 16px;
+  background: var(--bar);
+  color: var(--bar-ink);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.25);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+  font-family: var(--font-title);
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+}
+
+.resource-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-left: auto;
+}
+
+.res {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 6px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.07);
+}
+
+.res .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.res-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.res-amount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.res-rate {
+  font-size: 0.72rem;
+  color: var(--bar-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.res.full .res-amount {
+  color: var(--bar-full);
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- Sekmeler ---------- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 16px;
+  overflow-x: auto;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs a {
+  padding: 10px 14px;
+  border-bottom: 3px solid transparent;
+  color: var(--ink-soft);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tabs a:hover {
+  color: var(--ink);
+}
+
+.tabs a.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ---------- Sayfa ---------- */
+
+.view {
+  flex: 1;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.view-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+}
+
+.village-name {
+  font-size: 1.8rem;
+}
+
+.panel {
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.panel h2 {
+  font-size: 1.2rem;
+}
+
+.tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.plain-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+/* ---------- İnşaat kuyruğu ---------- */
+
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.queue-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 6px 16px;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.queue-time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.queue-remaining {
+  font-weight: 600;
+}
+
+.queue-row .btn {
+  justify-self: start;
+}
+
+.progress {
+  grid-column: 1 / -1;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--border);
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--accent));
+  transition: width 1s linear;
+}
+
+/* ---------- Bina kartları ---------- */
+
+.building-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-head h3 {
+  font-size: 1.1rem;
+}
+
+.badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-muted {
+  background: var(--ink-soft);
+}
+
+.card-desc {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.card-effect {
+  font-size: 0.9rem;
+}
+
+.cost {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cost-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cost-item.short {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: auto;
+}
+
+.card-status {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.card.locked {
+  opacity: 0.7;
+}
+
+.card.maxed .cost {
+  display: none;
+}
+
+/* ---------- Düğmeler ve formlar ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn:disabled {
+  background: var(--border);
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--accent-ink);
+}
+
+.btn-danger {
+  background: var(--bad);
+}
+
+.btn:focus-visible,
+.tabs a:focus-visible,
+.brand:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+input[type="text"],
+select,
+textarea {
+  padding: 8px 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+input[type="text"] {
+  flex: 1;
+  min-width: 160px;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
+.danger {
+  border-color: var(--bad);
+}
+
+/* ---------- Bildirimler ---------- */
+
+.toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  max-width: 420px;
+  padding: 10px 14px;
+  border-left: 4px solid var(--gold);
+  border-radius: 8px;
+  background: var(--bar);
+  color: var(--bar-ink);
+  box-shadow: var(--shadow);
+  pointer-events: auto;
+  animation: toast-in 0.2s ease-out;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.toast-success {
+  border-left-color: var(--ok);
+}
+
+.toast-error {
+  border-left-color: var(--bad);
+}
+
+.toast.leaving {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.footer {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.footer a {
+  color: inherit;
+}
+
+/* ---------- Dar ekranlar ---------- */
+
+@media (max-width: 640px) {
+  .topbar {
+    padding: 8px 12px;
+  }
+
+  /* Beş gösterge tek satıra sığsın diye simge üstte, sayılar altta. */
+  .resource-bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    width: 100%;
+    margin-left: 0;
+    gap: 4px;
+  }
+
+  .res {
+    flex-direction: column;
+    gap: 1px;
+    padding: 4px 2px;
+    border-radius: 8px;
+  }
+
+  .res-text {
+    align-items: center;
+  }
+
+  .res-amount {
+    font-size: 0.85rem;
+  }
+
+  .res-rate {
+    font-size: 0.66rem;
+  }
+
+  .res .icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .view {
+    padding: 12px;
+  }
+
+  .queue-row {
+    grid-template-columns: 1fr auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .progress > span {
+    animation: none;
+    transition: none;
+  }
+}

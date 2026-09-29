@@ -1,0 +1,130 @@
+import {
+  productionPerHour,
+  storageCapacity,
+  populationCapacity,
+  hiddenCapacity,
+  wallBonus,
+  konakTimeFactor,
+  trainingTimeFactor,
+} from '../core/formulas.js';
+
+/**
+ * Bina tanımları. Nesnedeki sıra, arayüzdeki sıradır.
+ *
+ * cost, costFactor       1. seviyenin maliyeti; sonraki her seviye costFactor kat pahalı.
+ * buildTime, timeFactor  1. seviyenin süresi (saniye, dünya hızı 1); sonraki seviyeler üstel uzar.
+ * pop                    o seviyede kullanılan toplam nüfus (taban, çarpan); yoksa nüfus kullanmaz.
+ * requires               inşaata başlamak için gereken (tamamlanmış) bina seviyeleri.
+ * effect                 arayüzde gösterilen etki: value(seviye, dünya) → sayı, format ile biçimlenir
+ *                        ('rate' = /saat, 'number', 'percent' = %86, 'bonus' = +%12).
+ */
+export const BUILDINGS = {
+  konak: {
+    name: 'Konak',
+    description: 'Beyliğin yönetim merkezi. Her seviye tüm inşaatları hızlandırır.',
+    maxLevel: 30,
+    cost: { odun: 90, kil: 80, demir: 70 },
+    costFactor: 1.26,
+    buildTime: 90,
+    timeFactor: 1.24,
+    pop: { base: 5, factor: 1.17 },
+    requires: {},
+    effect: { label: 'İnşaat süresi', format: 'percent', value: (lvl) => konakTimeFactor(lvl) },
+  },
+  oduncu: {
+    name: 'Oduncu',
+    description: 'Ormandan odun keser. Odun hemen her yapının temelidir.',
+    maxLevel: 30,
+    cost: { odun: 50, kil: 60, demir: 40 },
+    costFactor: 1.25,
+    buildTime: 60,
+    timeFactor: 1.22,
+    pop: { base: 5, factor: 1.155 },
+    requires: {},
+    effect: { label: 'Üretim', format: 'rate', value: (lvl, world) => productionPerHour(lvl, world.speed) },
+  },
+  kilocagi: {
+    name: 'Kil Ocağı',
+    description: 'Kil çıkarır; tuğla, sur ve ağır yapılar için gereklidir.',
+    maxLevel: 30,
+    cost: { odun: 65, kil: 50, demir: 40 },
+    costFactor: 1.27,
+    buildTime: 60,
+    timeFactor: 1.22,
+    pop: { base: 10, factor: 1.14 },
+    requires: {},
+    effect: { label: 'Üretim', format: 'rate', value: (lvl, world) => productionPerHour(lvl, world.speed) },
+  },
+  demirmadeni: {
+    name: 'Demir Madeni',
+    description: 'Demir cevheri çıkarır; silah ve zırh yapımında vazgeçilmezdir.',
+    maxLevel: 30,
+    cost: { odun: 75, kil: 65, demir: 70 },
+    costFactor: 1.252,
+    buildTime: 72,
+    timeFactor: 1.22,
+    pop: { base: 10, factor: 1.17 },
+    requires: {},
+    effect: { label: 'Üretim', format: 'rate', value: (lvl, world) => productionPerHour(lvl, world.speed) },
+  },
+  ambar: {
+    name: 'Ambar',
+    description: 'Kaynakların saklandığı yer. Ambar dolunca o kaynağın üretimi durur.',
+    maxLevel: 30,
+    cost: { odun: 60, kil: 50, demir: 40 },
+    costFactor: 1.265,
+    buildTime: 50,
+    timeFactor: 1.22,
+    requires: {},
+    effect: { label: 'Kapasite', format: 'number', value: (lvl) => storageCapacity(lvl) },
+  },
+  ciftlik: {
+    name: 'Çiftlik',
+    description: 'Köy halkını besler ve nüfus sınırını belirler. Binalar ve askerler nüfus kullanır.',
+    maxLevel: 30,
+    cost: { odun: 45, kil: 40, demir: 30 },
+    costFactor: 1.3,
+    buildTime: 60,
+    timeFactor: 1.22,
+    requires: {},
+    effect: { label: 'Nüfus sınırı', format: 'number', value: (lvl) => populationCapacity(lvl) },
+  },
+  gizlidepo: {
+    name: 'Gizli Depo',
+    description: 'Yağmacıların bulamayacağı bir mahzen. Buradaki kaynaklar yağmalanamaz.',
+    maxLevel: 10,
+    cost: { odun: 50, kil: 60, demir: 50 },
+    costFactor: 1.25,
+    buildTime: 40,
+    timeFactor: 1.22,
+    pop: { base: 2, factor: 1.17 },
+    requires: {},
+    effect: { label: 'Korunan kaynak', format: 'number', value: (lvl) => hiddenCapacity(lvl) },
+  },
+  kisla: {
+    name: 'Kışla',
+    description: 'Piyade askerlerini yetiştirir. Asker eğitimi yakında eklenecek.',
+    maxLevel: 25,
+    cost: { odun: 200, kil: 170, demir: 90 },
+    costFactor: 1.26,
+    buildTime: 180,
+    timeFactor: 1.22,
+    pop: { base: 7, factor: 1.17 },
+    requires: { konak: 3 },
+    effect: { label: 'Eğitim süresi', format: 'percent', value: (lvl) => trainingTimeFactor(lvl) },
+  },
+  sur: {
+    name: 'Sur',
+    description: 'Köyü çevreleyen taş duvar. Savunan askerlere güç katar.',
+    maxLevel: 20,
+    cost: { odun: 50, kil: 100, demir: 20 },
+    costFactor: 1.26,
+    buildTime: 120,
+    timeFactor: 1.22,
+    pop: { base: 5, factor: 1.17 },
+    requires: { kisla: 1 },
+    effect: { label: 'Savunma bonusu', format: 'bonus', value: (lvl) => wallBonus(lvl) },
+  },
+};
+
+export const BUILDING_IDS = Object.keys(BUILDINGS);
