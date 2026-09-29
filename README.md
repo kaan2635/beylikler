@@ -56,6 +56,16 @@ docs/                   Araştırma raporu ve yol haritası
 
 **Temel kural:** `core/` ve `systems/` klasörleri DOM'a dokunmaz. Böylece test edilebilirler ve ileride çok oyunculu sürümde sunucuda da çalışabilirler.
 
+## Güncelleme yayınlarken
+
+GitHub Pages dosyaları 10 dakika önbelleğe alınabilir işaretler. Güncellemeden sonra oyuncunun tarayıcısı eski ve yeni dosyaları karıştırmasın diye `index.html` içindeki her CSS ve JS adresine dosya içeriğinden türetilen bir sürüm damgası (`?v=…`) eklenir. Kod değiştiyse göndermeden önce:
+
+```bash
+npm run stamp
+```
+
+Damga eskiyse `npm test` bunu yakalar ve başarısız olur.
+
 ## Geliştirici ipuçları
 
 - **Ayarlar → Dünya hızı** ile oyunu 100 kata kadar hızlandırabilirsin.
