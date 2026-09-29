@@ -7,6 +7,7 @@ import { barbarianAt, distance } from './world.js';
 import { barbarianLive, recordBarbarian, recordDamage } from './barbarians.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { deposit } from './economy.js';
+import { techMultiplier } from './research.js';
 
 /**
  * Ordu hareketleri. Her hareket çıktığı köyün `movements` listesinde durur:
@@ -34,8 +35,9 @@ export function armyCarry(units) {
   return Object.entries(units).reduce((total, [id, n]) => total + n * UNITS[id].carry, 0);
 }
 
-export function armyAttack(units) {
-  return Object.entries(units).reduce((total, [id, n]) => total + n * UNITS[id].attack, 0);
+/** Ordunun toplam saldırı gücü; `tech` verilirse Demirci geliştirmeleri dahil. */
+export function armyAttack(units, tech = {}) {
+  return Object.entries(units).reduce((total, [id, n]) => total + n * UNITS[id].attack * techMultiplier(tech[id]), 0);
 }
 
 /** Hedefe gitmekte olan (henüz dönmeyen) hareket mi? */
@@ -70,7 +72,7 @@ export function inspectAttack(state, village, x, y, requested, now, options = {}
   const speed = armySpeed(units);
   const dist = distance(village.x, village.y, x, y);
   const seconds = Math.max(1, travelSeconds(dist, speed, state.world.speed));
-  const attack = armyAttack(units);
+  const attack = armyAttack(units, village.tech);
   const info = {
     ok: false,
     units,
@@ -155,6 +157,7 @@ function attack(state, village, movement, target) {
     defenders: live.units,
     wallLevel: target.buildings.sur,
     luck: luckFor(state.world.seed, movement.id),
+    attackerTech: village.tech,
   });
   const survivors = subtractUnits(movement.units, battle.attackerLosses);
   const available = {};

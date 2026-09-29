@@ -5,6 +5,7 @@ import { UNITS, UNIT_IDS, TRAINING_BUILDINGS, COMBAT_TYPES } from '../../config/
 import { trainingTimeFactor } from '../../core/formulas.js';
 import { inspectTraining, maxTrainable } from '../../systems/training.js';
 import { isOutbound } from '../../systems/movements.js';
+import { techMultiplier } from '../../systems/research.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
@@ -80,9 +81,10 @@ function createSummaryPanel() {
         const unit = UNITS[id];
         setText(chips[id].count, fmtInt(n));
         chips[id].chip.classList.toggle('empty', n === 0);
-        totalAttack += n * unit.attack;
+        const forged = techMultiplier(village.tech[id]); // Demirci bonusu
+        totalAttack += n * unit.attack * forged;
         totalCarry += n * unit.carry;
-        for (const type of Object.keys(totalDefense)) totalDefense[type] += n * unit.defense[type];
+        for (const type of Object.keys(totalDefense)) totalDefense[type] += n * unit.defense[type] * forged;
       }
       setText(attack, fmtInt(totalAttack));
       setText(defense, `${fmtInt(totalDefense.piyade)} / ${fmtInt(totalDefense.suvari)} / ${fmtInt(totalDefense.okcu)}`);
@@ -260,6 +262,7 @@ function createTrainQueue(buildingId) {
 function createUnitCard(unitId, { game, refresh }) {
   const unit = UNITS[unitId];
   const home = h('span', { class: 'badge' });
+  const techTag = h('span');
   const status = h('div', { class: 'card-status' });
   const input = h('input', {
     type: 'number',
@@ -292,7 +295,7 @@ function createUnitCard(unitId, { game, refresh }) {
     h(
       'div',
       { class: 'card-head' },
-      h('div', { class: 'unit-title' }, unitIcon(unitId), h('div', null, h('h3', null, unit.name), h('span', { class: 'role' }, unit.role))),
+      h('div', { class: 'unit-title' }, unitIcon(unitId), h('div', null, h('h3', null, unit.name), h('span', { class: 'role' }, unit.role, techTag))),
       home,
     ),
     h('p', { class: 'card-desc' }, unit.description),
@@ -333,6 +336,8 @@ function createUnitCard(unitId, { game, refresh }) {
       const max = maxTrainable(village, unitId);
 
       setText(home, `Köyde: ${fmtInt(village.units[unitId])}`);
+      const tech = village.tech[unitId];
+      setText(techTag, tech ? ` · Demirci ${tech} (+%${Math.round((techMultiplier(tech) - 1) * 100)})` : '');
       el.classList.toggle('locked', check.code === 'requires');
       for (const [resource, { item, value }] of Object.entries(costItems)) {
         setText(value, fmtInt(check.cost[resource]));

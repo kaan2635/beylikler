@@ -2,6 +2,7 @@ import { produce } from '../systems/economy.js';
 import { completeNextUpgrade } from '../systems/construction.js';
 import { completeNextUnit, nextUnitAt } from '../systems/training.js';
 import { completeMovement } from '../systems/movements.js';
+import { completeResearch } from '../systems/research.js';
 import { advanceClock } from '../systems/world.js';
 
 /**
@@ -11,7 +12,7 @@ import { advanceClock } from '../systems/world.js';
  * süre tek seferde hesaplanır. Böylece sekme kapalıyken geçen zaman da (çevrimdışı ilerleme)
  * aynı kodla yetiştirilir.
  *
- * Tüm olay türleri (inşaat bitişi, bir askerin yetişmesi, ordunun hedefe ya da eve varması)
+ * Tüm olay türleri (inşaat bitişi, bir askerin yetişmesi, geliştirme, ordunun hedefe ya da eve varması)
  * tek bir zaman çizelgesinde en erkenden başlayarak işlenir. Her olaydan önce dünya saati ve
  * o köyün üretimi olay anına kadar yürütülür; çünkü olay üretim oranını değiştirebilir, savaş
  * ise barbar köyünün o anki durumuna (dünya saatine) bakar.
@@ -44,6 +45,7 @@ function nextEvent(state, now) {
     for (const movement of village.movements) {
       consider(movement.arriveAt, village, () => completeMovement(state, village, movement));
     }
+    if (village.research) consider(village.research.endAt, village, () => completeResearch(village));
   }
   return next;
 }

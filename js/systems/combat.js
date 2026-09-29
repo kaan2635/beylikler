@@ -1,6 +1,7 @@
 import { UNITS } from '../config/units.js';
 import { COMBAT } from '../config/combat.js';
 import { wallBonus } from '../core/formulas.js';
+import { techMultiplier } from './research.js';
 
 const TYPES = ['piyade', 'suvari', 'okcu'];
 
@@ -8,10 +9,10 @@ function sum(values) {
   return Object.values(values).reduce((total, n) => total + n, 0);
 }
 
-/** Ordunun saldırı gücü, türlere (piyade / süvari / okçu) göre ayrı ayrı. */
-export function attackByType(units) {
+/** Ordunun saldırı gücü, türlere (piyade / süvari / okçu) göre ayrı ayrı. `tech`: Demirci seviyeleri. */
+export function attackByType(units, tech = {}) {
   const power = { piyade: 0, suvari: 0, okcu: 0 };
-  for (const [id, n] of Object.entries(units)) power[UNITS[id].type] += n * UNITS[id].attack;
+  for (const [id, n] of Object.entries(units)) power[UNITS[id].type] += n * UNITS[id].attack * techMultiplier(tech[id]);
   return power;
 }
 
@@ -19,12 +20,13 @@ export function attackByType(units) {
  * Savunanların gücü, saldıranın tür karışımına göre ağırlıklı: süvari ağırlıklı bir saldırıya
  * karşı süvari savunması, piyade ağırlıklıya karşı piyade savunması öne çıkar.
  */
-export function weightedDefense(units, attackPower) {
+export function weightedDefense(units, attackPower, tech = {}) {
   const total = sum(attackPower);
   if (total === 0) return 0;
   let defense = 0;
   for (const [id, n] of Object.entries(units)) {
-    for (const type of TYPES) defense += (n * UNITS[id].defense[type] * attackPower[type]) / total;
+    const multiplier = techMultiplier(tech[id]);
+    for (const type of TYPES) defense += (n * UNITS[id].defense[type] * multiplier * attackPower[type]) / total;
   }
   return defense;
 }
@@ -37,13 +39,14 @@ function scaleUnits(units, ratio) {
 
 /**
  * Tek hamlede savaş sonucu. Güçlü taraf kazanır; kaybedenin tüm askerleri ölür, kazananın
- * kayıp oranı (kaybeden güç / kazanan güç) ^ 1.5 olur. `luck` (−0.25..0.25) saldırı gücünü değiştirir.
+ * kayıp oranı (kaybeden güç / kazanan güç) ^ 1.5 olur. `luck` (−0.25..0.25) saldırı gücünü değiştirir;
+ * `attackerTech` / `defenderTech` Demirci geliştirmeleridir.
  */
-export function resolveBattle({ attackers, defenders, wallLevel = 0, luck = 0 }) {
-  const power = attackByType(attackers);
+export function resolveBattle({ attackers, defenders, wallLevel = 0, luck = 0, attackerTech = {}, defenderTech = {} }) {
+  const power = attackByType(attackers, attackerTech);
   const attack = sum(power) * (1 + luck);
   const defense =
-    weightedDefense(defenders, power) * (1 + wallBonus(wallLevel)) +
+    weightedDefense(defenders, power, defenderTech) * (1 + wallBonus(wallLevel)) +
     COMBAT.villageDefense +
     COMBAT.wallDefensePerLevel * wallLevel;
   const attackerWins = attack > defense;

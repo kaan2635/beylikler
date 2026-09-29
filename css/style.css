@@ -860,6 +860,37 @@ input.coord-input {
   font-size: 0.9rem;
 }
 
+.trade-row {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.trade-row input[type="number"] {
+  width: 100%;
+}
+
+.trade-row > :nth-child(n + 3):not(label) {
+  grid-column: 2;
+}
+
+.trade-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 1.5em;
+  font-size: 0.9rem;
+}
+
+.trade-meta,
+.trade-preview .warn,
+.card-status.warn {
+  flex-basis: 100%;
+  color: var(--bad);
+}
+
 .building-levels li {
   display: flex;
   justify-content: space-between;

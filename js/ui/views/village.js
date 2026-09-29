@@ -3,6 +3,13 @@ import { BUILDINGS, BUILDING_IDS } from '../../config/buildings.js';
 import { RESOURCES } from '../../config/resources.js';
 import { TRAINING_BUILDINGS } from '../../config/units.js';
 import { inspectUpgrade } from '../../systems/construction.js';
+
+// Kendi sayfası olan binalar: kart üzerinde, bina inşa edilince görünen bağlantı.
+const BUILDING_PAGES = {
+  ...Object.fromEntries(TRAINING_BUILDINGS.map((id) => [id, { href: '#/ordu', label: 'Asker eğit →' }])),
+  demirci: { href: '#/demirci', label: 'Geliştirmeler →' },
+  pazar: { href: '#/pazar', label: 'Takas yap →' },
+};
 import { plannedLevel } from '../../core/village.js';
 import { villagePoints, continentOf } from '../../systems/world.js';
 import { h, setText } from '../dom.js';
@@ -121,9 +128,8 @@ function createBuildingCard(buildingId) {
   const effect = h('div', { class: 'card-effect' });
   const status = h('div', { class: 'card-status' });
   const button = h('button', { class: 'btn', dataset: { action: 'upgrade', building: buildingId } });
-  const trainLink = TRAINING_BUILDINGS.includes(buildingId)
-    ? h('a', { class: 'card-link', href: '#/ordu' }, 'Asker eğit →')
-    : null;
+  const page = BUILDING_PAGES[buildingId];
+  const pageLink = page ? h('a', { class: 'card-link', href: page.href }, page.label) : null;
 
   const costItems = {};
   const costRow = h('div', { class: 'cost' });
@@ -147,7 +153,7 @@ function createBuildingCard(buildingId) {
     h('p', { class: 'card-desc' }, def.description),
     effect,
     costRow,
-    h('div', { class: 'card-actions' }, button, status, trainLink),
+    h('div', { class: 'card-actions' }, button, status, pageLink),
   );
 
   return {
@@ -158,7 +164,7 @@ function createBuildingCard(buildingId) {
       const check = inspectUpgrade(village, world, buildingId, now);
 
       setText(badge, current > 0 ? `${current}. seviye` : 'Yok');
-      if (trainLink) trainLink.hidden = current === 0;
+      if (pageLink) pageLink.hidden = current === 0;
       badge.classList.toggle('badge-muted', current === 0);
       el.classList.toggle('locked', check.code === 'requires' && current === 0);
       el.classList.toggle('maxed', check.code === 'max');

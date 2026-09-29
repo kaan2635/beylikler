@@ -48,6 +48,10 @@ function normalizeVillage(village) {
   village.trainQueues ??= {};
   for (const id of TRAINING_BUILDINGS) village.trainQueues[id] ??= [];
   village.movements ??= [];
+  village.tech ??= {}; // Demirci geliştirme seviyeleri (birim → 0..3)
+  for (const id of UNIT_IDS) village.tech[id] ??= 0;
+  village.research ??= null; // süren geliştirme
+  village.merchants ??= []; // yoldaki tüccarlar
   return village;
 }
 
@@ -61,6 +65,8 @@ const MIGRATIONS = {
   2: (data) => ({ ...data, world: { ...data.world, clock: { time: 0, at: data.createdAt } }, version: 3 }),
   // Adım 5: ordu hareketleri, raporlar ve barbar köylerinin değişen durumu eklendi.
   3: (data) => ({ ...data, barbarians: {}, reports: [], nextId: 1, version: 4 }),
+  // Adım 6b: Demirci geliştirmeleri ve pazar tüccarları (alanları normalizeVillage doldurur).
+  4: (data) => ({ ...data, version: 5 }),
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */

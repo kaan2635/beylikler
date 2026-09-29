@@ -5,6 +5,8 @@ import { encodeSave, decodeSave } from './core/save-codec.js';
 import { startUpgrade, cancelLastUpgrade } from './systems/construction.js';
 import { startTraining, cancelLastTraining } from './systems/training.js';
 import { sendAttack, recallAttack } from './systems/movements.js';
+import { startResearch, cancelResearch } from './systems/research.js';
+import { trade } from './systems/market.js';
 
 /**
  * Oyun durumu ile arayüz arasındaki tek kapı. Arayüz durumu doğrudan değiştirmez:
@@ -74,6 +76,28 @@ export class Game {
     const batch = cancelLastTraining(this.village, buildingId);
     if (batch) this.save();
     return batch;
+  }
+
+  research(unitId, now) {
+    this.tick(now);
+    const result = startResearch(this.village, this.state.world, unitId, now);
+    if (result.ok) this.save();
+    return result;
+  }
+
+  cancelResearch(now) {
+    this.tick(now);
+    const research = cancelResearch(this.village);
+    if (research) this.save();
+    return research;
+  }
+
+  /** Pazarda `amount` kadar `give` kaynağını `take` kaynağına takas eder. */
+  trade(give, take, amount, now) {
+    this.tick(now);
+    const result = trade(this.village, this.state.world, give, take, amount, now);
+    if (result.ok) this.save();
+    return result;
   }
 
   /** Birlik gönderir; yalnız gözcülerden oluşan birlik casusluğa gider. options: { catapultTarget } */

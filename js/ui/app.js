@@ -6,6 +6,8 @@ import { createVillageView } from './views/village.js';
 import { createArmyView } from './views/army.js';
 import { createMapView } from './views/map.js';
 import { createReportsView } from './views/reports.js';
+import { createSmithyView } from './views/smithy.js';
+import { createMarketView } from './views/market.js';
 import { createSettingsView } from './views/settings.js';
 import { initToasts, toast } from './toast.js';
 import { fmtInt } from './format.js';
@@ -18,7 +20,12 @@ const ROUTES = {
   ordu: (ctx) => createArmyView(ctx),
   raporlar: (ctx) => createReportsView(ctx),
   ayarlar: (ctx) => createSettingsView(ctx),
+  demirci: (ctx) => createSmithyView(ctx),
+  pazar: (ctx) => createMarketView(ctx),
 };
+
+// Sekmesi olmayan bina sayfalarında hangi sekme seçili görünsün.
+const PARENT_TAB = { demirci: 'koy', pazar: 'koy' };
 
 /** Arayüzü kurar, yönlendirmeyi ve saniyelik yenilemeyi başlatır. */
 export function mountApp(game, { isNew, events }) {
@@ -46,8 +53,9 @@ export function mountApp(game, { isNew, events }) {
     current = views[name];
     viewRoot.replaceChildren(current.el);
     current.onShow?.(params.map(Number));
+    const tab = PARENT_TAB[name] ?? name;
     for (const link of document.querySelectorAll('[data-route]')) {
-      const active = link.dataset.route === name;
+      const active = link.dataset.route === tab;
       link.classList.toggle('active', active);
       if (active) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
@@ -76,6 +84,7 @@ function announce(events, whileAway) {
       'train-complete': 'eğitim',
       'attack-result': 'savaş',
       'spy-result': 'casusluk',
+      'research-complete': 'geliştirme',
       return: 'dönüş',
     };
     const parts = Object.entries(counts).map(([type, n]) => `${n} ${labels[type]}`);
@@ -105,6 +114,8 @@ function describe(event) {
         kind: 'success',
       };
     }
+    case 'research-complete':
+      return { text: `Demirci: ${UNITS[event.unit].name} ${event.level}. seviyeye geliştirildi.`, kind: 'success' };
     case 'spy-result':
       return event.success
         ? { text: `${event.target} gözetlendi. Casus raporu hazır.`, kind: 'success' }

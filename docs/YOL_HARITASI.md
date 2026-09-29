@@ -73,9 +73,9 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] 56 birim testi (Game sınıfı bellek içi depoyla da test ediliyor)
 - [ ] Destek (kendi köyleri arasında asker gönderme) → Adım 8'de çoklu köyle birlikte
 
-## ◐ Adım 6 — Derinlik
+## ✅ Adım 6 — Derinlik
 
-**6a (tamamlandı): Casusluk ve kuşatma**
+**6a: Casusluk ve kuşatma**
 
 - [x] Yalnız gözcüden oluşan birlik casusluğa gider; nöbetçi gözcüleri geçerse köyün askerlerini, kaynaklarını, gizli depo korumasını ve binalarını görür
 - [x] Barbar köylerinde gelişmişliğe göre nöbetçi gözcü
@@ -85,10 +85,15 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Tekrar saldırı mancınık hedefini korur; casus birliği de geri çağrılabilir
 - [x] 64 birim testi
 
-**6b (sıradaki): Demirci ve Pazar**
+**6b: Demirci ve Pazar**
 
-- [ ] Demirci: asker türlerini geliştirme (saldırı ve savunma bonusu)
-- [ ] Pazar: kaynak takası
+- [x] Demirci binası ve sayfası: her asker türü 3 seviyeye kadar geliştirilir, her seviye +%10 saldırı ve savunma
+- [x] Geliştirme seviyeleri Demirci 1 / 5 / 10 ister; birimin kendi gereksinimleri de geçerli; aynı anda tek geliştirme, iptalde tam iade
+- [x] Geliştirmeler savaşa, saldırı gücü önizlemesine ve Ordu ekranındaki toplamlara yansır
+- [x] Pazar binası ve sayfası: kaynak takası; tüccar sayısı = Pazar seviyesi, her tüccar 1.000 taşır ve 30 dk yolda kalır
+- [x] Komisyon %28,75'ten (1. seviye) %5'e (20. seviye) iner; ambara sığmayacak kısım önceden uyarılır
+- [x] Kendi sayfası olan binalara Köy ekranından bağlantı; kayıt şeması 5. sürüm
+- [x] 75 birim testi (sürüm damgası denetimi dahil)
 
 ## ⬜ Adım 7 — Yapay zekâ beyler
 

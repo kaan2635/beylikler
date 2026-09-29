@@ -6,7 +6,7 @@ Saf HTML, CSS ve JavaScript ile yazıldı. Kurulum ya da derleme gerektirmez; Gi
 
 **Oyna:** https://kaan2635.github.io/beylikler/
 
-**Durum:** Adım 6a (casusluk ve kuşatma) tamamlandı: kaynak ekonomisi, 11 bina, 9 asker türü, barbar köyleriyle dolu bir harita; saldırı, yağma, casusluk, koçbaşı ve mancınıkla yıkım, raporlar → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
+**Durum:** Adım 6 (derinlik) tamamlandı: kaynak ekonomisi, 13 bina, 9 asker türü ve Demirci geliştirmeleri, Pazar takası; barbar köyleriyle dolu bir harita, saldırı, yağma, casusluk, kuşatma ve raporlar → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
 
 ## Yerelde çalıştırma
 
@@ -70,5 +70,5 @@ Damga eskiyse `npm test` bunu yakalar ve başarısız olur.
 
 - **Ayarlar → Dünya hızı** ile oyunu 100 kata kadar hızlandırabilirsin.
 - Tarayıcı konsolunda `beylikler.state` tüm oyun durumunu gösterir.
-- Denge değerleri `js/core/formulas.js`, `js/config/buildings.js` ve `js/config/units.js` dosyalarındadır.
+- Denge değerleri `js/core/formulas.js` ve `js/config/` klasöründedir (binalar, birimler, savaş, Demirci ve Pazar).
 - Kayıt şeması değişirse `js/config/game.js` içindeki `saveVersion` değerini artır ve `js/core/state.js` içine bir migrasyon ekle.
