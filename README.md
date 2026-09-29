@@ -6,7 +6,7 @@ Saf HTML, CSS ve JavaScript ile yazıldı. Kurulum ya da derleme gerektirmez; Gi
 
 **Oyna:** https://kaan2635.github.io/beylikler/
 
-**Durum:** Adım 7a (rakip beyler) tamamlandı: kaynak ekonomisi, 13 bina, 9 asker türü, Demirci ve Pazar; barbar köyleri ve saldıran, kişilikli 6 rakip beyle dolu bir harita; saldırı, savunma, yağma, casusluk, kuşatma ve raporlar. Zorluk Ayarlar'dan seçilir (Barış'ta saldırı yok) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
+**Durum:** Adım 7 (yapay zekâ beyler) tamamlandı: kaynak ekonomisi, 13 bina, 9 asker türü, Demirci ve Pazar; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
 
 ## Yerelde çalıştırma
 

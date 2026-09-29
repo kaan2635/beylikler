@@ -8,6 +8,7 @@ import { createMapView } from './views/map.js';
 import { createReportsView } from './views/reports.js';
 import { createSmithyView } from './views/smithy.js';
 import { createMarketView } from './views/market.js';
+import { createRankingView } from './views/ranking.js';
 import { createSettingsView } from './views/settings.js';
 import { initToasts, toast } from './toast.js';
 import { h } from './dom.js';
@@ -21,6 +22,7 @@ const ROUTES = {
   harita: (ctx) => createMapView(ctx),
   ordu: (ctx) => createArmyView(ctx),
   raporlar: (ctx) => createReportsView(ctx),
+  siralama: (ctx) => createRankingView(ctx),
   ayarlar: (ctx) => createSettingsView(ctx),
   demirci: (ctx) => createSmithyView(ctx),
   pazar: (ctx) => createMarketView(ctx),
@@ -71,8 +73,17 @@ export function mountApp(game, { isNew, events }) {
     for (const link of document.querySelectorAll('[data-route]')) {
       const active = link.dataset.route === tab;
       link.classList.toggle('active', active);
-      if (active) link.setAttribute('aria-current', 'page');
-      else link.removeAttribute('aria-current');
+      if (active) {
+        link.setAttribute('aria-current', 'page');
+        // Dar ekranda sekmeler yana kayar; seçili sekme görünür kalsın.
+        const bar = link.parentElement;
+        const left = link.offsetLeft - bar.offsetLeft;
+        if (left < bar.scrollLeft || left + link.offsetWidth > bar.scrollLeft + bar.clientWidth) {
+          bar.scrollLeft = left - (bar.clientWidth - link.offsetWidth) / 2;
+        }
+      } else {
+        link.removeAttribute('aria-current');
+      }
     }
     refresh();
   }

@@ -1,5 +1,6 @@
 import { UNITS } from '../config/units.js';
 import { COMBAT } from '../config/combat.js';
+import { LORD } from '../config/lords.js';
 import { hash3, mulberry32 } from '../core/random.js';
 import { techMultiplier } from './research.js';
 
@@ -35,6 +36,21 @@ export function subtractUnits(units, losses) {
 export function luckFor(seed, movementId) {
   const roll = mulberry32(hash3(seed ^ LUCK_SALT, movementId, 0))();
   return (roll * 2 - 1) * COMBAT.luckRange;
+}
+
+/** Savaş puanı: öldürülen askerlerin nüfus değeri (Sipahi 6, Yaya 1…). Sıralamada kullanılır. */
+export function battlePoints(units) {
+  return Object.entries(units).reduce((total, [id, n]) => total + n * UNITS[id].pop, 0);
+}
+
+export function resourceTotal(resources) {
+  return Object.values(resources).reduce((total, n) => total + n, 0);
+}
+
+/** Dünya olaylarına (Sıralama sayfasındaki haber akışı) bir satır ekler. */
+export function addNews(state, at, text) {
+  state.news.unshift({ at, text });
+  state.news.length = Math.min(state.news.length, LORD.newsMax);
 }
 
 /** Raporu en başa ekler; en fazla COMBAT.maxReports rapor saklanır. */

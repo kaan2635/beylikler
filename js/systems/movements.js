@@ -6,8 +6,18 @@ import { npcAt, distance } from './world.js';
 import { barbarianLive, recordBarbarian, recordDamage } from './barbarians.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { deposit } from './economy.js';
-import { provokeLord } from './ai.js';
-import { totalUnits, armySpeed, armyCarry, armyAttack, subtractUnits, luckFor, addReport } from './army.js';
+import { provokeLord, recordPlayerAttackOnLord } from './ai.js';
+import {
+  totalUnits,
+  armySpeed,
+  armyCarry,
+  armyAttack,
+  subtractUnits,
+  luckFor,
+  addReport,
+  battlePoints,
+  resourceTotal,
+} from './army.js';
 
 // Önceki sürümlerle uyum: bu yardımcılar artık army.js'te.
 export { totalUnits, armySpeed, armyCarry, armyAttack, luckFor };
@@ -163,6 +173,9 @@ function attack(state, village, movement, target) {
     siege,
     ...(movement.catapultTarget && { catapultTarget: movement.catapultTarget }),
   });
+  state.stats.kills += battlePoints(battle.defenderLosses);
+  state.stats.loot += resourceTotal(loot);
+  if (target.kind === 'bey') recordPlayerAttackOnLord(state, report);
 
   if (totalUnits(survivors) > 0) turnBack(movement, survivors, loot);
   else village.movements.splice(village.movements.indexOf(movement), 1);

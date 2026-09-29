@@ -998,6 +998,33 @@ input.coord-input {
   gap: 6px;
 }
 
+.data-table tr.is-me {
+  background: color-mix(in srgb, var(--gold) 18%, transparent);
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.news-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px dotted var(--border);
+}
+
+.news-time {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;

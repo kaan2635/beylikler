@@ -3,7 +3,7 @@ import { completeNextUpgrade } from '../systems/construction.js';
 import { completeNextUnit, nextUnitAt } from '../systems/training.js';
 import { completeMovement } from '../systems/movements.js';
 import { completeResearch } from '../systems/research.js';
-import { ensureLordSchedules, launchLordAttack, resolveIncoming } from '../systems/ai.js';
+import { ensureLordSchedules, launchLordAttack, lordRaid, resolveIncoming } from '../systems/ai.js';
 import { advanceClock, lordsOf } from '../systems/world.js';
 
 /**
@@ -55,8 +55,11 @@ function nextEvent(state, now) {
     }
   }
   for (const lord of lordsOf(state.world.seed)) {
-    const at = state.ai.lords[lord.id]?.nextAttackAt;
-    if (at != null) consider(at, villages[0], () => launchLordAttack(state, lord, at));
+    const entry = state.ai.lords[lord.id];
+    const attackAt = entry?.nextAttackAt;
+    if (attackAt != null) consider(attackAt, villages[0], () => launchLordAttack(state, lord, attackAt));
+    const raidAt = entry?.nextRaidAt;
+    if (raidAt != null) consider(raidAt, villages[0], () => lordRaid(state, lord, raidAt));
   }
   return next;
 }

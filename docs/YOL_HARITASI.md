@@ -95,9 +95,9 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Kendi sayfası olan binalara Köy ekranından bağlantı; kayıt şeması 5. sürüm
 - [x] 75 birim testi (sürüm damgası denetimi dahil)
 
-## ◐ Adım 7 — Yapay zekâ beyler
+## ✅ Adım 7 — Yapay zekâ beyler
 
-**7a (tamamlandı): Rakip beyler ve savunma**
+**7a: Rakip beyler ve savunma**
 
 - [x] Tohumdan belirlenen 6 rakip bey (Karaman, Germiyan, Aydın… beyleri); merkez çevresinde bir halkada, gölde değil
 - [x] Kişilikler: saldırgan (sık saldırır, koçbaşı getirir), tüccar (hızlı büyür, akıncıyla yağmalar), savunmacı (güçlü garnizon, seyrek saldırı)
@@ -108,10 +108,15 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Zorluk: Barış / Kolay / Normal / Zor; başlangıç koruması; mevcut kayıtlarda en az 12 oyun saati süre
 - [x] Kayıt şeması 6. sürüm; 86 birim testi
 
-**7b (sıradaki)**
+**7b: Canlı dünya ve sıralama**
 
-- [ ] Sıralama tablosu (oyuncu ve beyler, puana göre)
-- [ ] Beylerin barbar köylerini yağmalayıp büyümesi, birbirleriyle çatışması
+- [x] Beyler yakınlarındaki barbar köylerini yağmalar; köylerin garnizonu erir, ambarı boşalır (oyuncunun yağma rotasını etkiler)
+- [x] Saldırgan beyler başka beylere savaş açar; kazanan güçlenir, kaybeden zayıflar (güç payı −3…+4)
+- [x] Oyuncunun bey hisarlarına karşı zaferleri de beyleri zayıflatır
+- [x] Sıralama sekmesi: puan, savaş puanı (öldürülen askerlerin nüfus değeri) ve ganimet
+- [x] Dünya olayları: beyler arası savaşlar ve oyuncuyla çatışmalar
+- [x] Barış zorluğunda dünya tamamen sakin; 60 oyun günü 40 ms'de hesaplanır
+- [x] Kayıt şeması 7. sürüm; 93 birim testi
 
 ## ⬜ Adım 8 — Fetih ve çoklu köy
 

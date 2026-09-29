@@ -133,7 +133,9 @@ OGame tarzı tur tabanlı simülasyon daha derin olsa da hem daha yavaştır hem
 - **Güç:** `güç = başlangıç (2–4) + kişiliğe göre günlük artış × dünya günü` (en fazla 25). Hisar, barbar köyleriyle aynı bina ve garnizon kurallarıyla üretilir; garnizon kişiliğe göre çarpılır (savunmacı ×2, tüccar ×0,7).
 - **Saldırı ordusu:** `saldırı gücü = 50 × güç^1,5 × zorluk çarpanı`. Bu güç, kişiliğin birim dağılımına bölünür (saldırgan: %60 baltacı, %40 akıncı). Güçlenen saldırgan bey koçbaşı da getirir.
 - **Takvim:** Saldırı aralıkları kişiliğe göre 36–192 oyun saati arasındadır ve zorlukla ölçeklenir. İlk saldırı başlangıç korumasından sonra gelir. Tüm rastgelelik tohumdan geldiği için aynı kayıt aynı saldırıları üretir.
-- **Tasarım kararı:** Beyler gerçek bir oyuncu gibi kaynak toplayıp karar vermez; güçleri zamana bağlı bir eğridir. Bu hem hesaplaması ucuzdur hem de oyuncunun uzakta olduğu süreyi doğru biçimde yetiştirir. Daha "akıllı" davranışlar (barbar yağmalama, birbirleriyle savaş) 7b'de ele alınacak.
+- **Tasarım kararı:** Beyler gerçek bir oyuncu gibi kaynak toplayıp karar vermez; güçleri zamana bağlı bir eğridir. Bu hem hesaplaması ucuzdur hem de oyuncunun uzakta olduğu süreyi doğru biçimde yetiştirir.
+- **Yaşayan dünya (7b):** Her bey ayrı bir takvimle yakındaki barbar köylerini yağmalar. Kişiliğine göre bazen başka bir beye savaş açar (saldırgan %25, savunmacı %10, tüccar %5). Bu hareketler yol süresi olmadan anında çözülür. Sonuçları temel güce eklenen bir **güç payını** değiştirir (−3…+4): başarılı yağma +0,03, savaş zaferi +0,4, yenilgi −0,4.
+- **Denge ölçümü:** 60 oyun günlük benzetimde beyler 45–95 kez yağma yaptı. İlk ayarda güç payı hızla tavana vuruyordu ve 60. günde bütün beyler aynı puandaydı. Payı temel gücün üstüne ekleyip yağma kazancını düşürünce sıralama 1.190–4.006 puan arasına yayıldı.
 
 ### 4.4 Yağma ve fetih
 

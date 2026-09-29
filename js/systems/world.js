@@ -219,14 +219,23 @@ function lordTiles(seed) {
   return lordData(seed).tiles;
 }
 
-/** Beyin gücü: gelişmişlik gibi işler, kişiliğine göre günden güne artar. */
-export function lordPower(lord, world) {
-  return Math.min(LORD.maxPower, lord.startPower + PERSONALITIES[lord.personality].growthPerDay * worldDays(world));
+/**
+ * Beyin gücü: gelişmişlik gibi işler, kişiliğine göre günden güne artar. `bonus` savaşlarla
+ * kazanılan ya da kaybedilen paydır (state.ai.lords[id].bonus).
+ */
+export function lordPower(lord, world, bonus = 0) {
+  const base = Math.min(LORD.maxPower, lord.startPower + PERSONALITIES[lord.personality].growthPerDay * worldDays(world));
+  return Math.max(1, base + bonus);
+}
+
+/** Beyin kayıttaki savaş payıyla birlikte gücü. */
+export function lordPowerIn(state, lord) {
+  return lordPower(lord, state.world, state.ai?.lords?.[lord.id]?.bonus ?? 0);
 }
 
 /** Beyin hisarı, barbar köyleriyle aynı biçimde (saldırılabilir, gözetlenebilir). */
 export function lordVillage(state, lord) {
-  const growth = lordPower(lord, state.world);
+  const growth = lordPowerIn(state, lord);
   const buildings = applyDamage(state, lord.id, barbarianBuildings(growth));
   return {
     id: lord.id,

@@ -29,6 +29,8 @@ export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSee
     reports: [], // en yeni başta
     nextId: 1, // hareket ve rapor numaraları için sayaç
     ai: { difficulty, lords: {} }, // rakip beylerin saldırı takvimi (motor ilk ilerlemede kurar)
+    stats: { kills: 0, loot: 0 }, // oyuncunun savaş puanı ve toplam ganimeti (sıralama)
+    news: [], // dünya olayları, en yeni başta
   };
 }
 
@@ -71,6 +73,8 @@ const MIGRATIONS = {
   4: (data) => ({ ...data, version: 5 }),
   // Adım 7: rakip beyler. Mevcut kayıtlarda ilk saldırı en az 12 oyun saati sonra gelir.
   5: (data) => ({ ...data, ai: { difficulty: 'normal', lords: {} }, version: 6 }),
+  // Adım 7b: sıralama istatistikleri ve dünya olayları; beylerin hareket takvimi motorca kurulur.
+  6: (data) => ({ ...data, stats: { kills: 0, loot: 0 }, news: [], version: 7 }),
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */
