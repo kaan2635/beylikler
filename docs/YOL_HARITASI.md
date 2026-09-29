@@ -50,9 +50,9 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Yakındaki barbar köyleri tablosu (tıklayınca haritada gösterir)
 - [x] Kayıt şeması 3. sürüm; 39 birim testi
 
-## ◐ Adım 5 — Hareket ve savaş
+## ✅ Adım 5 — Hareket ve savaş
 
-**5a (tamamlandı):**
+**5a:**
 
 - [x] Haritadan barbar köyüne saldırı gönderme; en yavaş birimin hızıyla yolculuk, varış saati
 - [x] Saldırı ve ganimetle dönüş hareketleri tek zaman çizelgesinde; yoldaki askerler nüfus kullanır
@@ -63,12 +63,15 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Ordu ekranında yoldaki birlikler; haritada hareket çizgileri
 - [x] Kayıt şeması 4. sürüm; 52 birim testi
 
-**5b (sıradaki):**
+**5b:**
 
-- [ ] Yoldaki saldırıyı geri çağırma
-- [ ] Rapordan tek tıkla aynı orduyla tekrar saldırma
-- [ ] Rapor silme ve filtreleme
-- [ ] Destek (kendi köyleri arasında asker gönderme; Adım 8'deki çoklu köyle birlikte)
+- [x] Yoldaki saldırıyı geri çağırma (ordu bulunduğu yerden, yolda geçen süre kadar sonra döner)
+- [x] Rapordan tek tıkla aynı orduyla tekrar saldırma
+- [x] Yağma asistanı: yakın köyler tablosunda son sonuç, "yolda" işareti ve tek tıkla "Tekrar"
+- [x] Saldırı formunda "Son orduyu kullan"
+- [x] Raporları süzme (tümü, okunmamış, zafer, yenilgi), tek tek ya da okunanları silme
+- [x] 56 birim testi (Game sınıfı bellek içi depoyla da test ediliyor)
+- [ ] Destek (kendi köyleri arasında asker gönderme) → Adım 8'de çoklu köyle birlikte
 
 ## ⬜ Adım 6 — Derinlik
 

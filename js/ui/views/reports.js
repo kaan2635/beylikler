@@ -1,55 +1,135 @@
 import { UNITS, UNIT_IDS } from '../../config/units.js';
 import { RESOURCE_IDS, RESOURCES } from '../../config/resources.js';
-import { h } from '../dom.js';
+import { inspectAttack } from '../../systems/movements.js';
+import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtClock } from '../format.js';
+import { toast } from '../toast.js';
 
-/** Raporlar: her saldırının sonucu, kayıpları ve ganimeti. Açılan rapor okunmuş sayılır. */
+const FILTERS = {
+  tumu: { label: 'Tümü', match: () => true },
+  okunmamis: { label: 'Okunmamış', match: (r) => !r.read },
+  zafer: { label: 'Zafer', match: (r) => r.attackerWins },
+  yenilgi: { label: 'Yenilgi', match: (r) => !r.attackerWins },
+};
+
+/**
+ * Raporlar: her saldırının sonucu, kayıpları ve ganimeti. Açılan rapor okunmuş sayılır.
+ * Raporlar süzülebilir, silinebilir ve aynı orduyla tek tıkla tekrarlanabilir.
+ */
 export function createReportsView({ game, refresh }) {
-  const list = h('div', { class: 'stack-sm' });
+  let filter = 'tumu';
+  const filterButtons = {};
+  const filterBar = h(
+    'div',
+    { class: 'segmented', role: 'group', 'aria-label': 'Raporları süz' },
+    Object.entries(FILTERS).map(([key, { label }]) => {
+      const count = h('span', { class: 'segment-count' });
+      const button = h('button', { type: 'button', class: 'segment', dataset: { filter: key } }, label, count);
+      filterButtons[key] = { button, count };
+      return button;
+    }),
+  );
   const markAll = h('button', { class: 'btn btn-small btn-ghost', type: 'button' }, 'Tümünü okundu say');
-  const el = h('section', { class: 'stack' }, h('header', { class: 'view-header' }, h('h1', null, 'Raporlar'), markAll), list);
-  const items = new Map(); // rapor numarası → <details>
+  const deleteRead = h('button', { class: 'btn btn-small btn-ghost', type: 'button' }, 'Okunanları sil');
+  const list = h('div', { class: 'stack-sm' });
+  const el = h(
+    'section',
+    { class: 'stack' },
+    h('header', { class: 'view-header' }, h('h1', null, 'Raporlar')),
+    h('div', { class: 'toolbar' }, filterBar, h('div', { class: 'form-row' }, markAll, deleteRead)),
+    list,
+  );
+  const items = new Map(); // rapor numarası → { item: <details>, repeat: <button> }
   let signature = null;
+
+  filterBar.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-filter]');
+    if (!button) return;
+    filter = button.dataset.filter;
+    refresh();
+  });
 
   markAll.addEventListener('click', () => {
     game.markReportsRead(game.state.reports.map((r) => r.id));
     refresh();
   });
 
+  deleteRead.addEventListener('click', () => {
+    const read = game.state.reports.filter((r) => r.read).map((r) => r.id);
+    if (!read.length || !confirm(`${read.length} okunmuş rapor silinecek. Emin misin?`)) return;
+    game.deleteReports(read);
+    refresh();
+  });
+
+  list.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-action]');
+    if (!button) return;
+    const id = Number(button.dataset.report);
+    const now = Date.now();
+    if (button.dataset.action === 'delete') {
+      game.deleteReports([id]);
+    } else if (button.dataset.action === 'repeat') {
+      const result = game.repeatAttack(id, now);
+      if (result.ok) toast(`Ordu ${result.target.name} köyüne yeniden yola çıktı. Varış ${fmtClock(result.arriveAt, now)}.`, 'success');
+      else toast(result.reason, 'error');
+    }
+    refresh(now);
+  });
+
   function rebuild(reports, now) {
     // Yeniden çizimde açık raporlar açık kalsın.
-    const open = new Set([...items].filter(([, item]) => item.open).map(([id]) => id));
+    const open = new Set([...items].filter(([, { item }]) => item.open).map(([id]) => id));
     items.clear();
+    if (!reports.length) {
+      const empty = game.state.reports.length
+        ? 'Bu süzgece uyan rapor yok.'
+        : 'Henüz rapor yok. Haritadan bir barbar köyü seçip saldırı gönderebilirsin.';
+      list.replaceChildren(h('div', { class: 'panel' }, h('p', { class: 'muted' }, empty)));
+      return;
+    }
     list.replaceChildren(
-      ...(reports.length
-        ? reports.map((report) => {
-            const item = renderReport(report, now);
-            item.open = open.has(report.id);
-            item.addEventListener('toggle', () => {
-              if (item.open && !report.read) {
-                game.markReportsRead([report.id]);
-                refresh();
-              }
-            });
-            items.set(report.id, item);
-            return item;
-          })
-        : [h('div', { class: 'panel' }, h('p', { class: 'muted' }, 'Henüz rapor yok. Haritadan bir barbar köyü seçip saldırı gönderebilirsin.'))]),
+      ...reports.map((report) => {
+        const { item, repeat } = renderReport(report, now);
+        item.open = open.has(report.id);
+        item.addEventListener('toggle', () => {
+          if (item.open && !report.read) {
+            game.markReportsRead([report.id]);
+            refresh();
+          }
+        });
+        items.set(report.id, { item, repeat });
+        return item;
+      }),
     );
   }
 
   return {
     el,
     update(now) {
-      const reports = game.state.reports;
-      const next = reports.map((r) => r.id).join('|');
+      const all = game.state.reports;
+      for (const [key, { button, count }] of Object.entries(filterButtons)) {
+        button.classList.toggle('active', key === filter);
+        button.setAttribute('aria-pressed', String(key === filter));
+        setText(count, String(all.filter(FILTERS[key].match).length));
+      }
+      // Açık rapor süzgece artık uymasa da (ör. "Okunmamış"ta açılınca okundu olur) okunurken kaybolmasın.
+      const reports = all.filter((r) => FILTERS[filter].match(r) || items.get(r.id)?.item.open);
+      const next = `${filter}:${reports.map((r) => r.id).join('|')}`;
       if (next !== signature) {
         signature = next;
         rebuild(reports, now);
       }
-      for (const report of reports) items.get(report.id)?.classList.toggle('unread', !report.read);
-      markAll.disabled = !reports.some((r) => !r.read);
+      for (const report of reports) {
+        const entry = items.get(report.id);
+        if (!entry) continue;
+        entry.item.classList.toggle('unread', !report.read);
+        const check = inspectAttack(game.state, game.village, report.target.x, report.target.y, report.attackers, now);
+        entry.repeat.disabled = !check.ok;
+        entry.repeat.title = check.ok ? 'Aynı orduyu aynı köye yeniden gönder' : check.reason;
+      }
+      markAll.disabled = !all.some((r) => !r.read);
+      deleteRead.disabled = !all.some((r) => r.read);
     },
   };
 }
@@ -58,8 +138,9 @@ function renderReport(report, now) {
   const lootTotal = RESOURCE_IDS.reduce((total, id) => total + report.loot[id], 0);
   const luck = Math.round(report.luck * 100);
   const units = UNIT_IDS.filter((id) => report.attackers[id] || report.defenders[id]);
+  const repeat = h('button', { class: 'btn btn-small', type: 'button', dataset: { action: 'repeat', report: report.id } }, 'Tekrar saldır');
 
-  return h(
+  const item = h(
     'details',
     { class: 'panel report' },
     h(
@@ -124,9 +205,16 @@ function renderReport(report, now) {
           ? RESOURCE_IDS.map((id) => h('span', { class: 'cost-item', title: RESOURCES[id].name }, icon(id), fmtInt(report.loot[id])))
           : h('span', { class: 'muted' }, 'yok'),
       ),
-      h('a', { class: 'card-link', href: `#/harita/${report.target.x}/${report.target.y}` }, 'Haritada göster ve tekrar saldır →'),
+      h(
+        'div',
+        { class: 'form-row' },
+        repeat,
+        h('a', { class: 'btn btn-small btn-ghost', href: `#/harita/${report.target.x}/${report.target.y}` }, 'Haritada göster'),
+        h('button', { class: 'btn btn-small btn-ghost btn-quiet', type: 'button', dataset: { action: 'delete', report: report.id } }, 'Sil'),
+      ),
     ),
   );
+  return { item, repeat };
 }
 
 function cell(value, loss = false) {

@@ -12,7 +12,7 @@ import { toast } from '../toast.js';
 /** Ordu ekranı: köydeki birlikler ve her eğitim binası için kuyruk + birim kartları. */
 export function createArmyView(ctx) {
   const summary = createSummaryPanel();
-  const movements = createMovementsPanel();
+  const movements = createMovementsPanel(ctx);
   const panels = TRAINING_BUILDINGS.map((buildingId) => createBuildingPanel(buildingId, ctx));
   const el = h(
     'section',
@@ -90,13 +90,23 @@ function createSummaryPanel() {
   };
 }
 
-/** Yoldaki birlikler: saldırıya gidenler ve ganimetle dönenler. */
-function createMovementsPanel() {
+/** Yoldaki birlikler: saldırıya gidenler ve ganimetle dönenler. Giden saldırı geri çağrılabilir. */
+function createMovementsPanel({ game, refresh }) {
   const count = h('span', { class: 'muted' });
   const body = h('div', { class: 'queue' });
   const el = h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, h('h2', null, 'Yoldaki birlikler'), count), body);
   let signature = null;
   let rows = [];
+
+  body.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-recall]');
+    if (!button) return;
+    const now = Date.now();
+    const result = game.recallAttack(Number(button.dataset.recall), now);
+    if (result.ok) toast(`Birlikler geri çağrıldı. Dönüş ${fmtClock(result.movement.arriveAt, now)}.`);
+    else toast(result.reason, 'error');
+    refresh(now);
+  });
 
   function rebuild(movements, now) {
     rows = movements.map((movement) => {
@@ -108,6 +118,7 @@ function createMovementsPanel() {
         .map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`)
         .join(', ');
       const loot = movement.loot ? Object.values(movement.loot).reduce((a, b) => a + b, 0) : 0;
+      const recalled = movement.type === 'donus' && movement.turnAt < 1;
       const target = movement.target;
       const row = h(
         'div',
@@ -118,10 +129,12 @@ function createMovementsPanel() {
           h('span', { class: 'unit-icon small' }, icon(attack ? 'saldiri' : 'donus')),
           h('strong', null, attack ? 'Saldırı →' : 'Dönüş ←'),
           h('a', { class: 'card-link', href: `#/harita/${target.x}/${target.y}` }, `${target.name} (${target.x}|${target.y})`),
-          h('span', { class: 'muted movement-units' }, units + (loot ? ` · ganimet ${fmtInt(loot)}` : '')),
+          h('span', { class: 'muted movement-units' }, units + (loot ? ` · ganimet ${fmtInt(loot)}` : '') + (recalled ? ' · geri çağrıldı' : '')),
         ),
         h('div', { class: 'queue-time' }, remaining, h('span', { class: 'muted' }, `varış ${fmtClock(movement.arriveAt, now)}`)),
-        h('span'),
+        attack
+          ? h('button', { class: 'btn btn-small btn-ghost', type: 'button', dataset: { recall: movement.id } }, 'Geri çağır')
+          : h('span'),
         h('div', { class: 'progress' }, bar),
       );
       return { row, remaining, bar, movement };

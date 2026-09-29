@@ -12,7 +12,8 @@ import {
 } from '../../systems/world.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
-import { fmtInt, fmtDecimal, fmtDuration } from '../format.js';
+import { inspectAttack } from '../../systems/movements.js';
+import { fmtInt, fmtDecimal, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
 import { createAttackForm } from './attack-form.js';
 
@@ -84,7 +85,7 @@ export function createMapView({ game, refresh }) {
         'div',
         { class: 'panel-head' },
         h('h2', null, 'Yakındaki barbar köyleri'),
-        h('span', { class: 'muted' }, `${NEARBY_RADIUS} alan içinde, en yakın ${NEARBY_LIMIT}`),
+        h('span', { class: 'muted' }, `${NEARBY_RADIUS} alan içinde, en yakın ${NEARBY_LIMIT} · "Tekrar" son orduyu yeniden gönderir`),
       ),
       h(
         'div',
@@ -95,7 +96,15 @@ export function createMapView({ game, refresh }) {
           h(
             'thead',
             null,
-            h('tr', null, h('th', null, 'Köy'), h('th', null, 'Koordinat'), h('th', { class: 'num' }, 'Puan'), h('th', { class: 'num' }, 'Mesafe')),
+            h(
+              'tr',
+              null,
+              h('th', null, 'Köy'),
+              h('th', { class: 'num' }, 'Puan'),
+              h('th', { class: 'num' }, 'Mesafe'),
+              h('th', null, 'Son saldırı'),
+              h('th', null, h('span', { class: 'visually-hidden' }, 'Tekrar saldır')),
+            ),
           ),
           nearbyBody,
         ),
@@ -111,6 +120,7 @@ export function createMapView({ game, refresh }) {
   let frame = 0;
   let infoSignature = null;
   let nearbySignature = null;
+  let nearbyRows = []; // { report, repeat } — "Tekrar" düğmeleri her saniye güncellenir
 
   // ---------- Kamera ----------
 
@@ -237,6 +247,15 @@ export function createMapView({ game, refresh }) {
   }
 
   nearbyBody.addEventListener('click', (event) => {
+    const repeat = event.target.closest('button[data-repeat]');
+    if (repeat) {
+      const now = Date.now();
+      const result = game.repeatAttack(Number(repeat.dataset.repeat), now);
+      if (result.ok) toast(`${armyText(result.units)} ${result.target.name} köyüne yola çıktı. Varış ${fmtClock(result.arriveAt, now)}.`, 'success');
+      else toast(result.reason, 'error');
+      refresh(now);
+      return;
+    }
     const button = event.target.closest('button[data-x]');
     if (!button) return;
     const x = Number(button.dataset.x);
@@ -336,7 +355,10 @@ export function createMapView({ game, refresh }) {
     for (const movement of own.movements) {
       const home = [toScreenX(own.x) + t / 2, toScreenY(own.y) + t / 2];
       const away = [toScreenX(movement.target.x) + t / 2, toScreenY(movement.target.y) + t / 2];
-      const [from, to] = movement.type === 'saldiri' ? [home, away] : [away, home];
+      // Geri çağrılan ordu hedefe varmadan, yolun `turnAt` kadarından döner.
+      const turn = movement.turnAt ?? 1;
+      const turnPoint = [home[0] + (away[0] - home[0]) * turn, home[1] + (away[1] - home[1]) * turn];
+      const [from, to] = movement.type === 'saldiri' ? [home, away] : [turnPoint, home];
       const progress = Math.min(1, Math.max(0, (now - movement.departAt) / (movement.arriveAt - movement.departAt)));
       ctx.strokeStyle = movement.type === 'saldiri' ? colors.attack : colors.return;
       ctx.lineWidth = 2;
@@ -414,24 +436,53 @@ export function createMapView({ game, refresh }) {
     info.replaceChildren(...children);
   }
 
-  function renderNearby() {
+  /**
+   * Yağma asistanı: yakın köyler, her birine yapılan son saldırının sonucu ve aynı orduyu
+   * tek tıkla yeniden gönderen "Tekrar" düğmesi.
+   */
+  function renderNearby(now) {
+    const state = game.state;
     const own = game.village;
-    const list = nearbyBarbarians(game.state, own.x, own.y, NEARBY_RADIUS).slice(0, NEARBY_LIMIT);
-    const signature = list.map((v) => `${v.id}:${v.points}`).join('|');
-    if (signature === nearbySignature) return;
-    nearbySignature = signature;
-    nearbyBody.replaceChildren(
-      ...list.map((v) =>
-        h(
-          'tr',
-          null,
-          h('td', null, h('button', { type: 'button', class: 'link-btn', dataset: { x: v.x, y: v.y } }, v.name)),
-          h('td', null, `(${v.x}|${v.y})`),
-          h('td', { class: 'num' }, fmtInt(v.points)),
-          h('td', { class: 'num' }, fmtDecimal(v.distance)),
-        ),
-      ),
-    );
+    const list = nearbyBarbarians(state, own.x, own.y, NEARBY_RADIUS).slice(0, NEARBY_LIMIT);
+    const lastReports = new Map();
+    for (const report of state.reports) if (!lastReports.has(report.target.id)) lastReports.set(report.target.id, report);
+    const underway = new Set(own.movements.filter((m) => m.type === 'saldiri').map((m) => m.target.id));
+
+    const signature = list
+      .map((v) => `${v.id}:${v.points}:${lastReports.get(v.id)?.id ?? ''}:${underway.has(v.id)}`)
+      .join('|');
+    if (signature !== nearbySignature) {
+      nearbySignature = signature;
+      nearbyRows = [];
+      nearbyBody.replaceChildren(
+        ...list.map((v) => {
+          const report = lastReports.get(v.id);
+          const repeat = report
+            ? h('button', { type: 'button', class: 'btn btn-small btn-ghost', dataset: { repeat: report.id } }, 'Tekrar')
+            : null;
+          if (repeat) nearbyRows.push({ report, repeat });
+          return h(
+            'tr',
+            null,
+            h(
+              'td',
+              null,
+              h('button', { type: 'button', class: 'link-btn', dataset: { x: v.x, y: v.y } }, v.name),
+              h('span', { class: 'cell-sub' }, `(${v.x}|${v.y})`),
+            ),
+            h('td', { class: 'num' }, fmtInt(v.points)),
+            h('td', { class: 'num' }, fmtDecimal(v.distance)),
+            h('td', { class: 'wrap' }, lastAttackCell(report, underway.has(v.id), now)),
+            h('td', null, repeat),
+          );
+        }),
+      );
+    }
+    for (const { report, repeat } of nearbyRows) {
+      const check = inspectAttack(state, own, report.target.x, report.target.y, report.attackers, now);
+      repeat.disabled = !check.ok;
+      repeat.title = check.ok ? `Gönder: ${armyText(report.attackers)}` : check.reason;
+    }
   }
 
   return {
@@ -452,11 +503,29 @@ export function createMapView({ game, refresh }) {
     },
     update(now) {
       renderInfo();
-      renderNearby();
+      renderNearby(now);
       attackForm.update(now);
       requestDraw(); // barbar köyleri büyür, ordular yol alır
     },
   };
+}
+
+function lastAttackCell(report, underway, now) {
+  if (underway) return h('span', { class: 'result result-underway' }, 'Yolda');
+  if (!report) return h('span', { class: 'muted' }, '—');
+  const loot = Object.values(report.loot).reduce((a, b) => a + b, 0);
+  return h(
+    'span',
+    { class: `result ${report.attackerWins ? 'result-win' : 'result-loss'}`, title: fmtClock(report.at, now) },
+    report.attackerWins ? `Zafer · ${fmtInt(loot)}` : 'Yenilgi',
+  );
+}
+
+function armyText(units) {
+  return Object.entries(units)
+    .filter(([, n]) => n > 0)
+    .map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`)
+    .join(', ');
 }
 
 function mapButton(content, label, onClick) {

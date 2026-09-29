@@ -28,6 +28,7 @@ export function createAttackForm({ game, refresh }) {
   const submit = h('button', { class: 'btn', type: 'submit' }, 'Saldır');
   const allButton = h('button', { class: 'btn btn-small btn-ghost', type: 'button', onclick: fillAll }, 'Tüm birlikler');
   const clearButton = h('button', { class: 'btn btn-small btn-ghost', type: 'button', onclick: clear }, 'Temizle');
+  const lastArmyButton = h('button', { class: 'btn btn-small btn-ghost', type: 'button', onclick: fillLastArmy }, 'Son orduyu kullan');
 
   const el = h(
     'form',
@@ -37,7 +38,7 @@ export function createAttackForm({ game, refresh }) {
     empty,
     h('div', { class: 'send-grid' }, UNIT_IDS.map((id) => rows[id].row)),
     summary,
-    h('div', { class: 'form-row' }, submit, allButton, clearButton),
+    h('div', { class: 'form-row' }, submit, allButton, lastArmyButton, clearButton),
     status,
   );
   el.hidden = true;
@@ -53,6 +54,18 @@ export function createAttackForm({ game, refresh }) {
   function clear() {
     for (const id of UNIT_IDS) rows[id].input.value = '0';
     refresh();
+  }
+
+  /** Bu köye gönderilen son orduyu, köyde olduğu kadarıyla forma yazar. */
+  function fillLastArmy() {
+    const report = lastReportFor(target);
+    if (!report) return;
+    for (const id of UNIT_IDS) rows[id].input.value = String(Math.min(report.attackers[id] ?? 0, game.village.units[id]));
+    refresh();
+  }
+
+  function lastReportFor(village) {
+    return village ? game.state.reports.find((r) => r.target.id === village.id) : null;
   }
 
   function onSubmit(event) {
@@ -89,8 +102,9 @@ export function createAttackForm({ game, refresh }) {
       }
       empty.hidden = available > 0;
 
-      const report = game.state.reports.find((r) => r.target.id === target.id);
+      const report = lastReportFor(target);
       lastReport.hidden = !report;
+      lastArmyButton.hidden = !report;
       if (report) {
         const left = Object.entries(report.defenders)
           .map(([id, n]) => [id, n - report.defenderLosses[id]])

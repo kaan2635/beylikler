@@ -4,7 +4,7 @@ import { getVillage } from './core/village.js';
 import { encodeSave, decodeSave } from './core/save-codec.js';
 import { startUpgrade, cancelLastUpgrade } from './systems/construction.js';
 import { startTraining, cancelLastTraining } from './systems/training.js';
-import { sendAttack } from './systems/movements.js';
+import { sendAttack, recallAttack } from './systems/movements.js';
 
 /**
  * Oyun durumu ile arayüz arasındaki tek kapı. Arayüz durumu doğrudan değiştirmez:
@@ -81,6 +81,26 @@ export class Game {
     const result = sendAttack(this.state, this.village, x, y, units, now);
     if (result.ok) this.save();
     return result;
+  }
+
+  /** Raporun ordusunu aynı hedefe yeniden gönderir (köyde yeterli asker varsa). */
+  repeatAttack(reportId, now) {
+    const report = this.state.reports.find((r) => r.id === reportId);
+    if (!report) return { ok: false, reason: 'Rapor bulunamadı' };
+    return this.sendAttack(report.target.x, report.target.y, report.attackers, now);
+  }
+
+  recallAttack(movementId, now) {
+    this.tick(now);
+    const result = recallAttack(this.village, movementId, now);
+    if (result.ok) this.save();
+    return result;
+  }
+
+  deleteReports(ids) {
+    const before = this.state.reports.length;
+    this.state.reports = this.state.reports.filter((report) => !ids.includes(report.id));
+    if (this.state.reports.length !== before) this.save();
   }
 
   markReportsRead(ids) {

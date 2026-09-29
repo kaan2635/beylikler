@@ -10,9 +10,10 @@ import { deposit } from './economy.js';
 
 /**
  * Ordu hareketleri. Her hareket çıktığı köyün `movements` listesinde durur:
- *   { id, type: 'saldiri' | 'donus', target: { id, name, x, y }, units, loot, departAt, arriveAt }
+ *   { id, type: 'saldiri' | 'donus', target: { id, name, x, y }, units, loot, departAt, arriveAt, turnAt? }
  * Saldırı hedefe varınca savaş çözülür; sağ kalanlar aynı yoldan ganimetle geri döner.
- * Yoldaki askerler nüfus kullanmaya devam eder.
+ * `turnAt` dönüşün yolun neresinden başladığıdır (1 = hedeften, 0,4 = yolun %40'ından, geri
+ * çağrılan saldırılarda). Yoldaki askerler nüfus kullanmaya devam eder.
  */
 
 const LUCK_SALT = 0x3c6ef372;
@@ -100,6 +101,26 @@ export function sendAttack(state, village, x, y, requested, now) {
   return { ...check, movement };
 }
 
+/**
+ * Yoldaki saldırıyı geri çağırır. Ordu bulunduğu yerden döner; dönüş, o ana kadar yolda
+ * geçen süre kadar sürer. Savaş olmaz, rapor yazılmaz.
+ */
+export function recallAttack(village, movementId, now) {
+  const movement = village.movements.find((m) => m.id === movementId);
+  if (!movement) return { ok: false, reason: 'Bu hareket artık yok' };
+  if (movement.type !== 'saldiri') return { ok: false, reason: 'Yalnızca hedefe giden saldırılar geri çağrılabilir' };
+  if (now >= movement.arriveAt) return { ok: false, reason: 'Ordu hedefe çoktan vardı' };
+  const elapsed = Math.max(0, now - movement.departAt);
+  Object.assign(movement, {
+    type: 'donus',
+    loot: null,
+    turnAt: elapsed / (movement.arriveAt - movement.departAt),
+    departAt: now,
+    arriveAt: now + elapsed,
+  });
+  return { ok: true, movement };
+}
+
 /** Hareketin varış anında olanları uygular ve olayını döndürür. Motor zaman sırasıyla çağırır. */
 export function completeMovement(state, village, movement) {
   return movement.type === 'saldiri' ? arriveAtTarget(state, village, movement) : arriveHome(village, movement);
@@ -173,6 +194,7 @@ function turnBack(movement, units, loot) {
     type: 'donus',
     units,
     loot,
+    turnAt: 1,
     departAt: movement.arriveAt,
     arriveAt: movement.arriveAt + duration,
   });

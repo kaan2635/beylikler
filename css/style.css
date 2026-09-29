@@ -751,6 +751,10 @@ input.coord-input {
   text-align: right;
 }
 
+.data-table td.wrap {
+  white-space: normal;
+}
+
 .data-table tbody tr:hover {
   background: var(--panel-2);
 }
@@ -767,6 +771,12 @@ input.coord-input {
 
 .link-btn:hover {
   text-decoration: underline;
+}
+
+.cell-sub {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
 }
 
 @media (max-width: 900px) {
@@ -869,6 +879,86 @@ input.coord-input {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segment:last-child {
+  border-right: 0;
+}
+
+.segment.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.segment:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: -3px;
+}
+
+.segment-count {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.btn-quiet {
+  border-color: var(--border);
+  color: var(--ink-soft);
+}
+
+.result {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.result-win {
+  color: var(--ok);
+}
+
+.result-loss {
+  color: var(--bad);
+}
+
+.result-underway {
+  color: var(--gold);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 /* ---------- Düğmeler ve formlar ---------- */
@@ -1080,6 +1170,10 @@ textarea {
   .data-table th,
   .data-table td {
     padding: 6px;
+  }
+
+  .data-table th {
+    white-space: normal;
   }
 
   /* Harita parmakla sürüklenir; sayfayı kaydırmak için altında yer kalsın. */
