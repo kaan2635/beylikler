@@ -6,7 +6,7 @@ Saf HTML, CSS ve JavaScript ile yazıldı. Kurulum ya da derleme gerektirmez; Gi
 
 **Oyna:** https://kaan2635.github.io/beylikler/
 
-**Durum:** Adım 8a (fetih) tamamlandı: kaynak ekonomisi, 14 bina, 14 asker türü, Demirci, Pazar ve Saray; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, Elçiyle köy fethi ve çoklu köy yönetimi, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
+**Durum:** Adım 8 (fetih ve çoklu köy) tamamlandı: kaynak ekonomisi, 14 bina, 14 asker türü, Demirci, Pazar ve Saray; barbar köyleri ve birbirleriyle de savaşan, kişilikli 6 rakip beyle yaşayan bir dünya; saldırı, savunma, yağma, casusluk, kuşatma, Elçiyle köy fethi, çoklu köy yönetimi, köyler arası kaynak nakliyesi ve destek, raporlar ve sıralama. Zorluk Ayarlar'dan seçilir (Barış'ta dünya sakin) → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
 
 ## Yerelde çalıştırma
 

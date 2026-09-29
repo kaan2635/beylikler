@@ -10,6 +10,7 @@ import { createSmithyView } from './views/smithy.js';
 import { createMarketView } from './views/market.js';
 import { createRankingView } from './views/ranking.js';
 import { createSettingsView } from './views/settings.js';
+import { createOverviewView } from './views/overview.js';
 import { initToasts, toast } from './toast.js';
 import { h } from './dom.js';
 import { icon } from './icons.js';
@@ -26,6 +27,7 @@ const ROUTES = {
   ayarlar: (ctx) => createSettingsView(ctx),
   demirci: (ctx) => createSmithyView(ctx),
   pazar: (ctx) => createMarketView(ctx),
+  koyler: (ctx) => createOverviewView(ctx),
 };
 
 // Sekmesi olmayan bina sayfalarında hangi sekme seçili görünsün.
@@ -41,6 +43,7 @@ export function mountApp(game, { isNew, events }) {
   const alertText = h('span');
   incomingAlert.append(icon('saldiri'), alertText);
   const villageSwitch = document.getElementById('village-switch');
+  const overviewTab = document.querySelector('[data-route="koyler"]');
   let switchSignature = null;
   villageSwitch.addEventListener('change', () => {
     if (game.setActiveVillage(villageSwitch.value)) toast(`${game.village.name} köyünü yönetiyorsun.`);
@@ -53,6 +56,7 @@ export function mountApp(game, { isNew, events }) {
   function updateVillageSwitch() {
     const villages = Object.values(game.state.villages);
     villageSwitch.hidden = villages.length < 2;
+    overviewTab.hidden = villages.length < 2;
     const signature = villages.map((v) => `${v.id}:${v.name}`).join('|');
     if (signature !== switchSignature) {
       switchSignature = signature;
@@ -131,6 +135,8 @@ function announce(events, whileAway) {
       'research-complete': 'geliştirme',
       'incoming-attack': 'bey saldırısı',
       'defense-result': 'savunma',
+      'transport-arrived': 'nakliye',
+      'support-arrived': 'destek',
       return: 'dönüş',
     };
     const parts = Object.entries(counts).map(([type, n]) => `${n} ${labels[type]}`);
@@ -158,7 +164,10 @@ function describe(event) {
     case 'attack-result': {
       if (!event.attackerWins) return { text: `${event.target} saldırısı: yenilgi. Birlikler geri dönemedi.`, kind: 'error' };
       if (event.conquest?.conquered) {
-        return { text: `${event.target} fethedildi! Artık senin köyün; tepe çubuğundan köyler arasında geçebilirsin.`, kind: 'success' };
+        return {
+          text: `${event.target} fethedildi! Artık senin köyün; sağ kalan askerler orada destek olarak duruyor. Köyler arasında tepe çubuğundan geçebilirsin.`,
+          kind: 'success',
+        };
       }
       if (event.conquest) {
         return { text: `${event.target} saldırısı: zafer! Elçiler bağlılığı düşürdü: ${event.conquest.from} → ${event.conquest.to}.`, kind: 'success' };
@@ -194,6 +203,13 @@ function describe(event) {
       const overflow = lost > 0 ? ` Ambar dolu olduğu için ${fmtInt(lost)} kaynak kayboldu.` : '';
       return { text: `Birlikler ${event.target} köyünden döndü.${loot}${overflow}`, kind: 'success' };
     }
+    case 'transport-arrived': {
+      const lost = total(event.resources) - total(event.stored);
+      const overflow = lost > 0 ? ` Ambar dolu olduğu için ${fmtInt(lost)} kaynak kayboldu.` : '';
+      return { text: `Tüccarlar ${event.target} köyüne ${fmtInt(total(event.stored))} kaynak ulaştırdı.${overflow}`, kind: 'success' };
+    }
+    case 'support-arrived':
+      return { text: `${fmtInt(total(event.units))} asker destek olarak ${event.target} köyüne vardı.`, kind: 'success' };
     default:
       return null;
   }

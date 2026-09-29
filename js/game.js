@@ -6,7 +6,8 @@ import { startUpgrade, cancelLastUpgrade } from './systems/construction.js';
 import { startTraining, cancelLastTraining } from './systems/training.js';
 import { sendAttack, recallAttack } from './systems/movements.js';
 import { startResearch, cancelResearch } from './systems/research.js';
-import { trade } from './systems/market.js';
+import { trade, sendTransport } from './systems/market.js';
+import { withdrawSupport } from './systems/support.js';
 import { setDifficulty, rescaleLordSchedules } from './systems/ai.js';
 
 /**
@@ -101,7 +102,28 @@ export class Game {
     return result;
   }
 
-  /** Birlik gönderir; yalnız gözcülerden oluşan birlik casusluğa gider. options: { catapultTarget } */
+  /** Yönetilen köyden başka bir köye tüccarlarla kaynak gönderir. */
+  sendTransport(targetId, resources, now) {
+    this.tick(now);
+    const result = sendTransport(this.state, this.village, targetId, resources, now);
+    if (result.ok) this.save();
+    return result;
+  }
+
+  /** `homeId` köyünün `hostId` köyünde destek olarak duran askerlerini eve çağırır. */
+  withdrawSupport(homeId, hostId, now) {
+    this.tick(now);
+    const home = this.state.villages[homeId];
+    if (!home) return { ok: false, reason: 'Köy bulunamadı' };
+    const result = withdrawSupport(this.state, home, hostId, now);
+    if (result.ok) this.save();
+    return result;
+  }
+
+  /**
+   * Birlik gönderir: kendi köyüne destek, yalnız gözcülerden oluşan birlik casusluk, diğerleri
+   * saldırı. options: { catapultTarget }
+   */
   sendAttack(x, y, units, now, options = {}) {
     this.tick(now);
     const result = sendAttack(this.state, this.village, x, y, units, now, options);

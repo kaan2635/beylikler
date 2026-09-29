@@ -8,6 +8,8 @@ import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { deposit } from './economy.js';
 import { provokeLord, recordPlayerAttackOnLord } from './ai.js';
 import { applyEnvoys } from './conquest.js';
+import { deliverTransport } from './market.js';
+import { stationSupport } from './support.js';
 import {
   totalUnits,
   armySpeed,
@@ -25,25 +27,36 @@ export { totalUnits, armySpeed, armyCarry, armyAttack, luckFor };
 
 /**
  * Oyuncunun ordu hareketleri. Her hareket çıktığı köyün `movements` listesinde durur:
- *   { id, type: 'saldiri' | 'casus' | 'donus', target: { id, name, x, y }, units, loot,
- *     departAt, arriveAt, turnAt?, catapultTarget? }
- * Hedef barbar köyü ya da bey hisarı olabilir. Saldırı hedefe varınca savaş çözülür; yalnız
- * gözcülerden oluşan birlik (casus) savaşmadan köyü gözetler. Sağ kalanlar aynı yoldan geri
- * döner. `turnAt` dönüşün yolun neresinden başladığıdır (1 = hedeften; geri çağrılanlarda
+ *   { id, type: 'saldiri' | 'casus' | 'destek' | 'nakliye' | 'donus', target: { id, name, x, y },
+ *     units, loot, departAt, arriveAt, turnAt?, catapultTarget?, resources?, merchants? }
+ * Saldırı ve casusluğun hedefi barbar köyü ya da bey hisarıdır. Saldırı hedefe varınca savaş
+ * çözülür; yalnız gözcülerden oluşan birlik (casus) savaşmadan köyü gözetler. Sağ kalanlar aynı
+ * yoldan geri döner. Destek ve nakliye oyuncunun kendi başka köyüne gider (bkz. support.js ve
+ * market.js). `turnAt` dönüşün yolun neresinden başladığıdır (1 = hedeften; geri çağrılanlarda
  * daha az). Yoldaki askerler nüfus kullanmaya devam eder.
  */
 
-const OUTBOUND = new Set(['saldiri', 'casus']);
+const OUTBOUND = new Set(['saldiri', 'casus', 'destek']);
 
-/** Hedefe gitmekte olan (henüz dönmeyen) hareket mi? */
+/** Hedefe gitmekte olan (henüz dönmeyen) hareket mi? Geri çağrılabilir. */
 export function isOutbound(movement) {
   return OUTBOUND.has(movement.type);
 }
 
+/** Saldırı ya da casusluk mu (bir düşman köyüne giden)? */
+export function isHostile(movement) {
+  return movement.type === 'saldiri' || movement.type === 'casus';
+}
+
+function ownVillageAt(state, x, y) {
+  return Object.values(state.villages).find((v) => v.x === x && v.y === y) ?? null;
+}
+
 /**
- * (x, y)'deki köye birlik gönderilip gönderilemeyeceğini inceler. Yalnız gözcülerden oluşan
- * birlik casusluğa (`mission: 'casus'`), diğerleri saldırıya gider.
- * Dönen `code`: 'count' | 'empty' | 'units' | 'target' | 'catapult' (ok ise yok)
+ * (x, y)'deki köye birlik gönderilip gönderilemeyeceğini inceler. Hedef oyuncunun başka bir
+ * köyüyse birlik destek olarak gider (`mission: 'destek'`); yoksa yalnız gözcülerden oluşan
+ * birlik casusluğa (`'casus'`), diğerleri saldırıya (`'saldiri'`) gider.
+ * Dönen `code`: 'count' | 'empty' | 'units' | 'target' | 'self' | 'catapult' (ok ise yok)
  */
 export function inspectAttack(state, village, x, y, requested, now, options = {}) {
   const units = {};
@@ -56,21 +69,26 @@ export function inspectAttack(state, village, x, y, requested, now, options = {}
   const dist = distance(village.x, village.y, x, y);
   const seconds = Math.max(1, travelSeconds(dist, speed, state.world.speed));
   const attack = armyAttack(units, village.tech);
+  const own = ownVillageAt(state, x, y);
   const info = {
     ok: false,
     units,
-    mission: totalUnits(units) > 0 && attack === 0 ? 'casus' : 'saldiri',
+    mission: own ? 'destek' : totalUnits(units) > 0 && attack === 0 ? 'casus' : 'saldiri',
     attack,
     carry: armyCarry(units),
     distance: dist,
     seconds,
     arriveAt: now + seconds * 1000,
-    catapultTarget: units.mancinik ? (options.catapultTarget ?? 'konak') : null,
+    catapultTarget: units.mancinik && !own ? (options.catapultTarget ?? 'konak') : null,
   };
 
   if (!totalUnits(units)) return { ...info, code: 'empty', reason: 'Göndermek için asker seç' };
   const short = Object.keys(units).find((id) => units[id] > village.units[id]);
   if (short) return { ...info, code: 'units', reason: `Köyde yeterli ${UNITS[short].name} yok` };
+  if (own) {
+    if (own.id === village.id) return { ...info, code: 'self', reason: 'Askerler zaten bu köyde' };
+    return { ...info, target: { id: own.id, kind: 'oyuncu', name: own.name, x: own.x, y: own.y }, ok: true };
+  }
   const target = npcAt(state, x, y);
   if (!target) return { ...info, code: 'target', reason: 'Burada saldırılabilecek bir köy yok' };
   if (info.catapultTarget && !CATAPULT_TARGETS.includes(info.catapultTarget)) {
@@ -122,6 +140,8 @@ export function recallAttack(village, movementId, now) {
 /** Hareketin varış anında olanları uygular ve olayını döndürür. Motor zaman sırasıyla çağırır. */
 export function completeMovement(state, village, movement) {
   if (movement.type === 'donus') return arriveHome(village, movement);
+  if (movement.type === 'nakliye') return deliverTransport(state, village, movement);
+  if (movement.type === 'destek') return arriveSupport(state, village, movement);
   const target = npcAt(state, movement.target.x, movement.target.y);
   if (!target) {
     // Hedef artık yok (ör. yanına köy kuruldu): bir şey yapmadan geri dön.
@@ -131,6 +151,18 @@ export function completeMovement(state, village, movement) {
   return movement.type === 'casus'
     ? spyOn(state, village, movement, target)
     : attack(state, village, movement, target);
+}
+
+/** Destek birliği kendi köyüne vardı: orada durur ve köyü savunur. */
+function arriveSupport(state, village, movement) {
+  const host = state.villages[movement.target.id];
+  if (!host) {
+    turnBack(movement, movement.units, null);
+    return null;
+  }
+  stationSupport(village, host.id, movement.units);
+  village.movements.splice(village.movements.indexOf(movement), 1);
+  return { type: 'support-arrived', villageId: village.id, targetId: host.id, target: host.name, units: movement.units, at: movement.arriveAt };
 }
 
 function attack(state, village, movement, target) {

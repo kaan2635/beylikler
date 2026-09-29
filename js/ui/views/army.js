@@ -7,6 +7,7 @@ import { inspectTraining, maxTrainable } from '../../systems/training.js';
 import { isOutbound } from '../../systems/movements.js';
 import { techMultiplier } from '../../systems/research.js';
 import { incomingEstimate } from '../../systems/ai.js';
+import { defendersOf, supportAt, stationedAway } from '../../systems/support.js';
 import { COMBAT } from '../../config/combat.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
@@ -18,6 +19,7 @@ export function createArmyView(ctx) {
   const incoming = createIncomingPanel();
   const summary = createSummaryPanel();
   const movements = createMovementsPanel(ctx);
+  const support = createSupportPanel(ctx);
   const panels = TRAINING_BUILDINGS.map((buildingId) => createBuildingPanel(buildingId, ctx));
   const el = h(
     'section',
@@ -26,6 +28,7 @@ export function createArmyView(ctx) {
     incoming.el,
     summary.el,
     movements.el,
+    support.el,
     panels.map((panel) => panel.el),
   );
 
@@ -36,6 +39,7 @@ export function createArmyView(ctx) {
       incoming.update(ctx.game.state, village, now);
       summary.update(village);
       movements.update(village, now);
+      support.update(ctx.game.state, village);
       for (const panel of panels) panel.update(village, ctx.game.state.world, now);
     },
   };
@@ -98,11 +102,12 @@ function createSummaryPanel() {
   };
 }
 
-/** Köyün savunma gücü; sur, köylüler ve Demirci dahil. Bey saldırısının tahminiyle karşılaştırmak için. */
-function villageDefense(village) {
+/** Köyün savunma gücü; destek, sur, köylüler ve Demirci dahil. Bey saldırısının tahminiyle karşılaştırmak için. */
+function villageDefense(state, village) {
   const defense = { piyade: 0, suvari: 0, okcu: 0 };
+  const defenders = defendersOf(state, village);
   for (const id of UNIT_IDS) {
-    const n = village.units[id];
+    const n = defenders[id] ?? 0;
     if (!n) continue;
     for (const type of Object.keys(defense)) defense[type] += n * UNITS[id].defense[type] * techMultiplier(village.tech[id]);
   }
@@ -137,11 +142,11 @@ function createIncomingPanel() {
         .sort((a, b) => a.attack.arriveAt - b.attack.arriveAt);
       el.hidden = attacks.length === 0;
       if (!attacks.length) return;
-      const d = villageDefense(village);
+      const d = villageDefense(state, village);
       setText(
         defense,
         `${village.name} savunması: piyadeye ${fmtInt(d.piyade)} · süvariye ${fmtInt(d.suvari)} · okçuya ${fmtInt(d.okcu)}` +
-          ` (sur ${village.buildings.sur}. seviye dahil). Askerlerini köyde tut; Gizli Depo kaynaklarını korur.`,
+          ` (sur ${village.buildings.sur}. seviye ve destek dahil). Askerlerini köyde tut ya da diğer köylerinden destek gönder; Gizli Depo kaynaklarını korur.`,
       );
       const next = attacks.map((a) => a.attack.id).join('|');
       if (next !== signature) {
@@ -181,8 +186,65 @@ function createIncomingPanel() {
 const MOVEMENT_KINDS = {
   saldiri: { label: 'Saldırı →', icon: 'saldiri', className: 'is-attack' },
   casus: { label: 'Casusluk →', icon: 'gozcu', className: 'is-spy' },
+  destek: { label: 'Destek →', icon: 'savunma', className: 'is-support' },
+  nakliye: { label: 'Nakliye →', icon: 'tasima', className: 'is-transport' },
   donus: { label: 'Dönüş ←', icon: 'donus', className: 'is-return' },
 };
+
+/**
+ * Destek birlikleri: bu köyün başka köylerde duran askerleri (geri çağrılabilir) ve başka
+ * köylerden bu köyü savunmaya gelenler (geri gönderilebilir). Hiç yoksa gizlenir.
+ */
+function createSupportPanel({ game, refresh }) {
+  const away = h('div', { class: 'queue' });
+  const here = h('div', { class: 'queue' });
+  const awayBlock = h('div', { class: 'stack-sm' }, h('h3', { class: 'info-subtitle' }, 'Başka köylerdeki askerlerin'), away);
+  const hereBlock = h('div', { class: 'stack-sm' }, h('h3', { class: 'info-subtitle' }, 'Bu köyü savunan destek'), here);
+  const el = h('section', { class: 'panel stack-sm' }, h('div', { class: 'panel-head' }, h('h2', null, 'Destek')), awayBlock, hereBlock);
+  let signature = null;
+
+  el.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-home]');
+    if (!button) return;
+    const now = Date.now();
+    const result = game.withdrawSupport(button.dataset.home, button.dataset.host, now);
+    if (result.ok) toast(`Askerler ${result.host.name} köyünden ${result.home.name} köyüne dönüyor. Varış ${fmtClock(result.movement.arriveAt, now)}.`);
+    else toast(result.reason, 'error');
+    refresh(now);
+  });
+
+  const row = (label, units, home, host, buttonText) =>
+    h(
+      'div',
+      { class: 'queue-row' },
+      h('div', { class: 'queue-unit' }, h('span', { class: 'unit-icon small' }, icon('savunma')), h('strong', null, label), h('span', { class: 'muted movement-units' }, armyList(units))),
+      h('span'),
+      h('button', { type: 'button', class: 'btn btn-small btn-ghost', dataset: { home, host } }, buttonText),
+    );
+
+  return {
+    el,
+    update(state, village) {
+      const mine = stationedAway(state, village);
+      const guests = supportAt(state, village.id);
+      el.hidden = !mine.length && !guests.length;
+      const next = JSON.stringify([village.id, mine.map((m) => [m.hostId, m.units]), guests.map((g) => [g.home.id, g.units])]);
+      if (next === signature) return;
+      signature = next;
+      awayBlock.hidden = !mine.length;
+      hereBlock.hidden = !guests.length;
+      away.replaceChildren(...mine.map((m) => row(`→ ${m.host?.name ?? m.hostId}`, m.units, village.id, m.hostId, 'Geri çağır')));
+      here.replaceChildren(...guests.map((g) => row(`${g.home.name} köyünden`, g.units, g.home.id, village.id, 'Geri gönder')));
+    },
+  };
+}
+
+function armyList(units) {
+  return Object.entries(units)
+    .filter(([, n]) => n > 0)
+    .map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`)
+    .join(', ');
+}
 
 /** Yoldaki birlikler: hedefe gidenler ve (ganimetle) dönenler. Hedefe giden birlik geri çağrılabilir. */
 function createMovementsPanel({ game, refresh }) {
@@ -208,10 +270,10 @@ function createMovementsPanel({ game, refresh }) {
       const kind = MOVEMENT_KINDS[movement.type];
       const remaining = h('span', { class: 'queue-remaining' });
       const bar = h('span');
-      const units = Object.entries(movement.units)
-        .filter(([, n]) => n > 0)
-        .map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`)
-        .join(', ');
+      const units =
+        movement.type === 'nakliye'
+          ? `${movement.merchants} tüccar · ${fmtInt(Object.values(movement.resources).reduce((a, b) => a + b, 0))} kaynak`
+          : armyList(movement.units);
       const loot = movement.loot ? Object.values(movement.loot).reduce((a, b) => a + b, 0) : 0;
       const recalled = movement.type === 'donus' && movement.turnAt < 1;
       const target = movement.target;
@@ -235,7 +297,7 @@ function createMovementsPanel({ game, refresh }) {
       return { row, remaining, bar, movement };
     });
     body.replaceChildren(
-      ...(rows.length ? rows.map((r) => r.row) : [h('p', { class: 'muted' }, 'Yolda birlik yok. Haritadan bir barbar köyü seçip saldırı gönderebilirsin.')]),
+      ...(rows.length ? rows.map((r) => r.row) : [h('p', { class: 'muted' }, 'Yolda birlik yok. Haritadan bir barbar köyü seçip saldırı, kendi başka köyünü seçip destek gönderebilirsin.')]),
     );
   }
 

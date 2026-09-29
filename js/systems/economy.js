@@ -42,6 +42,10 @@ export function populationUsed(village) {
   for (const movement of village.movements) {
     for (const [id, n] of Object.entries(movement.units)) used += n * UNITS[id].pop;
   }
+  // Başka köylerde destek olarak duran askerler de geldikleri köyün nüfusundan sayılır.
+  for (const units of Object.values(village.stationed ?? {})) {
+    for (const [id, n] of Object.entries(units)) used += n * UNITS[id].pop;
+  }
   return used;
 }
 

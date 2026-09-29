@@ -214,9 +214,17 @@ export function createMapView({ game, refresh }) {
     infoSignature = null;
     renderInfo();
     const village = villageAt(game.state, tile.x, tile.y);
-    attackForm.setTarget(village && village.kind !== 'oyuncu' ? village : null);
+    // Yönetilen köy dışındaki her köye birlik gönderilebilir: kendi köylerine destek, diğerlerine saldırı.
+    attackForm.setTarget(village && village.id !== game.village.id ? village : null);
     requestDraw();
   }
+
+  info.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-manage]');
+    if (!button) return;
+    if (game.setActiveVillage(button.dataset.manage)) toast(`${game.village.name} köyünü yönetiyorsun.`);
+    location.hash = '#/koy';
+  });
 
   // ---------- Girdi ----------
 
@@ -390,10 +398,8 @@ export function createMapView({ game, refresh }) {
       ctx.strokeRect(toScreenX(selected.x) + 1.5, toScreenY(selected.y) + 1.5, t - 3, t - 3);
     }
 
-    // Yoldaki ordular: köyden hedefe kesikli çizgi ve ordunun şu anki yeri.
-    const own = game.village;
+    // Yoldaki ordular ve tüccarlar: köyden hedefe kesikli çizgi ve şu anki yerleri. Tüm köyler.
     const now = Date.now();
-    const home = [toScreenX(own.x) + t / 2, toScreenY(own.y) + t / 2];
     const drawArmy = (from, to, color, departAt, arriveAt) => {
       const progress = Math.min(1, Math.max(0, (now - departAt) / (arriveAt - departAt)));
       ctx.strokeStyle = color;
@@ -409,19 +415,22 @@ export function createMapView({ game, refresh }) {
       ctx.arc(from[0] + (to[0] - from[0]) * progress, from[1] + (to[1] - from[1]) * progress, Math.max(4, t / 7), 0, Math.PI * 2);
       ctx.fill();
     };
-    for (const movement of own.movements) {
-      const away = [toScreenX(movement.target.x) + t / 2, toScreenY(movement.target.y) + t / 2];
-      // Geri çağrılan ordu hedefe varmadan, yolun `turnAt` kadarından döner.
-      const turn = movement.turnAt ?? 1;
-      const turnPoint = [home[0] + (away[0] - home[0]) * turn, home[1] + (away[1] - home[1]) * turn];
-      const [from, to] = isOutbound(movement) ? [home, away] : [turnPoint, home];
-      const color = { saldiri: colors.attack, casus: colors.spy, donus: colors.return }[movement.type];
-      drawArmy(from, to, color, movement.departAt, movement.arriveAt);
-    }
-    // Köye gelen bey orduları.
-    for (const attack of own.incoming) {
-      const from = [toScreenX(attack.from.x) + t / 2, toScreenY(attack.from.y) + t / 2];
-      drawArmy(from, home, colors.lordFlag, attack.departAt, attack.arriveAt);
+    const movementColor = { saldiri: colors.attack, casus: colors.spy, destek: colors.support, nakliye: colors.transport, donus: colors.return };
+    for (const own of Object.values(state.villages)) {
+      const home = [toScreenX(own.x) + t / 2, toScreenY(own.y) + t / 2];
+      for (const movement of own.movements) {
+        const away = [toScreenX(movement.target.x) + t / 2, toScreenY(movement.target.y) + t / 2];
+        // Geri çağrılan ordu hedefe varmadan, yolun `turnAt` kadarından döner.
+        const turn = movement.turnAt ?? 1;
+        const turnPoint = [home[0] + (away[0] - home[0]) * turn, home[1] + (away[1] - home[1]) * turn];
+        const [from, to] = movement.type === 'donus' ? [turnPoint, home] : [home, away];
+        drawArmy(from, to, movementColor[movement.type], movement.departAt, movement.arriveAt);
+      }
+      // Köye gelen bey orduları.
+      for (const attack of own.incoming) {
+        const from = [toScreenX(attack.from.x) + t / 2, toScreenY(attack.from.y) + t / 2];
+        drawArmy(from, home, colors.lordFlag, attack.departAt, attack.arriveAt);
+      }
     }
 
     drawRulers(ctx, colors, { x0, x1, y0, y1, t, w, hgt, toScreenX, toScreenY });
@@ -482,8 +491,13 @@ export function createMapView({ game, refresh }) {
         ),
       );
     }
-    if (village?.kind === 'oyuncu') {
+    if (village?.kind === 'oyuncu' && village.id === own.id) {
       children.push(h('a', { class: 'btn btn-small', href: '#/koy' }, 'Köye git'));
+    } else if (village?.kind === 'oyuncu') {
+      children.push(
+        h('p', { class: 'muted' }, `Senin köyün. ${own.name} köyünden buraya destek gönderebilirsin; askerler bu köyü savunur.`),
+        h('button', { type: 'button', class: 'btn btn-small btn-ghost', dataset: { manage: village.id } }, 'Bu köyü yönet'),
+      );
     } else if (village?.kind === 'bey') {
       children.push(h('p', { class: 'muted' }, `Rakip bey. ${PERSONALITIES[village.personality].description}`));
     } else if (inWorld(x, y) && !village && terrainAt(state.world.seed, x, y) === 'gol') {
@@ -652,6 +666,8 @@ function readColors(el) {
     attack: v('attack'),
     spy: v('spy'),
     return: v('return'),
+    support: v('support'),
+    transport: v('transport'),
   };
 }
 

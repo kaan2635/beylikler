@@ -8,6 +8,7 @@ import { hash3, mulberry32 } from '../core/random.js';
 import { lordsOf, lordPowerIn, lordVillage, distance, nearbyBarbarians } from './world.js';
 import { barbarianLive, recordBarbarian } from './barbarians.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
+import { defendersOf, applyDefenderLosses } from './support.js';
 import {
   totalUnits,
   armySpeed,
@@ -277,7 +278,9 @@ export function incomingEstimate(attack) {
  * Saldıran kazanırsa gizli depoda olmayan kaynaklar yağmalanır ve koçbaşılar suru yıkar.
  */
 export function resolveIncoming(state, village, attack) {
-  const defenders = Object.fromEntries(Object.entries(village.units).filter(([, n]) => n > 0));
+  // Köyün kendi askerleri ve başka köylerinden gelen destek birlikleri birlikte savunur
+  // (Demirci geliştirmeleri savunulan köyünkidir).
+  const defenders = defendersOf(state, village);
   const wall = village.buildings.sur;
   const battle = resolveBattle({
     attackers: attack.units,
@@ -287,7 +290,7 @@ export function resolveIncoming(state, village, attack) {
     attackerTech: attack.tech,
     defenderTech: village.tech,
   });
-  for (const [id, n] of Object.entries(battle.defenderLosses)) village.units[id] -= n;
+  applyDefenderLosses(state, village, defenders, battle.defenderLosses);
 
   const survivors = subtractUnits(attack.units, battle.attackerLosses);
   const loot = Object.fromEntries(RESOURCE_IDS.map((id) => [id, 0]));

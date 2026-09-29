@@ -86,7 +86,8 @@ test('saldırı kontrolleri: boş ordu, eksik asker, hedef yok; yalnız gözcü 
   assert.equal(inspect({}).code, 'empty');
   assert.equal(inspect({ baltaci: 6 }).code, 'units');
   assert.equal(inspect({ baltaci: 1.5 }).code, 'count');
-  assert.equal(inspect({ baltaci: 1 }, village.x, village.y).code, 'target');
+  assert.equal(inspect({ baltaci: 1 }, village.x, village.y).code, 'self');
+  assert.equal(inspect({ baltaci: 1 }, village.x + 1, village.y).code, 'target');
   assert.equal(inspect({ gozcu: 2 }).mission, 'casus');
   assert.equal(inspect({ baltaci: 5, gozcu: 1 }).mission, 'saldiri');
   assert.ok(inspect({ baltaci: 5, gozcu: 1 }).ok);

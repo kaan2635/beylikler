@@ -71,7 +71,7 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Saldırı formunda "Son orduyu kullan"
 - [x] Raporları süzme (tümü, okunmamış, zafer, yenilgi), tek tek ya da okunanları silme
 - [x] 56 birim testi (Game sınıfı bellek içi depoyla da test ediliyor)
-- [ ] Destek (kendi köyleri arasında asker gönderme) → Adım 8b
+- [x] Destek (kendi köyleri arasında asker gönderme) → Adım 8b'de yapıldı
 
 ## ✅ Adım 6 — Derinlik
 
@@ -118,7 +118,7 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Barış zorluğunda dünya tamamen sakin; 60 oyun günü 40 ms'de hesaplanır
 - [x] Kayıt şeması 7. sürüm; 93 birim testi
 
-## 🔶 Adım 8 — Fetih ve çoklu köy
+## ✅ Adım 8 — Fetih ve çoklu köy
 
 **8a: Fetih** ✅
 
@@ -131,11 +131,16 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Haritada ve saldırı formunda bağlılık bilgisi; raporlarda fetih satırı
 - [x] 98 birim testi
 
-**8b: Köyler arası lojistik**
+**8b: Köyler arası lojistik** ✅
 
-- [ ] Kendi köyleri arasında kaynak gönderme (tüccarla)
-- [ ] Destek: asker gönderme, geri çağırma, başka köyde duran askerler
-- [ ] Köylere genel bakış ekranı
+- [x] Pazar'dan kendi köylerine kaynak gönderme: tüccar başına 1.000, alan başına 6 dk, komisyonsuz; tüccarlar gidiş-dönüş meşgul
+- [x] Destek: haritada kendi köyünü seçip asker gönderme; askerler orada durup savunur, nüfusları geldikleri köyde sayılır
+- [x] Ordu ekranında "Destek" paneli: başka köylerdeki askerlerini geri çağır, köyündeki destek birliklerini geri gönder
+- [x] Bey saldırısında kayıplar köy askerleri ile destek arasında oranla paylaşılır
+- [x] Fetihten sağ çıkan askerler yeni köyde destek olarak kalır (çiftlik taşması sorunu çözüldü)
+- [x] "Köyler" genel bakış ekranı: kaynaklar, nüfus, inşaat, eğitim, asker, tüccar ve gelen saldırılar tek tabloda
+- [x] Haritada tüm köylerin hareketleri; nakliye ve destek ayrı renkte
+- [x] 104 birim testi
 
 ## ⬜ Adım 9 — Sınıf seçimi ve premium
 
@@ -176,5 +181,5 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - Barbar köyleri saldırmaz; yalnızca rakip beyler saldırır.
 - Oyuncu uzun süre uzak kaldıysa aradaki bey saldırıları açılışta sırayla işlenir (çevrimdışı ilerleme).
 - Kuşatma araçları yalnızca kazanılan savaştan sonra yıkım yapar ve sur savaştan önce değil sonra düşer.
-- Fethedilen köye yerleşen garnizon çiftlik sınırını aşabilir; çiftlik yükseltilene ya da askerler başka yere gönderilene kadar o köyde nüfus isteyen inşaat yapılamaz.
-- Oyuncunun köyleri henüz birbirine asker ve kaynak gönderemez (Adım 8b).
+- Destek birlikleri savunulan köyün Demirci geliştirmeleriyle savaşır.
+- Yoldaki tüccarlar geri çağrılamaz.

@@ -84,8 +84,10 @@ test('bağlılığı sıfırlanan barbar köyü fethedilir: binalar korunur, bir
   assert.equal(conquered.name, target.name);
   assert.deepEqual([conquered.x, conquered.y], [target.x, target.y]);
   assert.equal(conquered.buildings.oduncu, target.buildings.oduncu);
-  assert.equal(conquered.units.baltaci, 500 - report.attackerLosses.baltaci);
-  assert.equal(conquered.units.elci, 0, 'elçiler görevini tamamladı');
+  // Sağ kalanlar yeni köyde destek olarak durur; nüfusları geldikleri köyde sayılır.
+  assert.equal(conquered.units.baltaci, 0);
+  assert.equal(village.stationed[conquered.id].baltaci, 500 - report.attackerLosses.baltaci);
+  assert.equal(village.stationed[conquered.id].elci, undefined, 'elçiler görevini tamamladı');
   assert.equal(village.movements.length, 0, 'fethedilen köyden kimse dönmez');
   assert.equal(barbarianAt(state, target.x, target.y), null);
   assert.equal(villageAt(state, target.x, target.y).kind, 'oyuncu');

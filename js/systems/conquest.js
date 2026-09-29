@@ -4,11 +4,12 @@ import { hash3, mulberry32 } from '../core/random.js';
 import { createVillage } from '../core/state.js';
 import { loyaltyOf, setLoyalty } from './barbarians.js';
 import { addNews } from './army.js';
+import { stationSupport } from './support.js';
 
 /**
  * Fetih. Kazanılan bir saldırıda hayatta kalan her Elçi köyün bağlılığını 20–35 düşürür
  * (tohumdan belirlenir). Bağlılık zamanla toparlanır. Sıfıra inerse köy oyuncunun olur:
- * binaları ve kaynakları korunur, saldıran birlikler garnizon olarak kalır, elçiler görevini
+ * binaları ve kaynakları korunur, saldıran birlikler destek olarak köyde kalır, elçiler görevini
  * tamamlayıp köye yerleşir. Hisarı fethedilen bey oyundan çıkar.
  */
 
@@ -45,11 +46,12 @@ function conquer(state, origin, target, survivors, buildings, resources, at) {
   const village = createVillage({ id, name: target.name, x: target.x, y: target.y, now: at });
   Object.assign(village.buildings, buildings);
   village.resources = Object.fromEntries(RESOURCE_IDS.map((r) => [r, Math.max(0, Math.floor(resources[r]))]));
-  for (const [unit, n] of Object.entries(survivors)) {
-    if (unit !== 'elci') village.units[unit] += n; // elçiler görevini tamamladı
-  }
   village.loyalty = CONQUEST.loyaltyAfterConquest;
   state.villages[id] = village;
+  // Sağ kalan saldırganlar yeni köyde destek olarak kalır: nüfusları geldikleri köyde sayılır,
+  // istendiğinde geri çağrılabilir. Elçiler görevini tamamladı.
+  const garrison = Object.fromEntries(Object.entries(survivors).filter(([unit, n]) => unit !== 'elci' && n > 0));
+  stationSupport(origin, id, garrison);
   delete state.barbarians[target.id];
 
   if (target.kind === 'bey') {

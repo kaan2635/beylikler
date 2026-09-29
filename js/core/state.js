@@ -56,6 +56,7 @@ function normalizeVillage(village) {
   village.research ??= null; // süren geliştirme
   village.merchants ??= []; // yoldaki tüccarlar
   village.incoming ??= []; // köye gelen bey saldırıları
+  village.stationed ??= {}; // başka köylerde destek olarak duran askerler (köy id → birlikler)
   return village;
 }
 

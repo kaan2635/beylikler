@@ -14,4 +14,5 @@ export const MARKET = Object.freeze({
   feeStart: 0.3, // komisyon: %30'dan başlar
   feePerLevel: 0.0125, // her Pazar seviyesi komisyonu 1,25 puan düşürür
   feeMin: 0.05, // en düşük komisyon %5
+  merchantSpeed: 6, // kendi köyleri arasında nakliye: tüccarın bir alanı geçme süresi (dakika)
 });

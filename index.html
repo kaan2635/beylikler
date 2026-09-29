@@ -9,7 +9,7 @@
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <!-- Aşağıdaki blok tools/stamp.js ile üretilir; elle düzenleme, npm run stamp çalıştır. -->
     <!-- sürüm-damgası:başla -->
-    <link rel="stylesheet" href="css/style.css?v=e5708dfcca" />
+    <link rel="stylesheet" href="css/style.css?v=9ec3c4951c" />
     <script type="importmap">
       {
         "imports": {
@@ -18,41 +18,43 @@
           "./js/config/game.js": "./js/config/game.js?v=2a3d839e97",
           "./js/config/lords.js": "./js/config/lords.js?v=09469449ce",
           "./js/config/resources.js": "./js/config/resources.js?v=cb79e93d26",
-          "./js/config/tech.js": "./js/config/tech.js?v=292707130f",
+          "./js/config/tech.js": "./js/config/tech.js?v=15752493b4",
           "./js/config/units.js": "./js/config/units.js?v=2bc4b2bcc9",
           "./js/config/world.js": "./js/config/world.js?v=075c2eb978",
           "./js/core/engine.js": "./js/core/engine.js?v=cce7c51711",
           "./js/core/formulas.js": "./js/core/formulas.js?v=b39d4aa8b3",
           "./js/core/random.js": "./js/core/random.js?v=8b15337135",
           "./js/core/save-codec.js": "./js/core/save-codec.js?v=bfba8eba96",
-          "./js/core/state.js": "./js/core/state.js?v=ebefeb3129",
+          "./js/core/state.js": "./js/core/state.js?v=676e5d09d6",
           "./js/core/village.js": "./js/core/village.js?v=43b0118869",
-          "./js/game.js": "./js/game.js?v=8aecd3daad",
+          "./js/game.js": "./js/game.js?v=b61e7b2fef",
           "./js/main.js": "./js/main.js?v=406d73cbb2",
           "./js/storage/local-store.js": "./js/storage/local-store.js?v=32dd81302d",
-          "./js/systems/ai.js": "./js/systems/ai.js?v=eaf469487c",
+          "./js/systems/ai.js": "./js/systems/ai.js?v=1ecc2dc029",
           "./js/systems/army.js": "./js/systems/army.js?v=e1854e9858",
           "./js/systems/barbarians.js": "./js/systems/barbarians.js?v=3625757644",
           "./js/systems/combat.js": "./js/systems/combat.js?v=587d3584f1",
-          "./js/systems/conquest.js": "./js/systems/conquest.js?v=e38a5dd93f",
+          "./js/systems/conquest.js": "./js/systems/conquest.js?v=3c8270e379",
           "./js/systems/construction.js": "./js/systems/construction.js?v=dc8ac634b2",
-          "./js/systems/economy.js": "./js/systems/economy.js?v=4c9f765322",
-          "./js/systems/market.js": "./js/systems/market.js?v=8e341ae843",
-          "./js/systems/movements.js": "./js/systems/movements.js?v=4b4d867213",
+          "./js/systems/economy.js": "./js/systems/economy.js?v=fb74feb747",
+          "./js/systems/market.js": "./js/systems/market.js?v=c61182582c",
+          "./js/systems/movements.js": "./js/systems/movements.js?v=0171bab8d2",
           "./js/systems/ranking.js": "./js/systems/ranking.js?v=18bad2b297",
           "./js/systems/research.js": "./js/systems/research.js?v=98bced5bae",
-          "./js/systems/training.js": "./js/systems/training.js?v=076da60586",
+          "./js/systems/support.js": "./js/systems/support.js?v=8c690a4dc2",
+          "./js/systems/training.js": "./js/systems/training.js?v=4a52aebf69",
           "./js/systems/world.js": "./js/systems/world.js?v=f17c1494fa",
-          "./js/ui/app.js": "./js/ui/app.js?v=f76d0b8e2a",
+          "./js/ui/app.js": "./js/ui/app.js?v=ff105790af",
           "./js/ui/dom.js": "./js/ui/dom.js?v=99613f402c",
           "./js/ui/format.js": "./js/ui/format.js?v=423ebdf8a0",
           "./js/ui/icons.js": "./js/ui/icons.js?v=83c592df2a",
           "./js/ui/resource-bar.js": "./js/ui/resource-bar.js?v=a0cfe9d3b6",
           "./js/ui/toast.js": "./js/ui/toast.js?v=1cd41d825e",
-          "./js/ui/views/army.js": "./js/ui/views/army.js?v=742d424be9",
-          "./js/ui/views/attack-form.js": "./js/ui/views/attack-form.js?v=67e36aa6b3",
-          "./js/ui/views/map.js": "./js/ui/views/map.js?v=49e790ddb8",
-          "./js/ui/views/market.js": "./js/ui/views/market.js?v=531f95cfac",
+          "./js/ui/views/army.js": "./js/ui/views/army.js?v=c7f389a91d",
+          "./js/ui/views/attack-form.js": "./js/ui/views/attack-form.js?v=16afc22d3a",
+          "./js/ui/views/map.js": "./js/ui/views/map.js?v=878b3fbc06",
+          "./js/ui/views/market.js": "./js/ui/views/market.js?v=12549c3430",
+          "./js/ui/views/overview.js": "./js/ui/views/overview.js?v=94c9be63bf",
           "./js/ui/views/ranking.js": "./js/ui/views/ranking.js?v=be56dfbd62",
           "./js/ui/views/reports.js": "./js/ui/views/reports.js?v=e237191708",
           "./js/ui/views/settings.js": "./js/ui/views/settings.js?v=4490334879",
@@ -77,6 +79,7 @@
 
     <nav class="tabs" aria-label="Bölümler">
       <a href="#/koy" data-route="koy">Köy</a>
+      <a href="#/koyler" data-route="koyler" hidden>Köyler</a>
       <a href="#/harita" data-route="harita">Harita</a>
       <a href="#/ordu" data-route="ordu">Ordu</a>
       <a href="#/raporlar" data-route="raporlar">
@@ -93,7 +96,7 @@
     <div id="toasts" class="toasts" aria-live="polite"></div>
 
     <footer class="footer">
-      Beylikler v0.10 · Adım 8a: Fetih ·
+      Beylikler v0.11 · Adım 8: Fetih ve çoklu köy ·
       <a href="https://github.com/kaan2635/beylikler">Kaynak kod</a>
     </footer>
 

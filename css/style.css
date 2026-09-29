@@ -48,6 +48,8 @@
   --map-attack: #b3261e;
   --map-spy: #8a5a00;
   --map-return: #1f6a2b;
+  --map-support: #1d5fa8;
+  --map-transport: #7a4fb0;
   --map-lord: #e6dcf0;
   --map-lord-roof: #5b3a86;
   --map-lord-flag: #7c4dbb;
@@ -89,6 +91,8 @@
     --map-attack: #ff7a66;
     --map-spy: #ffd166;
     --map-return: #7ddc86;
+    --map-support: #7fb8ff;
+    --map-transport: #c9a3ff;
     --map-lord: #cdbfe0;
     --map-lord-roof: #6e4aa0;
     --map-lord-flag: #b28cf0;
@@ -887,6 +891,22 @@ input.coord-input {
 
 .movement.is-spy .unit-icon {
   color: var(--gold);
+}
+
+.movement.is-support .unit-icon {
+  color: var(--map-support);
+}
+
+.movement.is-transport .unit-icon {
+  color: var(--map-transport);
+}
+
+.link-btn.strong {
+  font-weight: 700;
+}
+
+.data-table td.full {
+  color: var(--bad);
 }
 
 .intel {

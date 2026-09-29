@@ -31,13 +31,14 @@ export function totalCost(unit, count) {
   return cost;
 }
 
-/** Köyün sahip olduğu birim sayısı: köyde, eğitimde ve yolda olanlar. */
+/** Köyün sahip olduğu birim sayısı: köyde, eğitimde, yolda ve başka köylerde destekte olanlar. */
 export function unitsOwned(village, unitId) {
   const training = village.trainQueues[UNITS[unitId].building]
     .filter((batch) => batch.unit === unitId)
     .reduce((total, batch) => total + batch.count - batch.trained, 0);
   const away = village.movements.reduce((total, m) => total + (m.units[unitId] ?? 0), 0);
-  return village.units[unitId] + training + away;
+  const stationed = Object.values(village.stationed ?? {}).reduce((total, units) => total + (units[unitId] ?? 0), 0);
+  return village.units[unitId] + training + away + stationed;
 }
 
 /** Sayısı bir binaya bağlı birimlerde (Elçi → Saray) kalan hak; sınırsız birimlerde Infinity. */
