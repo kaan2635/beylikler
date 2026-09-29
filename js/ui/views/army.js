@@ -4,6 +4,7 @@ import { RESOURCES } from '../../config/resources.js';
 import { UNITS, UNIT_IDS, TRAINING_BUILDINGS, COMBAT_TYPES } from '../../config/units.js';
 import { trainingTimeFactor } from '../../core/formulas.js';
 import { inspectTraining, maxTrainable } from '../../systems/training.js';
+import { isOutbound } from '../../systems/movements.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
@@ -90,7 +91,13 @@ function createSummaryPanel() {
   };
 }
 
-/** Yoldaki birlikler: saldırıya gidenler ve ganimetle dönenler. Giden saldırı geri çağrılabilir. */
+const MOVEMENT_KINDS = {
+  saldiri: { label: 'Saldırı →', icon: 'saldiri', className: 'is-attack' },
+  casus: { label: 'Casusluk →', icon: 'gozcu', className: 'is-spy' },
+  donus: { label: 'Dönüş ←', icon: 'donus', className: 'is-return' },
+};
+
+/** Yoldaki birlikler: hedefe gidenler ve (ganimetle) dönenler. Hedefe giden birlik geri çağrılabilir. */
 function createMovementsPanel({ game, refresh }) {
   const count = h('span', { class: 'muted' });
   const body = h('div', { class: 'queue' });
@@ -110,7 +117,8 @@ function createMovementsPanel({ game, refresh }) {
 
   function rebuild(movements, now) {
     rows = movements.map((movement) => {
-      const attack = movement.type === 'saldiri';
+      const outbound = isOutbound(movement);
+      const kind = MOVEMENT_KINDS[movement.type];
       const remaining = h('span', { class: 'queue-remaining' });
       const bar = h('span');
       const units = Object.entries(movement.units)
@@ -122,17 +130,17 @@ function createMovementsPanel({ game, refresh }) {
       const target = movement.target;
       const row = h(
         'div',
-        { class: `queue-row movement ${attack ? 'is-attack' : 'is-return'}` },
+        { class: `queue-row movement ${kind.className}` },
         h(
           'div',
           { class: 'queue-unit' },
-          h('span', { class: 'unit-icon small' }, icon(attack ? 'saldiri' : 'donus')),
-          h('strong', null, attack ? 'Saldırı →' : 'Dönüş ←'),
+          h('span', { class: 'unit-icon small' }, icon(kind.icon)),
+          h('strong', null, kind.label),
           h('a', { class: 'card-link', href: `#/harita/${target.x}/${target.y}` }, `${target.name} (${target.x}|${target.y})`),
           h('span', { class: 'muted movement-units' }, units + (loot ? ` · ganimet ${fmtInt(loot)}` : '') + (recalled ? ' · geri çağrıldı' : '')),
         ),
         h('div', { class: 'queue-time' }, remaining, h('span', { class: 'muted' }, `varış ${fmtClock(movement.arriveAt, now)}`)),
-        attack
+        outbound
           ? h('button', { class: 'btn btn-small btn-ghost', type: 'button', dataset: { recall: movement.id } }, 'Geri çağır')
           : h('span'),
         h('div', { class: 'progress' }, bar),

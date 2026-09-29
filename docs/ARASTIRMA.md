@@ -121,6 +121,12 @@ S ≤ D ise savunan kazanır:  savunan kayıp oranı = (S / D)^1.5,   saldıran 
 
 OGame tarzı tur tabanlı simülasyon daha derin olsa da hem daha yavaştır hem de dengelenmesi zordur. İlk sürüm için kapalı form yeterli.
 
+### 4.3.1 Casusluk ve kuşatma (Beylikler'de uygulanan)
+
+- **Casusluk:** Yalnız gözcüden oluşan birlik savaşmaz. Saldıran gözcüler savunan gözcülerden fazlaysa görev başarılı olur ve kayıp oranı (savunan / saldıran)^1.5 olur. Değilse gözcülerin hepsi yakalanır. Başarılı rapor köyün askerlerini, kaynaklarını, gizli depo korumasını ve binalarını gösterir.
+- **Kuşatma:** Yalnızca kazanılan savaştan sonra sağ kalan araçlar yıkım yapar. L seviyeli bir binayı L−1'e indirmek L araç ister. Böylece yüksek seviyeli binaları yıkmak hem daha zor hem daha pahalıdır; 10. seviye bir ambarı 7'ye indirmek 10 + 9 + 8 = 27 mancınık ister. Koçbaşı suru, mancınık oyuncunun seçtiği binayı hedefler.
+- **Onarım:** Yıkılan barbar binaları her oyun günü bir seviye onarılır. Kayıtta yalnızca yıkım miktarı ve zamanı tutulur.
+
 ### 4.4 Yağma ve fetih
 
 - **Yağma:** Her birimin bir taşıma kapasitesi var. Gizli depodaki miktar düşüldükten sonra kalan kaynak, kapasite dolana kadar eşit oranda alınır.

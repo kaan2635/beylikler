@@ -1,5 +1,6 @@
 import { UNITS, UNIT_IDS } from '../../config/units.js';
 import { RESOURCE_IDS, RESOURCES } from '../../config/resources.js';
+import { BUILDINGS } from '../../config/buildings.js';
 import { inspectAttack } from '../../systems/movements.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
@@ -9,8 +10,9 @@ import { toast } from '../toast.js';
 const FILTERS = {
   tumu: { label: 'Tümü', match: () => true },
   okunmamis: { label: 'Okunmamış', match: (r) => !r.read },
-  zafer: { label: 'Zafer', match: (r) => r.attackerWins },
-  yenilgi: { label: 'Yenilgi', match: (r) => !r.attackerWins },
+  zafer: { label: 'Zafer', match: (r) => r.type === 'saldiri' && r.attackerWins },
+  yenilgi: { label: 'Yenilgi', match: (r) => r.type === 'saldiri' && !r.attackerWins },
+  casus: { label: 'Casusluk', match: (r) => r.type === 'casus' },
 };
 
 /**
@@ -135,10 +137,94 @@ export function createReportsView({ game, refresh }) {
 }
 
 function renderReport(report, now) {
+  return report.type === 'casus' ? renderSpyReport(report, now) : renderAttackReport(report, now);
+}
+
+/** Rapor altındaki düğmeler: tekrar gönder, haritada göster, sil. */
+function reportActions(report, repeatLabel) {
+  const repeat = h('button', { class: 'btn btn-small', type: 'button', dataset: { action: 'repeat', report: report.id } }, repeatLabel);
+  const row = h(
+    'div',
+    { class: 'form-row' },
+    repeat,
+    h('a', { class: 'btn btn-small btn-ghost', href: `#/harita/${report.target.x}/${report.target.y}` }, 'Haritada göster'),
+    h('button', { class: 'btn btn-small btn-ghost btn-quiet', type: 'button', dataset: { action: 'delete', report: report.id } }, 'Sil'),
+  );
+  return { row, repeat };
+}
+
+function renderSpyReport(report, now) {
+  const sent = report.attackers.gozcu;
+  const lost = report.attackerLosses.gozcu;
+  const { intel } = report;
+  const { row, repeat } = reportActions(report, 'Tekrar gönder');
+  const body = [
+    h('p', { class: 'muted' }, `${fmtInt(sent)} gözcü gönderildi, ${lost ? `${fmtInt(lost)} tanesi yakalandı` : 'hepsi döndü'}. Köyde ${fmtInt(report.defenders.gozcu)} nöbetçi gözcü vardı.`),
+  ];
+  if (intel) {
+    const units = UNIT_IDS.filter((id) => intel.units[id] > 0);
+    body.push(
+      h('h4', { class: 'info-subtitle' }, 'Askerler'),
+      units.length
+        ? h('div', { class: 'stats' }, units.map((id) => h('span', { class: 'unit-cell' }, h('span', { class: 'unit-icon small' }, icon(id)), `${fmtInt(intel.units[id])} ${UNITS[id].name}`)))
+        : h('p', { class: 'muted' }, 'Köyde asker yok.'),
+      h('h4', { class: 'info-subtitle' }, 'Kaynaklar'),
+      h(
+        'div',
+        { class: 'cost' },
+        RESOURCE_IDS.map((id) => h('span', { class: 'cost-item', title: RESOURCES[id].name }, icon(id), fmtInt(intel.resources[id]))),
+        intel.hidden ? h('span', { class: 'muted' }, `(gizli depoda ${fmtInt(intel.hidden)} korunuyor)`) : null,
+      ),
+      h('h4', { class: 'info-subtitle' }, 'Binalar'),
+      h(
+        'ul',
+        { class: 'building-levels' },
+        Object.entries(intel.buildings).map(([id, level]) => h('li', null, BUILDINGS[id].name, h('strong', null, String(level)))),
+      ),
+    );
+  } else {
+    body.push(h('p', null, 'Gözcülerin hepsi yakalandı; bilgi alınamadı. Daha fazla gözcü göndermeyi dene.'));
+  }
+  body.push(row);
+
+  const item = h(
+    'details',
+    { class: 'panel report' },
+    h(
+      'summary',
+      null,
+      h('span', { class: `badge ${intel ? 'badge-spy' : 'badge-loss'}` }, intel ? 'Casusluk' : 'Başarısız'),
+      h('span', { class: 'report-title' }, `${report.origin.name} → ${report.target.name} (${report.target.x}|${report.target.y})`),
+      h('span', { class: 'muted report-meta' }, fmtClock(report.at, now)),
+    ),
+    h('div', { class: 'report-body stack-sm' }, body),
+  );
+  return { item, repeat };
+}
+
+function renderAttackReport(report, now) {
   const lootTotal = RESOURCE_IDS.reduce((total, id) => total + report.loot[id], 0);
   const luck = Math.round(report.luck * 100);
   const units = UNIT_IDS.filter((id) => report.attackers[id] || report.defenders[id]);
-  const repeat = h('button', { class: 'btn btn-small', type: 'button', dataset: { action: 'repeat', report: report.id } }, 'Tekrar saldır');
+  const { row: actions, repeat } = reportActions(report, 'Tekrar saldır');
+  const siege = [];
+  if (report.siege?.wall) {
+    const { from, to } = report.siege.wall;
+    siege.push(
+      from === to
+        ? from ? `Koçbaşılar sura zarar veremedi (${from}. seviye).` : 'Köyde yıkılacak sur yoktu.'
+        : to === 0 ? `Koçbaşılar suru tamamen yıktı (${from}. seviyeydi).` : `Koçbaşılar suru ${from}. seviyeden ${to}. seviyeye indirdi.`,
+    );
+  }
+  if (report.siege?.catapult) {
+    const { building, from, to } = report.siege.catapult;
+    const name = BUILDINGS[building].name;
+    siege.push(
+      from === to
+        ? `Mancınıklar ${name} binasına zarar veremedi (${from}. seviye).`
+        : to === 0 ? `Mancınıklar ${name} binasını tamamen yıktı (${from}. seviyeydi).` : `Mancınıklar ${name} binasını ${from}. seviyeden ${to}. seviyeye indirdi.`,
+    );
+  }
 
   const item = h(
     'details',
@@ -205,13 +291,8 @@ function renderReport(report, now) {
           ? RESOURCE_IDS.map((id) => h('span', { class: 'cost-item', title: RESOURCES[id].name }, icon(id), fmtInt(report.loot[id])))
           : h('span', { class: 'muted' }, 'yok'),
       ),
-      h(
-        'div',
-        { class: 'form-row' },
-        repeat,
-        h('a', { class: 'btn btn-small btn-ghost', href: `#/harita/${report.target.x}/${report.target.y}` }, 'Haritada göster'),
-        h('button', { class: 'btn btn-small btn-ghost btn-quiet', type: 'button', dataset: { action: 'delete', report: report.id } }, 'Sil'),
-      ),
+      siege.map((line) => h('p', { class: 'siege-line' }, line)),
+      actions,
     ),
   );
   return { item, repeat };

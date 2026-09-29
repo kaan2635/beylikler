@@ -6,7 +6,7 @@ Saf HTML, CSS ve JavaScript ile yazıldı. Kurulum ya da derleme gerektirmez; Gi
 
 **Oyna:** https://kaan2635.github.io/beylikler/
 
-**Durum:** Adım 5 (hareket ve savaş) tamamlandı: kaynak ekonomisi, 11 bina, 9 asker türü, barbar köyleriyle dolu bir harita; saldırı, yağma, yağma asistanı ve savaş raporları → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
+**Durum:** Adım 6a (casusluk ve kuşatma) tamamlandı: kaynak ekonomisi, 11 bina, 9 asker türü, barbar köyleriyle dolu bir harita; saldırı, yağma, casusluk, koçbaşı ve mancınıkla yıkım, raporlar → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
 
 ## Yerelde çalıştırma
 

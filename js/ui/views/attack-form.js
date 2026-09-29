@@ -1,11 +1,17 @@
 import { UNITS, UNIT_IDS } from '../../config/units.js';
+import { BUILDINGS } from '../../config/buildings.js';
+import { CATAPULT_TARGETS } from '../../config/combat.js';
+import { RESOURCE_IDS } from '../../config/resources.js';
 import { inspectAttack, totalUnits } from '../../systems/movements.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
 
-/** Haritada seçilen barbar köyüne asker gönderme formu. */
+/**
+ * Haritada seçilen barbar köyüne birlik gönderme formu. Yalnız gözcü seçilirse birlik
+ * casusluğa gider; mancınık varsa hedef bina sorulur.
+ */
 export function createAttackForm({ game, refresh }) {
   let target = null;
   const rows = {};
@@ -21,8 +27,17 @@ export function createAttackForm({ game, refresh }) {
     rows[id] = { row, input, all };
   }
 
+  const catapultSelect = h(
+    'select',
+    { id: 'catapult-target' },
+    CATAPULT_TARGETS.map((id) => h('option', { value: id }, BUILDINGS[id].name)),
+  );
+  catapultSelect.addEventListener('change', () => refresh());
+  const catapultRow = h('div', { class: 'form-row' }, h('label', { for: 'catapult-target' }, 'Mancınık hedefi'), catapultSelect);
+
   const empty = h('p', { class: 'muted' }, 'Köyde asker yok. Ordu sekmesinden asker eğitebilirsin.');
-  const lastReport = h('p', { class: 'muted' });
+  const lastAttack = h('p', { class: 'muted' });
+  const intel = h('p', { class: 'intel' });
   const summary = h('div', { class: 'stats' });
   const status = h('p', { class: 'card-status' });
   const submit = h('button', { class: 'btn', type: 'submit' }, 'Saldır');
@@ -33,10 +48,13 @@ export function createAttackForm({ game, refresh }) {
   const el = h(
     'form',
     { class: 'attack-form stack-sm', onsubmit: onSubmit },
-    h('h4', { class: 'info-subtitle' }, 'Saldırı gönder'),
-    lastReport,
+    h('h4', { class: 'info-subtitle' }, 'Birlik gönder'),
+    intel,
+    lastAttack,
     empty,
     h('div', { class: 'send-grid' }, UNIT_IDS.map((id) => rows[id].row)),
+    catapultRow,
+    h('p', { class: 'muted hint' }, 'Yalnız gözcü gönderirsen casusluk yapılır: köyün askerleri, kaynakları ve binaları görünür.'),
     summary,
     h('div', { class: 'form-row' }, submit, allButton, lastArmyButton, clearButton),
     status,
@@ -44,6 +62,8 @@ export function createAttackForm({ game, refresh }) {
   el.hidden = true;
 
   const readUnits = () => Object.fromEntries(UNIT_IDS.map((id) => [id, Number(rows[id].input.value || 0)]));
+  const options = () => ({ catapultTarget: catapultSelect.value });
+  const latest = (type) => (target ? game.state.reports.find((r) => r.type === type && r.target.id === target.id) : null);
 
   function fillAll() {
     // Gözcüler savaşamaz; "tüm birlikler" onları dışarıda bırakır.
@@ -56,30 +76,58 @@ export function createAttackForm({ game, refresh }) {
     refresh();
   }
 
-  /** Bu köye gönderilen son orduyu, köyde olduğu kadarıyla forma yazar. */
+  /** Bu köye gönderilen son orduyu (ve mancınık hedefini) köyde olduğu kadarıyla forma yazar. */
   function fillLastArmy() {
-    const report = lastReportFor(target);
+    const report = latest('saldiri');
     if (!report) return;
     for (const id of UNIT_IDS) rows[id].input.value = String(Math.min(report.attackers[id] ?? 0, game.village.units[id]));
+    if (report.catapultTarget) catapultSelect.value = report.catapultTarget;
     refresh();
-  }
-
-  function lastReportFor(village) {
-    return village ? game.state.reports.find((r) => r.target.id === village.id) : null;
   }
 
   function onSubmit(event) {
     event.preventDefault();
     const now = Date.now();
-    const result = game.sendAttack(target.x, target.y, readUnits(), now);
+    const result = game.sendAttack(target.x, target.y, readUnits(), now, options());
     if (result.ok) {
-      const count = fmtInt(totalUnits(result.units));
-      toast(`${count} asker ${result.target.name} köyüne yola çıktı. Varış ${fmtClock(result.arriveAt, now)}.`, 'success');
+      const what = result.mission === 'casus' ? `${fmtInt(result.units.gozcu)} gözcü` : `${fmtInt(totalUnits(result.units))} asker`;
+      toast(`${what} ${result.target.name} köyüne yola çıktı. Varış ${fmtClock(result.arriveAt, now)}.`, 'success');
       for (const id of UNIT_IDS) rows[id].input.value = '0';
     } else {
       toast(result.reason, 'error');
     }
     refresh(now);
+  }
+
+  function renderIntel(now) {
+    const report = latest('casus');
+    const known = report?.intel;
+    intel.hidden = !known;
+    if (!known) return;
+    const units = Object.entries(known.units).filter(([, n]) => n > 0).map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`);
+    const resources = RESOURCE_IDS.map((id) => fmtInt(known.resources[id])).join(' / ');
+    setText(
+      intel,
+      `Casus raporu (${fmtClock(report.at, now)}): ${units.length ? units.join(', ') : 'asker yok'} · ` +
+        `kaynak ${resources}${known.hidden ? ` (gizli ${fmtInt(known.hidden)})` : ''} · ` +
+        `${known.buildings.sur ? `sur ${known.buildings.sur}. seviye` : 'sur yok'}`,
+    );
+  }
+
+  function renderLastAttack(now) {
+    const report = latest('saldiri');
+    lastAttack.hidden = !report;
+    lastArmyButton.hidden = !report;
+    if (!report) return;
+    const left = Object.entries(report.defenders)
+      .map(([id, n]) => [id, n - (report.defenderLosses[id] ?? 0)])
+      .filter(([, n]) => n > 0)
+      .map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`);
+    setText(
+      lastAttack,
+      `Son saldırı ${fmtClock(report.at, now)}: ${report.attackerWins ? 'zafer' : 'yenilgi'}. ` +
+        (left.length ? `Savunmada ${left.join(', ')} kaldı.` : 'Savunmada kimse kalmadı.'),
+    );
   }
 
   return {
@@ -101,33 +149,23 @@ export function createAttackForm({ game, refresh }) {
         rows[id].row.hidden = home === 0 && Number(rows[id].input.value || 0) === 0;
       }
       empty.hidden = available > 0;
+      renderIntel(now);
+      renderLastAttack(now);
 
-      const report = lastReportFor(target);
-      lastReport.hidden = !report;
-      lastArmyButton.hidden = !report;
-      if (report) {
-        const left = Object.entries(report.defenders)
-          .map(([id, n]) => [id, n - report.defenderLosses[id]])
-          .filter(([, n]) => n > 0)
-          .map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`);
-        setText(
-          lastReport,
-          `Son saldırı ${fmtClock(report.at, now)}: ${report.attackerWins ? 'zafer' : 'yenilgi'}. ` +
-            (left.length ? `Savunmada ${left.join(', ')} kaldı.` : 'Savunmada kimse kalmadı.'),
-        );
-      }
-
-      const check = inspectAttack(game.state, village, target.x, target.y, readUnits(), now);
+      const check = inspectAttack(game.state, village, target.x, target.y, readUnits(), now, options());
+      catapultRow.hidden = !check.units.mancinik;
       const chosen = totalUnits(check.units) > 0;
       summary.hidden = !chosen;
       if (chosen) {
         summary.replaceChildren(
-          stat('saldiri', 'Saldırı gücü', fmtInt(check.attack)),
-          stat('tasima', 'Taşıma kapasitesi', fmtInt(check.carry)),
+          ...(check.mission === 'casus'
+            ? [h('span', { class: 'muted' }, 'Casusluk')]
+            : [stat('saldiri', 'Saldırı gücü', fmtInt(check.attack)), stat('tasima', 'Taşıma kapasitesi', fmtInt(check.carry))]),
           stat('saat', 'Yolculuk süresi (tek yön)', fmtDuration(check.seconds)),
           h('span', { class: 'muted' }, `varış ${fmtClock(check.arriveAt, now)}`),
         );
       }
+      setText(submit, check.mission === 'casus' ? 'Casus gönder' : 'Saldır');
       submit.disabled = !check.ok;
       setText(status, check.ok || check.code === 'empty' ? '' : check.reason);
     },

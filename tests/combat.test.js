@@ -80,15 +80,16 @@ test('dokunulmamış barbar köyü tam garnizonla ve biriken kaynakla gelir; amb
   assert.equal(barbarianLive(state, later).resources.odun, barbarianLive(state, later).cap);
 });
 
-test('saldırı kontrolleri: boş ordu, eksik asker, hedef yok, yalnız gözcü', () => {
+test('saldırı kontrolleri: boş ordu, eksik asker, hedef yok; yalnız gözcü casusluğa gider', () => {
   const { state, village, target } = game({ units: { baltaci: 5, gozcu: 2 } });
-  const inspect = (units, x = target.x, y = target.y) => inspectAttack(state, village, x, y, units, T0).code;
-  assert.equal(inspect({}), 'empty');
-  assert.equal(inspect({ baltaci: 6 }), 'units');
-  assert.equal(inspect({ baltaci: 1.5 }), 'count');
-  assert.equal(inspect({ baltaci: 1 }, village.x, village.y), 'target');
-  assert.equal(inspect({ gozcu: 2 }), 'scouts');
-  assert.equal(inspect({ baltaci: 5, gozcu: 1 }), undefined);
+  const inspect = (units, x = target.x, y = target.y) => inspectAttack(state, village, x, y, units, T0);
+  assert.equal(inspect({}).code, 'empty');
+  assert.equal(inspect({ baltaci: 6 }).code, 'units');
+  assert.equal(inspect({ baltaci: 1.5 }).code, 'count');
+  assert.equal(inspect({ baltaci: 1 }, village.x, village.y).code, 'target');
+  assert.equal(inspect({ gozcu: 2 }).mission, 'casus');
+  assert.equal(inspect({ baltaci: 5, gozcu: 1 }).mission, 'saldiri');
+  assert.ok(inspect({ baltaci: 5, gozcu: 1 }).ok);
 });
 
 test('saldırı gönderilince askerler köyden çıkar ama nüfusu kullanmaya devam eder', () => {

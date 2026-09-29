@@ -46,6 +46,7 @@
   --map-ruler-bg: rgb(53 38 26 / 0.8);
   --map-ruler-ink: #f1e3c2;
   --map-attack: #b3261e;
+  --map-spy: #8a5a00;
   --map-return: #1f6a2b;
 }
 
@@ -83,6 +84,7 @@
     --map-barbar: #b3a587;
     --map-barbar-roof: #4b3d2b;
     --map-attack: #ff7a66;
+    --map-spy: #ffd166;
     --map-return: #7ddc86;
   }
 }
@@ -409,6 +411,10 @@ code {
 
 .badge-loss {
   background: var(--bad);
+}
+
+.badge-spy {
+  background: var(--gold);
 }
 
 .card-desc {
@@ -821,6 +827,45 @@ input.coord-input {
 
 .movement.is-return .unit-icon {
   color: var(--ok);
+}
+
+.movement.is-spy .unit-icon {
+  color: var(--gold);
+}
+
+.intel {
+  padding: 8px 10px;
+  border-left: 3px solid var(--gold);
+  border-radius: 4px;
+  background: var(--panel-2);
+  font-size: 0.85rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+}
+
+.siege-line {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.building-levels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.building-levels li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 2px;
+  border-bottom: 1px dotted var(--border);
 }
 
 /* ---------- Raporlar ---------- */

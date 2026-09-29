@@ -73,12 +73,22 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] 56 birim testi (Game sınıfı bellek içi depoyla da test ediliyor)
 - [ ] Destek (kendi köyleri arasında asker gönderme) → Adım 8'de çoklu köyle birlikte
 
-## ⬜ Adım 6 — Derinlik
+## ◐ Adım 6 — Derinlik
 
-- [ ] Gözcü ile casusluk
-- [ ] Demirci: birim geliştirme
+**6a (tamamlandı): Casusluk ve kuşatma**
+
+- [x] Yalnız gözcüden oluşan birlik casusluğa gider; nöbetçi gözcüleri geçerse köyün askerlerini, kaynaklarını, gizli depo korumasını ve binalarını görür
+- [x] Barbar köylerinde gelişmişliğe göre nöbetçi gözcü
+- [x] Casus raporu saldırı formunda özetlenir; "Casusluk" rapor süzgeci
+- [x] Kazanılan savaştan sonra koçbaşı suru, mancınık seçilen binayı yıkar (L seviyeli binayı bir seviye indirmek L araç ister)
+- [x] Yıkılan binalar barbar köyünde her oyun günü bir seviye onarılır; yıkım puanı düşürür
+- [x] Tekrar saldırı mancınık hedefini korur; casus birliği de geri çağrılabilir
+- [x] 64 birim testi
+
+**6b (sıradaki): Demirci ve Pazar**
+
+- [ ] Demirci: asker türlerini geliştirme (saldırı ve savunma bonusu)
 - [ ] Pazar: kaynak takası
-- [ ] Koçbaşı ile surun, mancınıkla binaların hasar görmesi
 
 ## ⬜ Adım 7 — Yapay zekâ beyler
 
@@ -110,4 +120,4 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - Sistem saati ileri alınarak zaman atlatılabilir. Tek oyunculuda bu bilerek kabul edildi.
 - İnşaat ve eğitim kuyruklarında yalnızca son iş iptal edilebilir.
 - Barbar köyleri henüz saldırmaz; saldıran rakipler Adım 7'de (yapay zekâ beyler) gelecek.
-- Koçbaşı ve mancınık savaşa katılır ama sura/binalara henüz hasar vermez (Adım 6).
+- Kuşatma araçları yalnızca kazanılan savaştan sonra yıkım yapar ve sur savaştan önce değil sonra düşer.

@@ -76,18 +76,19 @@ export class Game {
     return batch;
   }
 
-  sendAttack(x, y, units, now) {
+  /** Birlik gönderir; yalnız gözcülerden oluşan birlik casusluğa gider. options: { catapultTarget } */
+  sendAttack(x, y, units, now, options = {}) {
     this.tick(now);
-    const result = sendAttack(this.state, this.village, x, y, units, now);
+    const result = sendAttack(this.state, this.village, x, y, units, now, options);
     if (result.ok) this.save();
     return result;
   }
 
-  /** Raporun ordusunu aynı hedefe yeniden gönderir (köyde yeterli asker varsa). */
+  /** Raporun birliğini (mancınık hedefiyle birlikte) aynı köye yeniden gönderir. */
   repeatAttack(reportId, now) {
     const report = this.state.reports.find((r) => r.id === reportId);
     if (!report) return { ok: false, reason: 'Rapor bulunamadı' };
-    return this.sendAttack(report.target.x, report.target.y, report.attackers, now);
+    return this.sendAttack(report.target.x, report.target.y, report.attackers, now, { catapultTarget: report.catapultTarget });
   }
 
   recallAttack(movementId, now) {

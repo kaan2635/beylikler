@@ -71,7 +71,13 @@ function announce(events, whileAway) {
   if (events.length > 3) {
     const counts = {};
     for (const event of events) counts[event.type] = (counts[event.type] ?? 0) + 1;
-    const labels = { 'build-complete': 'inşaat', 'train-complete': 'eğitim', 'attack-result': 'savaş', return: 'dönüş' };
+    const labels = {
+      'build-complete': 'inşaat',
+      'train-complete': 'eğitim',
+      'attack-result': 'savaş',
+      'spy-result': 'casusluk',
+      return: 'dönüş',
+    };
     const parts = Object.entries(counts).map(([type, n]) => `${n} ${labels[type]}`);
     toast(`${whileAway ? 'Sen yokken ' : ''}${parts.join(', ')} gerçekleşti. Ayrıntılar Raporlar'da.`, 'success', 7000);
     return;
@@ -89,10 +95,20 @@ function describe(event) {
       return { text: `${BUILDINGS[event.building].name} ${event.level}. seviyeye ulaştı.`, kind: 'success' };
     case 'train-complete':
       return { text: `${fmtInt(event.count)} ${UNITS[event.unit].name} eğitildi ve köyde hazır.`, kind: 'success' };
-    case 'attack-result':
-      return event.attackerWins
-        ? { text: `${event.target} saldırısı: zafer! Ganimet ${fmtInt(total(event.loot))}. Birlikler dönüyor.`, kind: 'success' }
-        : { text: `${event.target} saldırısı: yenilgi. Birlikler geri dönemedi.`, kind: 'error' };
+    case 'attack-result': {
+      if (!event.attackerWins) return { text: `${event.target} saldırısı: yenilgi. Birlikler geri dönemedi.`, kind: 'error' };
+      const { wall, catapult } = event.siege ?? {};
+      const fell = (name, { from, to }) => (to < from ? (to === 0 ? `${name} yıkıldı` : `${name} ${to}. seviyeye indi`) : '');
+      const siege = [wall && fell('sur', wall), catapult && fell(BUILDINGS[catapult.building].name, catapult)].filter(Boolean);
+      return {
+        text: `${event.target} saldırısı: zafer! Ganimet ${fmtInt(total(event.loot))}.${siege.length ? ` Kuşatma: ${siege.join(', ')}.` : ''}`,
+        kind: 'success',
+      };
+    }
+    case 'spy-result':
+      return event.success
+        ? { text: `${event.target} gözetlendi. Casus raporu hazır.`, kind: 'success' }
+        : { text: `${event.target} köyünde gözcülerin yakalandı.`, kind: 'error' };
     case 'return': {
       const lost = total(event.loot) - total(event.stored);
       const loot = total(event.loot) ? ` ${fmtInt(total(event.stored))} kaynak ambara eklendi.` : '';

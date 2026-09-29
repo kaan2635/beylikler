@@ -2,6 +2,8 @@ import { WORLD, VILLAGE_NAME_PARTS } from '../config/world.js';
 import { BUILDINGS } from '../config/buildings.js';
 import { buildingPoints } from '../core/formulas.js';
 import { hash3, mulberry32, valueNoise } from '../core/random.js';
+import { MIN_BUILDING_LEVEL } from '../config/combat.js';
+import { remainingDamage } from './barbarians.js';
 
 /**
  * Dünya haritası. Harita kayda yazılmaz: her alanın arazisi ve barbar köyü, dünya tohumundan
@@ -103,9 +105,19 @@ export function barbarianAt(state, x, y) {
   const perDay = 0.15 + rng() * 0.45;
   const growth = Math.min(WORLD.barbarianMaxGrowth, start + perDay * worldDays(state.world));
   const buildings = barbarianBuildings(growth);
+  const id = `b${x}_${y}`;
+
+  // Koçbaşı ve mancınıkla yıkılan, henüz onarılmamış seviyeler düşülür.
+  const damage = state.barbarians?.[id]?.damage;
+  if (damage) {
+    for (const [building, entry] of Object.entries(damage)) {
+      const min = MIN_BUILDING_LEVEL[building] ?? 0;
+      buildings[building] = Math.max(min, buildings[building] - remainingDamage(entry, state.world.clock.time));
+    }
+  }
 
   return {
-    id: `b${x}_${y}`,
+    id,
     kind: 'barbar',
     name: head + tail,
     x,

@@ -58,6 +58,20 @@ export function resolveBattle({ attackers, defenders, wallLevel = 0, luck = 0 })
   };
 }
 
+/**
+ * `count` kuşatma aracıyla bir binadan kaç seviye yıkıldığı. Bina L seviyesindeyken bir seviye
+ * indirmek (L × perLevel) araç ister; yüksek seviyeleri yıkmak daha zordur.
+ */
+export function siegeLevels(count, level, perLevel, minLevel = 0) {
+  let left = count;
+  let current = level;
+  while (current > minLevel && left >= perLevel * current) {
+    left -= perLevel * current;
+    current -= 1;
+  }
+  return level - current;
+}
+
 /** Taşıma kapasitesini kaynaklara olabildiğince eşit dağıtır; bir kaynak bitince pay diğerlerine kalır. */
 export function distributeLoot(available, capacity) {
   const loot = Object.fromEntries(Object.keys(available).map((id) => [id, 0]));

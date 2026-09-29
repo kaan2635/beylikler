@@ -12,7 +12,7 @@ import {
 } from '../../systems/world.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
-import { inspectAttack } from '../../systems/movements.js';
+import { inspectAttack, isOutbound } from '../../systems/movements.js';
 import { fmtInt, fmtDecimal, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
 import { createAttackForm } from './attack-form.js';
@@ -358,9 +358,9 @@ export function createMapView({ game, refresh }) {
       // Geri çağrılan ordu hedefe varmadan, yolun `turnAt` kadarından döner.
       const turn = movement.turnAt ?? 1;
       const turnPoint = [home[0] + (away[0] - home[0]) * turn, home[1] + (away[1] - home[1]) * turn];
-      const [from, to] = movement.type === 'saldiri' ? [home, away] : [turnPoint, home];
+      const [from, to] = isOutbound(movement) ? [home, away] : [turnPoint, home];
       const progress = Math.min(1, Math.max(0, (now - movement.departAt) / (movement.arriveAt - movement.departAt)));
-      ctx.strokeStyle = movement.type === 'saldiri' ? colors.attack : colors.return;
+      ctx.strokeStyle = { saldiri: colors.attack, casus: colors.spy, donus: colors.return }[movement.type];
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 5]);
       ctx.beginPath();
@@ -445,8 +445,10 @@ export function createMapView({ game, refresh }) {
     const own = game.village;
     const list = nearbyBarbarians(state, own.x, own.y, NEARBY_RADIUS).slice(0, NEARBY_LIMIT);
     const lastReports = new Map();
-    for (const report of state.reports) if (!lastReports.has(report.target.id)) lastReports.set(report.target.id, report);
-    const underway = new Set(own.movements.filter((m) => m.type === 'saldiri').map((m) => m.target.id));
+    for (const report of state.reports) {
+      if (report.type === 'saldiri' && !lastReports.has(report.target.id)) lastReports.set(report.target.id, report);
+    }
+    const underway = new Set(own.movements.filter(isOutbound).map((m) => m.target.id));
 
     const signature = list
       .map((v) => `${v.id}:${v.points}:${lastReports.get(v.id)?.id ?? ''}:${underway.has(v.id)}`)
@@ -558,6 +560,7 @@ function readColors(el) {
     rulerBg: v('ruler-bg'),
     rulerInk: v('ruler-ink'),
     attack: v('attack'),
+    spy: v('spy'),
     return: v('return'),
   };
 }
