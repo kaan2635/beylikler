@@ -45,6 +45,8 @@
   --map-door: #35261a;
   --map-ruler-bg: rgb(53 38 26 / 0.8);
   --map-ruler-ink: #f1e3c2;
+  --map-attack: #b3261e;
+  --map-return: #1f6a2b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -80,6 +82,8 @@
     --map-own: #f1e3c2;
     --map-barbar: #b3a587;
     --map-barbar-roof: #4b3d2b;
+    --map-attack: #ff7a66;
+    --map-return: #7ddc86;
   }
 }
 
@@ -253,6 +257,19 @@ code {
   border-bottom-color: var(--accent);
 }
 
+.nav-badge {
+  display: inline-block;
+  min-width: 20px;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.75rem;
+  line-height: 20px;
+  text-align: center;
+}
+
 /* ---------- Sayfa ---------- */
 
 .view {
@@ -292,20 +309,6 @@ code {
 
 .panel h2 {
   font-size: 1.2rem;
-}
-
-.tag {
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: var(--gold);
-  color: #fff;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.plain-list {
-  margin: 0;
-  padding-left: 20px;
 }
 
 /* ---------- İnşaat kuyruğu ---------- */
@@ -398,6 +401,14 @@ code {
 
 .badge-muted {
   background: var(--ink-soft);
+}
+
+.badge-win {
+  background: var(--ok);
+}
+
+.badge-loss {
+  background: var(--bad);
 }
 
 .card-desc {
@@ -764,6 +775,102 @@ input.coord-input {
   }
 }
 
+/* ---------- Saldırı ve hareketler ---------- */
+
+.attack-form {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.send-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.send-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto 76px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.send-row input[type="number"] {
+  width: 76px;
+  padding: 5px 8px;
+}
+
+.movement-units {
+  font-size: 0.85rem;
+}
+
+.movement.is-attack .unit-icon {
+  color: var(--bad);
+}
+
+.movement.is-return .unit-icon {
+  color: var(--ok);
+}
+
+/* ---------- Raporlar ---------- */
+
+.report {
+  padding: 0;
+}
+
+.report > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.report > summary::-webkit-details-marker {
+  display: none;
+}
+
+.report > summary::before {
+  content: "▸";
+  color: var(--ink-soft);
+  transition: transform 0.15s;
+}
+
+.report[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.report.unread > summary .report-title {
+  font-weight: 700;
+}
+
+.report.unread {
+  border-left: 4px solid var(--accent);
+}
+
+.report-meta {
+  margin-left: auto;
+  font-size: 0.85rem;
+}
+
+.report-body {
+  padding: 0 16px 16px;
+}
+
+.data-table td.loss {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+.unit-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* ---------- Düğmeler ve formlar ---------- */
 
 .btn {
@@ -968,6 +1075,11 @@ textarea {
 
   .queue-row {
     grid-template-columns: 1fr auto;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 6px;
   }
 
   /* Harita parmakla sürüklenir; sayfayı kaydırmak için altında yer kalsın. */

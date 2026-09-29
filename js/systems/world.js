@@ -110,6 +110,7 @@ export function barbarianAt(state, x, y) {
     name: head + tail,
     x,
     y,
+    growth,
     buildings,
     points: villagePoints(buildings),
   };

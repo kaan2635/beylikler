@@ -1,7 +1,7 @@
 // Oyun ve dünya ayarları. Dünya hızı tüm üretim ve inşaat sürelerini ölçekler.
 export const GAME = Object.freeze({
   title: 'Beylikler',
-  saveVersion: 3,
+  saveVersion: 4,
   saveKey: 'beylikler:kayit',
   defaultSpeed: 1,
   speedOptions: [1, 2, 5, 10, 50, 100],

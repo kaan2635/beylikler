@@ -39,6 +39,9 @@ export function populationUsed(village) {
   for (const queue of Object.values(village.trainQueues)) {
     for (const batch of queue) used += (batch.count - batch.trained) * UNITS[batch.unit].pop;
   }
+  for (const movement of village.movements) {
+    for (const [id, n] of Object.entries(movement.units)) used += n * UNITS[id].pop;
+  }
   return used;
 }
 
@@ -64,6 +67,18 @@ export function canAfford(village, cost) {
 
 export function spend(village, cost) {
   for (const [id, amount] of Object.entries(cost)) village.resources[id] -= amount;
+}
+
+/** Ganimet gibi dışarıdan gelen kaynağı ekler; ambara sığmayan kısım kaybolur. Eklenen miktarı döndürür. */
+export function deposit(village, amounts) {
+  const cap = storageCap(village);
+  const added = {};
+  for (const [id, amount] of Object.entries(amounts)) {
+    const before = village.resources[id];
+    village.resources[id] = Math.max(before, Math.min(cap, before + amount));
+    added[id] = village.resources[id] - before;
+  }
+  return added;
 }
 
 /** İade ambar sınırını aşabilir; fazlası harcanana kadar korunur, o sırada üretim durur. */

@@ -4,6 +4,7 @@ import { getVillage } from './core/village.js';
 import { encodeSave, decodeSave } from './core/save-codec.js';
 import { startUpgrade, cancelLastUpgrade } from './systems/construction.js';
 import { startTraining, cancelLastTraining } from './systems/training.js';
+import { sendAttack } from './systems/movements.js';
 
 /**
  * Oyun durumu ile arayüz arasındaki tek kapı. Arayüz durumu doğrudan değiştirmez:
@@ -73,6 +74,24 @@ export class Game {
     const batch = cancelLastTraining(this.village, buildingId);
     if (batch) this.save();
     return batch;
+  }
+
+  sendAttack(x, y, units, now) {
+    this.tick(now);
+    const result = sendAttack(this.state, this.village, x, y, units, now);
+    if (result.ok) this.save();
+    return result;
+  }
+
+  markReportsRead(ids) {
+    let changed = false;
+    for (const report of this.state.reports) {
+      if (!report.read && ids.includes(report.id)) {
+        report.read = true;
+        changed = true;
+      }
+    }
+    if (changed) this.save();
   }
 
   renameVillage(name) {

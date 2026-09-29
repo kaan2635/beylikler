@@ -50,12 +50,25 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Yakındaki barbar köyleri tablosu (tıklayınca haritada gösterir)
 - [x] Kayıt şeması 3. sürüm; 39 birim testi
 
-## ⬜ Adım 5 — Hareket ve savaş
+## ◐ Adım 5 — Hareket ve savaş
 
-- [ ] Saldırı, destek, geri dönüş hareketleri; yolculuk süresi
-- [ ] Savaş formülü (bkz. araştırma §4.3), sur bonusu, şans
-- [ ] Yağma: taşıma kapasitesi, gizli depo koruması
-- [ ] Savaş raporları ("Raporlar" ekranı)
+**5a (tamamlandı):**
+
+- [x] Haritadan barbar köyüne saldırı gönderme; en yavaş birimin hızıyla yolculuk, varış saati
+- [x] Saldırı ve ganimetle dönüş hareketleri tek zaman çizelgesinde; yoldaki askerler nüfus kullanır
+- [x] Savaş formülü (bkz. araştırma §4.3): tür karışımına göre ağırlıklı savunma, sur bonusu, köylü direnişi, tohumdan belirlenen ±%25 şans
+- [x] Barbar köyleri: gelişmişliğe göre garnizon, zamanla dolan ambar; yenilen köy kayıtta tutulur ve toparlanır
+- [x] Yağma: taşıma kapasitesi eşit dağıtılır, gizli depo korur, ambara sığmayan kaybolur
+- [x] Raporlar ekranı (kayıplar, ganimet, şans, sur); okunmamış rapor rozeti
+- [x] Ordu ekranında yoldaki birlikler; haritada hareket çizgileri
+- [x] Kayıt şeması 4. sürüm; 52 birim testi
+
+**5b (sıradaki):**
+
+- [ ] Yoldaki saldırıyı geri çağırma
+- [ ] Rapordan tek tıkla aynı orduyla tekrar saldırma
+- [ ] Rapor silme ve filtreleme
+- [ ] Destek (kendi köyleri arasında asker gönderme; Adım 8'deki çoklu köyle birlikte)
 
 ## ⬜ Adım 6 — Derinlik
 
@@ -93,4 +106,5 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - Kayıt yalnızca o tarayıcıda durur. Başka cihaza geçmek için Ayarlar → Kayıt kodunu kullan.
 - Sistem saati ileri alınarak zaman atlatılabilir. Tek oyunculuda bu bilerek kabul edildi.
 - İnşaat ve eğitim kuyruklarında yalnızca son iş iptal edilebilir.
-- Askerler henüz köyden ayrılamaz; hareket ve savaş Adım 5'te gelecek.
+- Barbar köyleri henüz saldırmaz; saldıran rakipler Adım 7'de (yapay zekâ beyler) gelecek.
+- Koçbaşı ve mancınık savaşa katılır ama sura/binalara henüz hasar vermez (Adım 6).

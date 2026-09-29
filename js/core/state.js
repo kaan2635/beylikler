@@ -25,6 +25,9 @@ export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSee
     villages: {
       v1: createVillage({ id: 'v1', name: START.villageName, x: 500, y: 500, now }),
     },
+    barbarians: {}, // yalnızca saldırıya uğramış barbar köylerinin son durumu
+    reports: [], // en yeni başta
+    nextId: 1, // hareket ve rapor numaraları için sayaç
   };
 }
 
@@ -44,6 +47,7 @@ function normalizeVillage(village) {
   for (const id of UNIT_IDS) village.units[id] ??= 0;
   village.trainQueues ??= {};
   for (const id of TRAINING_BUILDINGS) village.trainQueues[id] ??= [];
+  village.movements ??= [];
   return village;
 }
 
@@ -55,6 +59,8 @@ const MIGRATIONS = {
   1: (data) => ({ ...data, version: 2 }),
   // Adım 4: dünya saati eklendi. Kuruluştan bu yana geçen süre ilk ilerlemede eklenir.
   2: (data) => ({ ...data, world: { ...data.world, clock: { time: 0, at: data.createdAt } }, version: 3 }),
+  // Adım 5: ordu hareketleri, raporlar ve barbar köylerinin değişen durumu eklendi.
+  3: (data) => ({ ...data, barbarians: {}, reports: [], nextId: 1, version: 4 }),
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */

@@ -5,22 +5,18 @@ import { createResourceBar } from './resource-bar.js';
 import { createVillageView } from './views/village.js';
 import { createArmyView } from './views/army.js';
 import { createMapView } from './views/map.js';
+import { createReportsView } from './views/reports.js';
 import { createSettingsView } from './views/settings.js';
-import { createPlaceholderView } from './views/placeholder.js';
 import { initToasts, toast } from './toast.js';
 import { fmtInt } from './format.js';
 
 // Adres çubuğundaki #/koy gibi yollar ve karşılık gelen ekranlar.
+// Yolun devamı ekrana parametre olarak gider: #/harita/503/500 → harita, [503, 500].
 const ROUTES = {
   koy: (ctx) => createVillageView(ctx),
   harita: (ctx) => createMapView(ctx),
   ordu: (ctx) => createArmyView(ctx),
-  raporlar: () =>
-    createPlaceholderView({
-      title: 'Raporlar',
-      intro: 'Savaşların, yağmaların ve casus raporlarının kaydı.',
-      items: ['Savaş raporları (kayıplar, ganimet)', 'Casusluk raporları', 'Olay geçmişi'],
-    }),
+  raporlar: (ctx) => createReportsView(ctx),
   ayarlar: (ctx) => createSettingsView(ctx),
 };
 
@@ -29,6 +25,7 @@ export function mountApp(game, { isNew, events }) {
   initToasts(document.getElementById('toasts'));
   const resourceBar = createResourceBar(document.getElementById('resource-bar'));
   const viewRoot = document.getElementById('view');
+  const reportsBadge = document.getElementById('reports-badge');
   const views = {};
   let current = null;
 
@@ -36,16 +33,19 @@ export function mountApp(game, { isNew, events }) {
     game.tick(now);
     resourceBar.update(game);
     current?.update(now);
-    document.title = `${game.village.name} · ${GAME.title}`;
+    const unread = game.state.reports.filter((report) => !report.read).length;
+    reportsBadge.hidden = unread === 0;
+    reportsBadge.textContent = String(unread);
+    document.title = `${unread ? `(${unread}) ` : ''}${game.village.name} · ${GAME.title}`;
   }
 
   function route() {
-    const requested = location.hash.replace(/^#\/?/, '');
+    const [requested, ...params] = location.hash.replace(/^#\/?/, '').split('/');
     const name = ROUTES[requested] ? requested : 'koy';
     views[name] ??= ROUTES[name]({ game, refresh });
     current = views[name];
     viewRoot.replaceChildren(current.el);
-    current.onShow?.();
+    current.onShow?.(params.map(Number));
     for (const link of document.querySelectorAll('[data-route]')) {
       const active = link.dataset.route === name;
       link.classList.toggle('active', active);
@@ -68,19 +68,38 @@ export function mountApp(game, { isNew, events }) {
 }
 
 function announce(events, whileAway) {
-  const builds = events.filter((event) => event.type === 'build-complete');
-  const trainings = events.filter((event) => event.type === 'train-complete');
-  if (builds.length + trainings.length > 3) {
-    const parts = [];
-    if (builds.length) parts.push(`${builds.length} inşaat`);
-    if (trainings.length) parts.push(`${trainings.length} eğitim`);
-    toast(`${whileAway ? 'Sen yokken ' : ''}${parts.join(' ve ')} tamamlandı.`, 'success', 6000);
+  if (events.length > 3) {
+    const counts = {};
+    for (const event of events) counts[event.type] = (counts[event.type] ?? 0) + 1;
+    const labels = { 'build-complete': 'inşaat', 'train-complete': 'eğitim', 'attack-result': 'savaş', return: 'dönüş' };
+    const parts = Object.entries(counts).map(([type, n]) => `${n} ${labels[type]}`);
+    toast(`${whileAway ? 'Sen yokken ' : ''}${parts.join(', ')} gerçekleşti. Ayrıntılar Raporlar'da.`, 'success', 7000);
     return;
   }
-  for (const event of builds) {
-    toast(`${BUILDINGS[event.building].name} ${event.level}. seviyeye ulaştı.`, 'success');
+  for (const event of events) {
+    const message = describe(event);
+    if (message) toast(message.text, message.kind, 6000);
   }
-  for (const event of trainings) {
-    toast(`${fmtInt(event.count)} ${UNITS[event.unit].name} eğitildi ve köyde hazır.`, 'success');
+}
+
+function describe(event) {
+  const total = (resources) => Object.values(resources ?? {}).reduce((a, b) => a + b, 0);
+  switch (event.type) {
+    case 'build-complete':
+      return { text: `${BUILDINGS[event.building].name} ${event.level}. seviyeye ulaştı.`, kind: 'success' };
+    case 'train-complete':
+      return { text: `${fmtInt(event.count)} ${UNITS[event.unit].name} eğitildi ve köyde hazır.`, kind: 'success' };
+    case 'attack-result':
+      return event.attackerWins
+        ? { text: `${event.target} saldırısı: zafer! Ganimet ${fmtInt(total(event.loot))}. Birlikler dönüyor.`, kind: 'success' }
+        : { text: `${event.target} saldırısı: yenilgi. Birlikler geri dönemedi.`, kind: 'error' };
+    case 'return': {
+      const lost = total(event.loot) - total(event.stored);
+      const loot = total(event.loot) ? ` ${fmtInt(total(event.stored))} kaynak ambara eklendi.` : '';
+      const overflow = lost > 0 ? ` Ambar dolu olduğu için ${fmtInt(lost)} kaynak kayboldu.` : '';
+      return { text: `Birlikler ${event.target} köyünden döndü.${loot}${overflow}`, kind: 'success' };
+    }
+    default:
+      return null;
   }
 }

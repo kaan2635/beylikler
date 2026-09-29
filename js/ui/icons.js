@@ -22,6 +22,7 @@ const ICONS = {
   saldiri: line('<path d="M5 5l11 11"/><path d="M19 5L8 16"/><path d="M13.5 18.5l5-5M5.5 13.5l5 5"/>'),
   savunma: line('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'),
   hiz: line('<path d="M3 12h10"/><path d="M9 7l5 5-5 5"/><path d="M15 7l5 5-5 5"/>'),
+  donus: line('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>'),
   konum: line('<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'),
   tasima: line('<path d="M9 3h6l-2 4h-2z"/><path d="M8 8h8c3 3 4 6 3 9a3 3 0 0 1-3 2.5H8A3 3 0 0 1 5 17c-1-3 0-6 3-9z"/>'),
 };

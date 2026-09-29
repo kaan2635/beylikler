@@ -211,7 +211,25 @@ Harita **prosedürel** üretilir: bir alanın arazisi ve orada barbar köyü olu
 - Göl, orman ve tepeler "değer gürültüsü" (value noise) ile üretilir. Yakın alanlar benzer değer aldığı için araziler tek tek dağılmaz, kümeler oluşturur.
 - Barbar köylerinin gelişmişliği `başlangıç + günlük artış × dünya günü` formülüyle bulunur. Dünya günü, dünya hızıyla işleyen `world.clock` saatinden gelir.
 
-Oyuncu bir barbar köyünü değiştirdiğinde (yağmaladığında, askerlerini öldürdüğünde) yalnızca bu **fark** kayda yazılacak (Adım 5).
+Oyuncu bir barbar köyünü değiştirdiğinde (yağmaladığında, askerlerini öldürdüğünde) yalnızca bu **fark** kayda yazılır.
+
+### 8.2 Savaş verisi (Adım 5, kayıt şeması 4. sürüm)
+
+```json
+{
+  "villages": { "v1": { "movements": [
+    { "id": 7, "type": "saldiri", "target": { "id": "b500_498", "name": "Akdere", "x": 500, "y": 498 },
+      "units": { "baltaci": 20, "akinci": 10 }, "loot": null, "departAt": 0, "arriveAt": 2160000 }
+  ] } },
+  "barbarians": { "b500_498": { "units": { "yaya": 0, "kilicci": 0, "okcu": 0 }, "resources": { "odun": 12, "kil": 9, "demir": 30 }, "time": 7200000 } },
+  "reports": [ { "id": 8, "attackerWins": true, "luck": -0.099, "attack": 1892, "defense": 138, "loot": { "odun": 334, "kil": 333, "demir": 333 } } ],
+  "nextId": 9
+}
+```
+
+- Hareket, çıktığı köyün `movements` listesinde durur. Varışta saldırı `donus` türüne çevrilir; sağ kalanlar aynı süreyle geri gelir.
+- `barbarians` yalnızca saldırıya uğramış köyleri içerir. `time` dünya saatidir; köy bu andan itibaren üretmeye ve garnizonunu günde %25 toparlamaya devam eder.
+- Şans, `(tohum, hareket numarası)` ile belirlenir. Aynı kayıt aynı savaşı her zaman aynı sonuçla çözer. Bu hem testleri kolaylaştırır hem de çok oyunculu sürümde sunucuyla istemcinin aynı sonucu bulmasını sağlar.
 
 ## 9. Beylikler'in oyun tasarımı
 

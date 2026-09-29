@@ -6,7 +6,7 @@ Saf HTML, CSS ve JavaScript ile yazıldı. Kurulum ya da derleme gerektirmez; Gi
 
 **Oyna:** https://kaan2635.github.io/beylikler/
 
-**Durum:** Adım 4 (dünya haritası) tamamlandı: kaynak ekonomisi, 11 bina, 9 asker türü, eğitim kuyrukları ve barbar köyleriyle dolu, sürüklenebilir bir harita → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
+**Durum:** Adım 5a (savaş) tamamlandı: kaynak ekonomisi, 11 bina, 9 asker türü, barbar köyleriyle dolu bir harita; barbar köylerine saldırı, yağma ve savaş raporları → [Yol haritası](docs/YOL_HARITASI.md) · [Araştırma raporu](docs/ARASTIRMA.md)
 
 ## Yerelde çalıştırma
 
@@ -46,7 +46,7 @@ js/
   game.js               Arayüz ile oyun durumu arasındaki tek kapı (eylemler)
   config/               Oyun verisi: ayarlar, kaynaklar, binalar, birimler, dünya
   core/                 Motor: formüller, durum, zaman çizelgesi, tohumlu rastgelelik, kayıt kodu
-  systems/              Oyun kuralları: ekonomi, inşaat, asker eğitimi, dünya haritası
+  systems/              Oyun kuralları: ekonomi, inşaat, asker eğitimi, dünya, barbar köyleri, savaş, hareketler
   storage/              Kayıt deposu (localStorage)
   ui/                   Arayüz: kaynak çubuğu, ekranlar, bildirimler
 tests/                  Node testleri (node --test)

@@ -14,6 +14,7 @@ import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDecimal, fmtDuration } from '../format.js';
 import { toast } from '../toast.js';
+import { createAttackForm } from './attack-form.js';
 
 const ZOOMS = [16, 24, 32, 44, 60, 80]; // alan başına piksel
 const DEFAULT_ZOOM = 3;
@@ -22,7 +23,8 @@ const NEARBY_LIMIT = 25;
 const RULER = 18; // üst ve sol kenardaki koordinat şeridinin kalınlığı (px)
 
 /** Harita ekranı: tuval üzerinde sürüklenebilir dünya, seçili alanın bilgisi ve yakın köyler. */
-export function createMapView({ game }) {
+export function createMapView({ game, refresh }) {
+  const attackForm = createAttackForm({ game, refresh });
   const canvas = h('canvas', {
     class: 'map-canvas',
     tabindex: 0,
@@ -73,7 +75,7 @@ export function createMapView({ game }) {
           ),
         ),
       ),
-      h('section', { class: 'panel map-side' }, h('h2', null, 'Seçili alan'), info),
+      h('section', { class: 'panel map-side' }, h('h2', null, 'Seçili alan'), info, attackForm.el),
     ),
     h(
       'section',
@@ -160,6 +162,8 @@ export function createMapView({ game }) {
     selected = tile;
     infoSignature = null;
     renderInfo();
+    const village = villageAt(game.state, tile.x, tile.y);
+    attackForm.setTarget(village?.kind === 'barbar' ? village : null);
     requestDraw();
   }
 
@@ -326,6 +330,28 @@ export function createMapView({ game }) {
       ctx.strokeRect(toScreenX(selected.x) + 1.5, toScreenY(selected.y) + 1.5, t - 3, t - 3);
     }
 
+    // Yoldaki ordular: köyden hedefe kesikli çizgi ve ordunun şu anki yeri.
+    const own = game.village;
+    const now = Date.now();
+    for (const movement of own.movements) {
+      const home = [toScreenX(own.x) + t / 2, toScreenY(own.y) + t / 2];
+      const away = [toScreenX(movement.target.x) + t / 2, toScreenY(movement.target.y) + t / 2];
+      const [from, to] = movement.type === 'saldiri' ? [home, away] : [away, home];
+      const progress = Math.min(1, Math.max(0, (now - movement.departAt) / (movement.arriveAt - movement.departAt)));
+      ctx.strokeStyle = movement.type === 'saldiri' ? colors.attack : colors.return;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.moveTo(from[0], from[1]);
+      ctx.lineTo(to[0], to[1]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.beginPath();
+      ctx.arc(from[0] + (to[0] - from[0]) * progress, from[1] + (to[1] - from[1]) * progress, Math.max(4, t / 7), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     drawRulers(ctx, colors, { x0, x1, y0, y1, t, w, hgt, toScreenX, toScreenY });
   }
 
@@ -382,9 +408,7 @@ export function createMapView({ game }) {
     }
     if (village?.kind === 'oyuncu') {
       children.push(h('a', { class: 'btn btn-small', href: '#/koy' }, 'Köye git'));
-    } else if (village) {
-      children.push(h('p', { class: 'muted' }, 'Saldırı, yağma ve casusluk sonraki adımlarda eklenecek.'));
-    } else if (inWorld(x, y) && terrainAt(state.world.seed, x, y) === 'gol') {
+    } else if (inWorld(x, y) && !village && terrainAt(state.world.seed, x, y) === 'gol') {
       children.push(h('p', { class: 'muted' }, 'Göle köy kurulamaz.'));
     }
     info.replaceChildren(...children);
@@ -412,19 +436,25 @@ export function createMapView({ game }) {
 
   return {
     el,
-    onShow() {
+    /** `#/harita/503/500` adresiyle açılırsa o alanı ortalar ve seçer. */
+    onShow([x, y] = []) {
       if (!centered) {
         centered = true;
         if (canvas.clientWidth < 500) cam.zoom = DEFAULT_ZOOM - 1; // dar ekranda daha geniş alan göster
         centerOnOwn();
       }
+      if (Number.isInteger(x) && Number.isInteger(y)) {
+        centerOn(x, y);
+        select({ x, y });
+      }
       clampCamera();
       resize();
     },
-    update() {
+    update(now) {
       renderInfo();
       renderNearby();
-      requestDraw(); // barbar köyleri zamanla büyür
+      attackForm.update(now);
+      requestDraw(); // barbar köyleri büyür, ordular yol alır
     },
   };
 }
@@ -458,6 +488,8 @@ function readColors(el) {
     door: v('door'),
     rulerBg: v('ruler-bg'),
     rulerInk: v('ruler-ink'),
+    attack: v('attack'),
+    return: v('return'),
   };
 }
 

@@ -12,12 +12,14 @@ import { toast } from '../toast.js';
 /** Ordu ekranı: köydeki birlikler ve her eğitim binası için kuyruk + birim kartları. */
 export function createArmyView(ctx) {
   const summary = createSummaryPanel();
+  const movements = createMovementsPanel();
   const panels = TRAINING_BUILDINGS.map((buildingId) => createBuildingPanel(buildingId, ctx));
   const el = h(
     'section',
     { class: 'stack' },
     h('header', { class: 'view-header' }, h('h1', null, 'Ordu')),
     summary.el,
+    movements.el,
     panels.map((panel) => panel.el),
   );
 
@@ -26,6 +28,7 @@ export function createArmyView(ctx) {
     update(now) {
       const village = ctx.game.village;
       summary.update(village);
+      movements.update(village, now);
       for (const panel of panels) panel.update(village, ctx.game.state.world, now);
     },
   };
@@ -83,6 +86,66 @@ function createSummaryPanel() {
       setText(attack, fmtInt(totalAttack));
       setText(defense, `${fmtInt(totalDefense.piyade)} / ${fmtInt(totalDefense.suvari)} / ${fmtInt(totalDefense.okcu)}`);
       setText(carry, fmtInt(totalCarry));
+    },
+  };
+}
+
+/** Yoldaki birlikler: saldırıya gidenler ve ganimetle dönenler. */
+function createMovementsPanel() {
+  const count = h('span', { class: 'muted' });
+  const body = h('div', { class: 'queue' });
+  const el = h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, h('h2', null, 'Yoldaki birlikler'), count), body);
+  let signature = null;
+  let rows = [];
+
+  function rebuild(movements, now) {
+    rows = movements.map((movement) => {
+      const attack = movement.type === 'saldiri';
+      const remaining = h('span', { class: 'queue-remaining' });
+      const bar = h('span');
+      const units = Object.entries(movement.units)
+        .filter(([, n]) => n > 0)
+        .map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`)
+        .join(', ');
+      const loot = movement.loot ? Object.values(movement.loot).reduce((a, b) => a + b, 0) : 0;
+      const target = movement.target;
+      const row = h(
+        'div',
+        { class: `queue-row movement ${attack ? 'is-attack' : 'is-return'}` },
+        h(
+          'div',
+          { class: 'queue-unit' },
+          h('span', { class: 'unit-icon small' }, icon(attack ? 'saldiri' : 'donus')),
+          h('strong', null, attack ? 'Saldırı →' : 'Dönüş ←'),
+          h('a', { class: 'card-link', href: `#/harita/${target.x}/${target.y}` }, `${target.name} (${target.x}|${target.y})`),
+          h('span', { class: 'muted movement-units' }, units + (loot ? ` · ganimet ${fmtInt(loot)}` : '')),
+        ),
+        h('div', { class: 'queue-time' }, remaining, h('span', { class: 'muted' }, `varış ${fmtClock(movement.arriveAt, now)}`)),
+        h('span'),
+        h('div', { class: 'progress' }, bar),
+      );
+      return { row, remaining, bar, movement };
+    });
+    body.replaceChildren(
+      ...(rows.length ? rows.map((r) => r.row) : [h('p', { class: 'muted' }, 'Yolda birlik yok. Haritadan bir barbar köyü seçip saldırı gönderebilirsin.')]),
+    );
+  }
+
+  return {
+    el,
+    update(village, now) {
+      const movements = [...village.movements].sort((a, b) => a.arriveAt - b.arriveAt);
+      setText(count, movements.length ? String(movements.length) : '');
+      const next = movements.map((m) => `${m.id}:${m.type}:${m.arriveAt}`).join('|');
+      if (next !== signature) {
+        signature = next;
+        rebuild(movements, now);
+      }
+      for (const { remaining, bar, movement } of rows) {
+        setText(remaining, fmtDuration((movement.arriveAt - now) / 1000));
+        const done = (now - movement.departAt) / (movement.arriveAt - movement.departAt);
+        bar.style.width = `${Math.min(100, Math.max(0, done * 100))}%`;
+      }
     },
   };
 }
