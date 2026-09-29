@@ -21,7 +21,7 @@ const T0 = Date.UTC(2026, 0, 1);
 const DAY = 86_400_000;
 
 function world(seed = 42, speed = 1) {
-  const state = createNewGame({ now: T0, seed, speed });
+  const state = createNewGame({ now: T0, difficulty: 'baris', seed, speed });
   return { state, village: state.villages[state.activeVillageId] };
 }
 

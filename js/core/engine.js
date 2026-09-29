@@ -3,7 +3,8 @@ import { completeNextUpgrade } from '../systems/construction.js';
 import { completeNextUnit, nextUnitAt } from '../systems/training.js';
 import { completeMovement } from '../systems/movements.js';
 import { completeResearch } from '../systems/research.js';
-import { advanceClock } from '../systems/world.js';
+import { ensureLordSchedules, launchLordAttack, resolveIncoming } from '../systems/ai.js';
+import { advanceClock, lordsOf } from '../systems/world.js';
 
 /**
  * Oyun dünyasını `now` anına kadar ilerletir ve bu sırada gerçekleşen olayları döndürür.
@@ -12,12 +13,14 @@ import { advanceClock } from '../systems/world.js';
  * süre tek seferde hesaplanır. Böylece sekme kapalıyken geçen zaman da (çevrimdışı ilerleme)
  * aynı kodla yetiştirilir.
  *
- * Tüm olay türleri (inşaat bitişi, bir askerin yetişmesi, geliştirme, ordunun hedefe ya da eve varması)
- * tek bir zaman çizelgesinde en erkenden başlayarak işlenir. Her olaydan önce dünya saati ve
- * o köyün üretimi olay anına kadar yürütülür; çünkü olay üretim oranını değiştirebilir, savaş
- * ise barbar köyünün o anki durumuna (dünya saatine) bakar.
+ * Tüm olay türleri (inşaat bitişi, bir askerin yetişmesi, geliştirme, ordunun hedefe ya da eve
+ * varması, rakip beyin saldırı başlatması ve saldırısının köye varması) tek bir zaman
+ * çizelgesinde en erkenden başlayarak işlenir. Her olaydan önce dünya saati ve o köyün üretimi
+ * olay anına kadar yürütülür; çünkü olay üretim oranını değiştirebilir, savaş ise köylerin o
+ * anki durumuna (dünya saatine) bakar.
  */
 export function advance(state, now) {
+  ensureLordSchedules(state, now);
   const events = [];
   for (let next = nextEvent(state, now); next; next = nextEvent(state, now)) {
     advanceClock(state.world, next.at);
@@ -36,7 +39,8 @@ function nextEvent(state, now) {
   const consider = (at, village, run) => {
     if (at <= now && (!next || at < next.at)) next = { at, village, run };
   };
-  for (const village of Object.values(state.villages)) {
+  const villages = Object.values(state.villages);
+  for (const village of villages) {
     const job = village.buildQueue[0];
     if (job) consider(job.endAt, village, () => completeNextUpgrade(village));
     for (const [buildingId, queue] of Object.entries(village.trainQueues)) {
@@ -46,6 +50,13 @@ function nextEvent(state, now) {
       consider(movement.arriveAt, village, () => completeMovement(state, village, movement));
     }
     if (village.research) consider(village.research.endAt, village, () => completeResearch(village));
+    for (const attack of village.incoming) {
+      consider(attack.arriveAt, village, () => resolveIncoming(state, village, attack));
+    }
+  }
+  for (const lord of lordsOf(state.world.seed)) {
+    const at = state.ai.lords[lord.id]?.nextAttackAt;
+    if (at != null) consider(at, villages[0], () => launchLordAttack(state, lord, at));
   }
   return next;
 }

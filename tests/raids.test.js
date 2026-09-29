@@ -24,7 +24,7 @@ function memoryStore(initial = null) {
 }
 
 function setup(units) {
-  const state = createNewGame({ now: T0, seed: 42 });
+  const state = createNewGame({ now: T0, difficulty: 'baris', seed: 42 });
   const village = state.villages[state.activeVillageId];
   Object.assign(village.units, units);
   const target = nearbyBarbarians(state, village.x, village.y, 10)[0];

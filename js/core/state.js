@@ -14,7 +14,7 @@ export function createVillage({ id, name, x, y, now }) {
   });
 }
 
-export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSeed() }) {
+export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSeed(), difficulty = GAME.defaultDifficulty }) {
   return {
     version: GAME.saveVersion,
     createdAt: now,
@@ -25,9 +25,10 @@ export function createNewGame({ now, speed = GAME.defaultSpeed, seed = randomSee
     villages: {
       v1: createVillage({ id: 'v1', name: START.villageName, x: 500, y: 500, now }),
     },
-    barbarians: {}, // yalnızca saldırıya uğramış barbar köylerinin son durumu
+    barbarians: {}, // yalnızca saldırıya uğramış barbar köylerinin ve bey hisarlarının son durumu
     reports: [], // en yeni başta
     nextId: 1, // hareket ve rapor numaraları için sayaç
+    ai: { difficulty, lords: {} }, // rakip beylerin saldırı takvimi (motor ilk ilerlemede kurar)
   };
 }
 
@@ -52,6 +53,7 @@ function normalizeVillage(village) {
   for (const id of UNIT_IDS) village.tech[id] ??= 0;
   village.research ??= null; // süren geliştirme
   village.merchants ??= []; // yoldaki tüccarlar
+  village.incoming ??= []; // köye gelen bey saldırıları
   return village;
 }
 
@@ -67,6 +69,8 @@ const MIGRATIONS = {
   3: (data) => ({ ...data, barbarians: {}, reports: [], nextId: 1, version: 4 }),
   // Adım 6b: Demirci geliştirmeleri ve pazar tüccarları (alanları normalizeVillage doldurur).
   4: (data) => ({ ...data, version: 5 }),
+  // Adım 7: rakip beyler. Mevcut kayıtlarda ilk saldırı en az 12 oyun saati sonra gelir.
+  5: (data) => ({ ...data, ai: { difficulty: 'normal', lords: {} }, version: 6 }),
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */

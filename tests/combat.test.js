@@ -15,7 +15,7 @@ const T0 = Date.UTC(2026, 0, 1);
 const DAY = 86_400_000;
 
 function game({ units = {}, speed = 1 } = {}) {
-  const state = createNewGame({ now: T0, seed: 42, speed });
+  const state = createNewGame({ now: T0, difficulty: 'baris', seed: 42, speed });
   const village = state.villages[state.activeVillageId];
   Object.assign(village.units, units);
   const target = nearbyBarbarians(state, village.x, village.y, 10)[0];

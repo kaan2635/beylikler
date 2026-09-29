@@ -9,47 +9,50 @@
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <!-- Aşağıdaki blok tools/stamp.js ile üretilir; elle düzenleme, npm run stamp çalıştır. -->
     <!-- sürüm-damgası:başla -->
-    <link rel="stylesheet" href="css/style.css?v=6e0903c67c" />
+    <link rel="stylesheet" href="css/style.css?v=bb857d5ead" />
     <script type="importmap">
       {
         "imports": {
           "./js/config/buildings.js": "./js/config/buildings.js?v=79b8e09520",
           "./js/config/combat.js": "./js/config/combat.js?v=8403b5a798",
-          "./js/config/game.js": "./js/config/game.js?v=886a5440dc",
+          "./js/config/game.js": "./js/config/game.js?v=a9d900ae99",
+          "./js/config/lords.js": "./js/config/lords.js?v=39c60417f7",
           "./js/config/resources.js": "./js/config/resources.js?v=cb79e93d26",
           "./js/config/tech.js": "./js/config/tech.js?v=292707130f",
           "./js/config/units.js": "./js/config/units.js?v=37169da67a",
           "./js/config/world.js": "./js/config/world.js?v=075c2eb978",
-          "./js/core/engine.js": "./js/core/engine.js?v=3b17939462",
+          "./js/core/engine.js": "./js/core/engine.js?v=e727cfa8fc",
           "./js/core/formulas.js": "./js/core/formulas.js?v=b39d4aa8b3",
           "./js/core/random.js": "./js/core/random.js?v=8b15337135",
           "./js/core/save-codec.js": "./js/core/save-codec.js?v=bfba8eba96",
-          "./js/core/state.js": "./js/core/state.js?v=b340b5d665",
+          "./js/core/state.js": "./js/core/state.js?v=83a82b4e0d",
           "./js/core/village.js": "./js/core/village.js?v=43b0118869",
-          "./js/game.js": "./js/game.js?v=ccbfc1b4c1",
+          "./js/game.js": "./js/game.js?v=8d84fc11ef",
           "./js/main.js": "./js/main.js?v=406d73cbb2",
           "./js/storage/local-store.js": "./js/storage/local-store.js?v=32dd81302d",
-          "./js/systems/barbarians.js": "./js/systems/barbarians.js?v=4a238c0c3b",
+          "./js/systems/ai.js": "./js/systems/ai.js?v=8283e2a5b1",
+          "./js/systems/army.js": "./js/systems/army.js?v=9b77020e40",
+          "./js/systems/barbarians.js": "./js/systems/barbarians.js?v=b072106b1a",
           "./js/systems/combat.js": "./js/systems/combat.js?v=587d3584f1",
           "./js/systems/construction.js": "./js/systems/construction.js?v=dc8ac634b2",
           "./js/systems/economy.js": "./js/systems/economy.js?v=4c9f765322",
           "./js/systems/market.js": "./js/systems/market.js?v=8e341ae843",
-          "./js/systems/movements.js": "./js/systems/movements.js?v=7a9759999e",
+          "./js/systems/movements.js": "./js/systems/movements.js?v=0a75600540",
           "./js/systems/research.js": "./js/systems/research.js?v=98bced5bae",
           "./js/systems/training.js": "./js/systems/training.js?v=526034760a",
-          "./js/systems/world.js": "./js/systems/world.js?v=fe399bf033",
-          "./js/ui/app.js": "./js/ui/app.js?v=0ebb718f16",
+          "./js/systems/world.js": "./js/systems/world.js?v=755d8e37e1",
+          "./js/ui/app.js": "./js/ui/app.js?v=176f9cf519",
           "./js/ui/dom.js": "./js/ui/dom.js?v=99613f402c",
           "./js/ui/format.js": "./js/ui/format.js?v=423ebdf8a0",
           "./js/ui/icons.js": "./js/ui/icons.js?v=026fa6e511",
           "./js/ui/resource-bar.js": "./js/ui/resource-bar.js?v=a0cfe9d3b6",
           "./js/ui/toast.js": "./js/ui/toast.js?v=1cd41d825e",
-          "./js/ui/views/army.js": "./js/ui/views/army.js?v=430bc7ff87",
+          "./js/ui/views/army.js": "./js/ui/views/army.js?v=6cf10f1e97",
           "./js/ui/views/attack-form.js": "./js/ui/views/attack-form.js?v=b09cce50a9",
-          "./js/ui/views/map.js": "./js/ui/views/map.js?v=fd2a4753db",
+          "./js/ui/views/map.js": "./js/ui/views/map.js?v=e001aad6c9",
           "./js/ui/views/market.js": "./js/ui/views/market.js?v=531f95cfac",
-          "./js/ui/views/reports.js": "./js/ui/views/reports.js?v=9bc7c074c3",
-          "./js/ui/views/settings.js": "./js/ui/views/settings.js?v=d1f4bcd0aa",
+          "./js/ui/views/reports.js": "./js/ui/views/reports.js?v=acd2f27df5",
+          "./js/ui/views/settings.js": "./js/ui/views/settings.js?v=4490334879",
           "./js/ui/views/smithy.js": "./js/ui/views/smithy.js?v=b12bce753c",
           "./js/ui/views/village.js": "./js/ui/views/village.js?v=036c97d7dd"
         }
@@ -64,6 +67,7 @@
         <img src="assets/favicon.svg" alt="" width="30" height="30" />
         <span>Beylikler</span>
       </a>
+      <a id="incoming-alert" class="incoming-alert" href="#/ordu" hidden></a>
       <div id="resource-bar" class="resource-bar" aria-label="Kaynaklar"></div>
     </header>
 
@@ -84,7 +88,7 @@
     <div id="toasts" class="toasts" aria-live="polite"></div>
 
     <footer class="footer">
-      Beylikler v0.7 · Adım 6: Demirci ve Pazar ·
+      Beylikler v0.8 · Adım 7a: Rakip beyler ·
       <a href="https://github.com/kaan2635/beylikler">Kaynak kod</a>
     </footer>
 

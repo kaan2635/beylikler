@@ -1,5 +1,6 @@
 import { UNITS, UNIT_IDS } from '../../config/units.js';
 import { TERRAIN, WORLD } from '../../config/world.js';
+import { PERSONALITIES } from '../../config/lords.js';
 import { travelSeconds } from '../../core/formulas.js';
 import {
   villageAt,
@@ -9,6 +10,8 @@ import {
   distance,
   continentOf,
   nearbyBarbarians,
+  lordsOf,
+  lordVillage,
 } from '../../systems/world.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
@@ -45,6 +48,8 @@ export function createMapView({ game, refresh }) {
   });
   const info = h('div', { class: 'stack-sm' });
   const nearbyBody = h('tbody');
+  const lordsBody = h('tbody');
+  let lordsSignature = null;
 
   const el = h(
     'section',
@@ -110,7 +115,41 @@ export function createMapView({ game, refresh }) {
         ),
       ),
     ),
+    h(
+      'section',
+      { class: 'panel' },
+      h(
+        'div',
+        { class: 'panel-head' },
+        h('h2', null, 'Rakip beyler'),
+        h('span', { class: 'muted' }, 'Zamanla güçlenir ve sana saldırırlar; sen de onlara saldırabilirsin'),
+      ),
+      h(
+        'div',
+        { class: 'table-wrap' },
+        h(
+          'table',
+          { class: 'data-table' },
+          h(
+            'thead',
+            null,
+            h('tr', null, h('th', null, 'Bey'), h('th', null, 'Kişilik'), h('th', { class: 'num' }, 'Puan'), h('th', { class: 'num' }, 'Mesafe')),
+          ),
+          lordsBody,
+        ),
+      ),
+    ),
   );
+
+  lordsBody.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-x]');
+    if (!button) return;
+    const x = Number(button.dataset.x);
+    const y = Number(button.dataset.y);
+    centerOn(x, y);
+    select({ x, y });
+    canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 
   const cam = { cx: WORLD.center + 0.5, cy: WORLD.center + 0.5, zoom: DEFAULT_ZOOM };
   let selected = null;
@@ -173,7 +212,7 @@ export function createMapView({ game, refresh }) {
     infoSignature = null;
     renderInfo();
     const village = villageAt(game.state, tile.x, tile.y);
-    attackForm.setTarget(village?.kind === 'barbar' ? village : null);
+    attackForm.setTarget(village && village.kind !== 'oyuncu' ? village : null);
     requestDraw();
   }
 
@@ -352,15 +391,10 @@ export function createMapView({ game, refresh }) {
     // Yoldaki ordular: köyden hedefe kesikli çizgi ve ordunun şu anki yeri.
     const own = game.village;
     const now = Date.now();
-    for (const movement of own.movements) {
-      const home = [toScreenX(own.x) + t / 2, toScreenY(own.y) + t / 2];
-      const away = [toScreenX(movement.target.x) + t / 2, toScreenY(movement.target.y) + t / 2];
-      // Geri çağrılan ordu hedefe varmadan, yolun `turnAt` kadarından döner.
-      const turn = movement.turnAt ?? 1;
-      const turnPoint = [home[0] + (away[0] - home[0]) * turn, home[1] + (away[1] - home[1]) * turn];
-      const [from, to] = isOutbound(movement) ? [home, away] : [turnPoint, home];
-      const progress = Math.min(1, Math.max(0, (now - movement.departAt) / (movement.arriveAt - movement.departAt)));
-      ctx.strokeStyle = { saldiri: colors.attack, casus: colors.spy, donus: colors.return }[movement.type];
+    const home = [toScreenX(own.x) + t / 2, toScreenY(own.y) + t / 2];
+    const drawArmy = (from, to, color, departAt, arriveAt) => {
+      const progress = Math.min(1, Math.max(0, (now - departAt) / (arriveAt - departAt)));
+      ctx.strokeStyle = color;
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 5]);
       ctx.beginPath();
@@ -368,10 +402,24 @@ export function createMapView({ game, refresh }) {
       ctx.lineTo(to[0], to[1]);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = ctx.strokeStyle;
+      ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(from[0] + (to[0] - from[0]) * progress, from[1] + (to[1] - from[1]) * progress, Math.max(4, t / 7), 0, Math.PI * 2);
       ctx.fill();
+    };
+    for (const movement of own.movements) {
+      const away = [toScreenX(movement.target.x) + t / 2, toScreenY(movement.target.y) + t / 2];
+      // Geri çağrılan ordu hedefe varmadan, yolun `turnAt` kadarından döner.
+      const turn = movement.turnAt ?? 1;
+      const turnPoint = [home[0] + (away[0] - home[0]) * turn, home[1] + (away[1] - home[1]) * turn];
+      const [from, to] = isOutbound(movement) ? [home, away] : [turnPoint, home];
+      const color = { saldiri: colors.attack, casus: colors.spy, donus: colors.return }[movement.type];
+      drawArmy(from, to, color, movement.departAt, movement.arriveAt);
+    }
+    // Köye gelen bey orduları.
+    for (const attack of own.incoming) {
+      const from = [toScreenX(attack.from.x) + t / 2, toScreenY(attack.from.y) + t / 2];
+      drawArmy(from, home, colors.lordFlag, attack.departAt, attack.arriveAt);
     }
 
     drawRulers(ctx, colors, { x0, x1, y0, y1, t, w, hgt, toScreenX, toScreenY });
@@ -398,7 +446,9 @@ export function createMapView({ game, refresh }) {
       title = 'Dünyanın sınırı';
     } else if (village) {
       title = village.name;
-      rows.push(['Sahibi', village.kind === 'oyuncu' ? 'Sen' : 'Barbar köyü'], ['Puan', fmtInt(village.points)]);
+      const owner = { oyuncu: 'Sen', bey: village.owner, barbar: 'Barbar köyü' }[village.kind];
+      rows.push(['Sahibi', owner], ['Puan', fmtInt(village.points)]);
+      if (village.kind === 'bey') rows.push(['Kişilik', PERSONALITIES[village.personality].name]);
     } else {
       title = TERRAIN[terrainAt(state.world.seed, x, y)].name;
       rows.push(['Durum', 'Boş arazi']);
@@ -430,10 +480,41 @@ export function createMapView({ game, refresh }) {
     }
     if (village?.kind === 'oyuncu') {
       children.push(h('a', { class: 'btn btn-small', href: '#/koy' }, 'Köye git'));
+    } else if (village?.kind === 'bey') {
+      children.push(h('p', { class: 'muted' }, `Rakip bey. ${PERSONALITIES[village.personality].description}`));
     } else if (inWorld(x, y) && !village && terrainAt(state.world.seed, x, y) === 'gol') {
       children.push(h('p', { class: 'muted' }, 'Göle köy kurulamaz.'));
     }
     info.replaceChildren(...children);
+  }
+
+  /** Rakip beyler: yakından uzağa. */
+  function renderLords() {
+    const own = game.village;
+    const lords = lordsOf(game.state.world.seed)
+      .map((lord) => lordVillage(game.state, lord))
+      .map((v) => ({ ...v, distance: distance(own.x, own.y, v.x, v.y) }))
+      .sort((a, b) => a.distance - b.distance);
+    const signature = lords.map((v) => `${v.id}:${v.points}`).join('|');
+    if (signature === lordsSignature) return;
+    lordsSignature = signature;
+    lordsBody.replaceChildren(
+      ...lords.map((v) =>
+        h(
+          'tr',
+          null,
+          h(
+            'td',
+            { class: 'wrap' },
+            h('button', { type: 'button', class: 'link-btn', dataset: { x: v.x, y: v.y } }, v.owner),
+            h('span', { class: 'cell-sub' }, `${v.name} (${v.x}|${v.y})`),
+          ),
+          h('td', { class: 'wrap' }, PERSONALITIES[v.personality].name),
+          h('td', { class: 'num' }, fmtInt(v.points)),
+          h('td', { class: 'num' }, fmtDecimal(v.distance)),
+        ),
+      ),
+    );
   }
 
   /**
@@ -506,6 +587,7 @@ export function createMapView({ game, refresh }) {
     update(now) {
       renderInfo();
       renderNearby(now);
+      renderLords();
       attackForm.update(now);
       requestDraw(); // barbar köyleri büyür, ordular yol alır
     },
@@ -559,6 +641,9 @@ function readColors(el) {
     door: v('door'),
     rulerBg: v('ruler-bg'),
     rulerInk: v('ruler-ink'),
+    lord: v('lord'),
+    lordRoof: v('lord-roof'),
+    lordFlag: v('lord-flag'),
     attack: v('attack'),
     spy: v('spy'),
     return: v('return'),
@@ -599,18 +684,25 @@ function drawTerrain(ctx, c, kind, detail, sx, sy, t) {
   }
 }
 
-/** Köy simgesi: puanı büyüdükçe ev de büyür. Oyuncunun köyü bayraklı ve farklı renkte. */
+/**
+ * Köy simgesi: puanı büyüdükçe ev de büyür. Oyuncunun köyü ve bey hisarları bayraklıdır;
+ * her biri kendi rengindedir.
+ */
 function drawVillage(ctx, c, village, sx, sy, t) {
-  const own = village.kind === 'oyuncu';
+  const palette = {
+    oyuncu: { body: c.own, roof: c.ownRoof, flag: c.flag },
+    bey: { body: c.lord, roof: c.lordRoof, flag: c.lordFlag },
+    barbar: { body: c.barbar, roof: c.barbarRoof, flag: null },
+  }[village.kind];
   const tier = village.points < 150 ? 0 : village.points < 500 ? 1 : 2;
   const size = t * (0.46 + tier * 0.12);
   const cx = sx + t / 2;
   const base = sy + t * 0.82;
   const bodyH = size * 0.55;
 
-  ctx.fillStyle = own ? c.own : c.barbar;
+  ctx.fillStyle = palette.body;
   ctx.fillRect(cx - size / 2, base - bodyH, size, bodyH);
-  ctx.fillStyle = own ? c.ownRoof : c.barbarRoof;
+  ctx.fillStyle = palette.roof;
   ctx.beginPath();
   ctx.moveTo(cx - size / 2 - size * 0.1, base - bodyH);
   ctx.lineTo(cx, base - bodyH - size * 0.45);
@@ -621,7 +713,7 @@ function drawVillage(ctx, c, village, sx, sy, t) {
     ctx.fillStyle = c.door;
     ctx.fillRect(cx - size * 0.1, base - bodyH * 0.6, size * 0.2, bodyH * 0.6);
   }
-  if (own) {
+  if (palette.flag) {
     const top = base - bodyH - size * 0.45;
     ctx.strokeStyle = c.door;
     ctx.lineWidth = Math.max(1, t / 30);
@@ -629,7 +721,7 @@ function drawVillage(ctx, c, village, sx, sy, t) {
     ctx.moveTo(cx, top);
     ctx.lineTo(cx, top - size * 0.4);
     ctx.stroke();
-    ctx.fillStyle = c.flag;
+    ctx.fillStyle = palette.flag;
     ctx.beginPath();
     ctx.moveTo(cx, top - size * 0.4);
     ctx.lineTo(cx + size * 0.32, top - size * 0.3);

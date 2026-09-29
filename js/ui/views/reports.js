@@ -10,8 +10,9 @@ import { toast } from '../toast.js';
 const FILTERS = {
   tumu: { label: 'Tümü', match: () => true },
   okunmamis: { label: 'Okunmamış', match: (r) => !r.read },
-  zafer: { label: 'Zafer', match: (r) => r.type === 'saldiri' && r.attackerWins },
-  yenilgi: { label: 'Yenilgi', match: (r) => r.type === 'saldiri' && !r.attackerWins },
+  zafer: { label: 'Zafer', match: (r) => r.type !== 'casus' && playerWon(r) },
+  yenilgi: { label: 'Yenilgi', match: (r) => r.type !== 'casus' && !playerWon(r) },
+  savunma: { label: 'Savunma', match: (r) => r.type === 'savunma' },
   casus: { label: 'Casusluk', match: (r) => r.type === 'casus' },
 };
 
@@ -126,6 +127,7 @@ export function createReportsView({ game, refresh }) {
         const entry = items.get(report.id);
         if (!entry) continue;
         entry.item.classList.toggle('unread', !report.read);
+        if (!entry.repeat) continue; // savunma raporlarında tekrar yok
         const check = inspectAttack(game.state, game.village, report.target.x, report.target.y, report.attackers, now);
         entry.repeat.disabled = !check.ok;
         entry.repeat.title = check.ok ? 'Aynı orduyu aynı köye yeniden gönder' : check.reason;
@@ -136,18 +138,35 @@ export function createReportsView({ game, refresh }) {
   };
 }
 
+/** Rapor oyuncu açısından başarılı mı? Savunmada saldıranın yenilmesi zaferdir. */
+function playerWon(report) {
+  return report.type === 'savunma' ? !report.attackerWins : report.attackerWins;
+}
+
 function renderReport(report, now) {
   return report.type === 'casus' ? renderSpyReport(report, now) : renderAttackReport(report, now);
 }
 
-/** Rapor altındaki düğmeler: tekrar gönder, haritada göster, sil. */
+/** Köy adı; bey hisarlarında sahibiyle: "Germiyan Bey (Germiyan Hisarı)". */
+function placeLabel(place) {
+  return place.owner ? `${place.owner} (${place.name})` : place.name;
+}
+
+/**
+ * Rapor altındaki düğmeler: tekrar gönder, haritada göster, sil. Savunma raporunda tekrar
+ * yerine saldıranın hisarına giden "Karşı saldırı" bağlantısı olur.
+ */
 function reportActions(report, repeatLabel) {
-  const repeat = h('button', { class: 'btn btn-small', type: 'button', dataset: { action: 'repeat', report: report.id } }, repeatLabel);
+  const defense = report.type === 'savunma';
+  const place = defense ? report.origin : report.target;
+  const repeat = defense
+    ? null
+    : h('button', { class: 'btn btn-small', type: 'button', dataset: { action: 'repeat', report: report.id } }, repeatLabel);
   const row = h(
     'div',
     { class: 'form-row' },
     repeat,
-    h('a', { class: 'btn btn-small btn-ghost', href: `#/harita/${report.target.x}/${report.target.y}` }, 'Haritada göster'),
+    h('a', { class: `btn btn-small${defense ? '' : ' btn-ghost'}`, href: `#/harita/${place.x}/${place.y}` }, defense ? 'Karşı saldırı' : 'Haritada göster'),
     h('button', { class: 'btn btn-small btn-ghost btn-quiet', type: 'button', dataset: { action: 'delete', report: report.id } }, 'Sil'),
   );
   return { row, repeat };
@@ -194,7 +213,7 @@ function renderSpyReport(report, now) {
       'summary',
       null,
       h('span', { class: `badge ${intel ? 'badge-spy' : 'badge-loss'}` }, intel ? 'Casusluk' : 'Başarısız'),
-      h('span', { class: 'report-title' }, `${report.origin.name} → ${report.target.name} (${report.target.x}|${report.target.y})`),
+      h('span', { class: 'report-title' }, `${report.origin.name} → ${placeLabel(report.target)} (${report.target.x}|${report.target.y})`),
       h('span', { class: 'muted report-meta' }, fmtClock(report.at, now)),
     ),
     h('div', { class: 'report-body stack-sm' }, body),
@@ -202,7 +221,13 @@ function renderSpyReport(report, now) {
   return { item, repeat };
 }
 
+/** Saldırı ve savunma raporu (savunmada saldıran bir beydir, kayıplar senin askerlerindir). */
 function renderAttackReport(report, now) {
+  const defense = report.type === 'savunma';
+  const won = playerWon(report);
+  const badgeText = defense ? (won ? 'Savunma: zafer' : 'Savunma: yenilgi') : won ? 'Zafer' : 'Yenilgi';
+  const other = defense ? report.origin : report.target;
+  const lootLabel = defense ? 'yağmalanan' : 'ganimet';
   const lootTotal = RESOURCE_IDS.reduce((total, id) => total + report.loot[id], 0);
   const luck = Math.round(report.luck * 100);
   const units = UNIT_IDS.filter((id) => report.attackers[id] || report.defenders[id]);
@@ -232,9 +257,9 @@ function renderAttackReport(report, now) {
     h(
       'summary',
       null,
-      h('span', { class: `badge ${report.attackerWins ? 'badge-win' : 'badge-loss'}` }, report.attackerWins ? 'Zafer' : 'Yenilgi'),
-      h('span', { class: 'report-title' }, `${report.origin.name} → ${report.target.name} (${report.target.x}|${report.target.y})`),
-      h('span', { class: 'muted report-meta' }, `${fmtClock(report.at, now)}${lootTotal ? ` · ganimet ${fmtInt(lootTotal)}` : ''}`),
+      h('span', { class: `badge ${won ? 'badge-win' : 'badge-loss'}` }, badgeText),
+      h('span', { class: 'report-title' }, `${placeLabel(report.origin)} → ${placeLabel(report.target)} (${other.x}|${other.y})`),
+      h('span', { class: 'muted report-meta' }, `${fmtClock(report.at, now)}${lootTotal ? ` · ${lootLabel} ${fmtInt(lootTotal)}` : ''}`),
     ),
     h(
       'div',
@@ -286,7 +311,7 @@ function renderAttackReport(report, now) {
       h(
         'div',
         { class: 'cost' },
-        h('span', { class: 'muted' }, 'Ganimet:'),
+        h('span', { class: 'muted' }, defense ? 'Yağmalanan:' : 'Ganimet:'),
         lootTotal
           ? RESOURCE_IDS.map((id) => h('span', { class: 'cost-item', title: RESOURCES[id].name }, icon(id), fmtInt(report.loot[id])))
           : h('span', { class: 'muted' }, 'yok'),

@@ -22,7 +22,7 @@ import { GAME } from '../js/config/game.js';
 const T0 = Date.UTC(2026, 0, 1);
 
 function village(buildings = {}, resources = 20_000) {
-  const state = createNewGame({ now: T0, seed: 3 });
+  const state = createNewGame({ now: T0, difficulty: 'baris', seed: 3 });
   const v = state.villages[state.activeVillageId];
   Object.assign(v.buildings, { konak: 10, kisla: 5, ciftlik: 15, ambar: 20 }, buildings);
   v.resources = { odun: resources, kil: resources, demir: resources };

@@ -1,9 +1,10 @@
 // Oyun ve dünya ayarları. Dünya hızı tüm üretim ve inşaat sürelerini ölçekler.
 export const GAME = Object.freeze({
   title: 'Beylikler',
-  saveVersion: 5,
+  saveVersion: 6,
   saveKey: 'beylikler:kayit',
   defaultSpeed: 1,
+  defaultDifficulty: 'normal', // rakip beyler: baris | kolay | normal | zor
   speedOptions: [1, 2, 5, 10, 50, 100],
   maxBuildQueue: 2,
   maxTrainQueue: 5, // her eğitim binası için ayrı

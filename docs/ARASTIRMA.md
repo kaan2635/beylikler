@@ -127,6 +127,14 @@ OGame tarzı tur tabanlı simülasyon daha derin olsa da hem daha yavaştır hem
 - **Kuşatma:** Yalnızca kazanılan savaştan sonra sağ kalan araçlar yıkım yapar. L seviyeli bir binayı L−1'e indirmek L araç ister. Böylece yüksek seviyeli binaları yıkmak hem daha zor hem daha pahalıdır; 10. seviye bir ambarı 7'ye indirmek 10 + 9 + 8 = 27 mancınık ister. Koçbaşı suru, mancınık oyuncunun seçtiği binayı hedefler.
 - **Onarım:** Yıkılan barbar binaları her oyun günü bir seviye onarılır. Kayıtta yalnızca yıkım miktarı ve zamanı tutulur.
 
+### 4.3.2 Rakip beyler (Beylikler'de uygulanan yapay zekâ)
+
+- **Belirlenim:** Beylerin yerleri, adları ve kişilikleri yalnızca dünya tohumundan hesaplanır. Kayıtta yalnızca saldırı takvimi (`state.ai.lords`) ve hisarlarındaki değişiklikler tutulur.
+- **Güç:** `güç = başlangıç (2–4) + kişiliğe göre günlük artış × dünya günü` (en fazla 25). Hisar, barbar köyleriyle aynı bina ve garnizon kurallarıyla üretilir; garnizon kişiliğe göre çarpılır (savunmacı ×2, tüccar ×0,7).
+- **Saldırı ordusu:** `saldırı gücü = 50 × güç^1,5 × zorluk çarpanı`. Bu güç, kişiliğin birim dağılımına bölünür (saldırgan: %60 baltacı, %40 akıncı). Güçlenen saldırgan bey koçbaşı da getirir.
+- **Takvim:** Saldırı aralıkları kişiliğe göre 36–192 oyun saati arasındadır ve zorlukla ölçeklenir. İlk saldırı başlangıç korumasından sonra gelir. Tüm rastgelelik tohumdan geldiği için aynı kayıt aynı saldırıları üretir.
+- **Tasarım kararı:** Beyler gerçek bir oyuncu gibi kaynak toplayıp karar vermez; güçleri zamana bağlı bir eğridir. Bu hem hesaplaması ucuzdur hem de oyuncunun uzakta olduğu süreyi doğru biçimde yetiştirir. Daha "akıllı" davranışlar (barbar yağmalama, birbirleriyle savaş) 7b'de ele alınacak.
+
 ### 4.4 Yağma ve fetih
 
 - **Yağma:** Her birimin bir taşıma kapasitesi var. Gizli depodaki miktar düşüldükten sonra kalan kaynak, kapasite dolana kadar eşit oranda alınır.

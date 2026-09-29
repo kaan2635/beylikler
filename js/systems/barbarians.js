@@ -14,10 +14,10 @@ const DAY = 24 * HOUR;
  * devam eder. Tüm zamanlar dünya saatine (world.clock.time) göredir.
  */
 
-/** Gelişmişliğe göre tam garnizon. */
-export function barbarianGarrison(growth) {
+/** Gelişmişliğe göre tam garnizon; `factor` bey hisarlarında kişiliğe göre büyütür ya da küçültür. */
+export function barbarianGarrison(growth, factor = 1) {
   const units = {};
-  for (const [id, perGrowth] of Object.entries(BARBARIAN.garrisonPerGrowth)) units[id] = Math.floor(growth * perGrowth);
+  for (const [id, perGrowth] of Object.entries(BARBARIAN.garrisonPerGrowth)) units[id] = Math.floor(growth * perGrowth * factor);
   return units;
 }
 
@@ -33,7 +33,7 @@ export function barbarianLive(state, village) {
   const saved = state.barbarians[village.id];
   const hours = Math.max(0, state.world.clock.time - (saved?.time ?? 0)) / HOUR;
   const cap = storageCapacity(village.buildings.ambar);
-  const garrison = barbarianGarrison(village.growth);
+  const garrison = barbarianGarrison(village.growth, village.garrisonFactor);
 
   const resources = {};
   for (const id of RESOURCE_IDS) {

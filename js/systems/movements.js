@@ -2,59 +2,31 @@ import { UNITS, UNIT_IDS } from '../config/units.js';
 import { COMBAT, CATAPULT_TARGETS, MIN_BUILDING_LEVEL } from '../config/combat.js';
 import { RESOURCE_IDS } from '../config/resources.js';
 import { travelSeconds } from '../core/formulas.js';
-import { hash3, mulberry32 } from '../core/random.js';
-import { barbarianAt, distance } from './world.js';
+import { npcAt, distance } from './world.js';
 import { barbarianLive, recordBarbarian, recordDamage } from './barbarians.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { deposit } from './economy.js';
-import { techMultiplier } from './research.js';
+import { provokeLord } from './ai.js';
+import { totalUnits, armySpeed, armyCarry, armyAttack, subtractUnits, luckFor, addReport } from './army.js';
+
+// Önceki sürümlerle uyum: bu yardımcılar artık army.js'te.
+export { totalUnits, armySpeed, armyCarry, armyAttack, luckFor };
 
 /**
- * Ordu hareketleri. Her hareket çıktığı köyün `movements` listesinde durur:
+ * Oyuncunun ordu hareketleri. Her hareket çıktığı köyün `movements` listesinde durur:
  *   { id, type: 'saldiri' | 'casus' | 'donus', target: { id, name, x, y }, units, loot,
  *     departAt, arriveAt, turnAt?, catapultTarget? }
- * Saldırı hedefe varınca savaş çözülür; yalnız gözcülerden oluşan birlik (casus) savaşmadan
- * köyü gözetler. Sağ kalanlar aynı yoldan geri döner. `turnAt` dönüşün yolun neresinden
- * başladığıdır (1 = hedeften; geri çağrılanlarda daha az). Yoldaki askerler nüfus kullanmaya
- * devam eder.
+ * Hedef barbar köyü ya da bey hisarı olabilir. Saldırı hedefe varınca savaş çözülür; yalnız
+ * gözcülerden oluşan birlik (casus) savaşmadan köyü gözetler. Sağ kalanlar aynı yoldan geri
+ * döner. `turnAt` dönüşün yolun neresinden başladığıdır (1 = hedeften; geri çağrılanlarda
+ * daha az). Yoldaki askerler nüfus kullanmaya devam eder.
  */
 
-const LUCK_SALT = 0x3c6ef372;
 const OUTBOUND = new Set(['saldiri', 'casus']);
-
-export function totalUnits(units) {
-  return Object.values(units).reduce((total, n) => total + n, 0);
-}
-
-/** Ordu en yavaş biriminin hızıyla ilerler (dakika / alan). */
-export function armySpeed(units) {
-  return Math.max(0, ...Object.entries(units).filter(([, n]) => n > 0).map(([id]) => UNITS[id].speed));
-}
-
-export function armyCarry(units) {
-  return Object.entries(units).reduce((total, [id, n]) => total + n * UNITS[id].carry, 0);
-}
-
-/** Ordunun toplam saldırı gücü; `tech` verilirse Demirci geliştirmeleri dahil. */
-export function armyAttack(units, tech = {}) {
-  return Object.entries(units).reduce((total, [id, n]) => total + n * UNITS[id].attack * techMultiplier(tech[id]), 0);
-}
 
 /** Hedefe gitmekte olan (henüz dönmeyen) hareket mi? */
 export function isOutbound(movement) {
   return OUTBOUND.has(movement.type);
-}
-
-function subtractUnits(units, losses) {
-  const result = {};
-  for (const [id, n] of Object.entries(units)) result[id] = n - (losses[id] ?? 0);
-  return result;
-}
-
-/** Saldırı şansı tohumdan ve hareket numarasından gelir: aynı kayıt hep aynı sonucu verir. */
-export function luckFor(seed, movementId) {
-  const roll = mulberry32(hash3(seed ^ LUCK_SALT, movementId, 0))();
-  return (roll * 2 - 1) * COMBAT.luckRange;
 }
 
 /**
@@ -88,7 +60,7 @@ export function inspectAttack(state, village, x, y, requested, now, options = {}
   if (!totalUnits(units)) return { ...info, code: 'empty', reason: 'Göndermek için asker seç' };
   const short = Object.keys(units).find((id) => units[id] > village.units[id]);
   if (short) return { ...info, code: 'units', reason: `Köyde yeterli ${UNITS[short].name} yok` };
-  const target = barbarianAt(state, x, y);
+  const target = npcAt(state, x, y);
   if (!target) return { ...info, code: 'target', reason: 'Burada saldırılabilecek bir köy yok' };
   if (info.catapultTarget && !CATAPULT_TARGETS.includes(info.catapultTarget)) {
     return { ...info, target, code: 'catapult', reason: 'Mancınık için geçerli bir hedef bina seç' };
@@ -139,7 +111,7 @@ export function recallAttack(village, movementId, now) {
 /** Hareketin varış anında olanları uygular ve olayını döndürür. Motor zaman sırasıyla çağırır. */
 export function completeMovement(state, village, movement) {
   if (movement.type === 'donus') return arriveHome(village, movement);
-  const target = barbarianAt(state, movement.target.x, movement.target.y);
+  const target = npcAt(state, movement.target.x, movement.target.y);
   if (!target) {
     // Hedef artık yok (ör. yanına köy kuruldu): bir şey yapmadan geri dön.
     turnBack(movement, movement.units, null);
@@ -171,11 +143,13 @@ function attack(state, village, movement, target) {
   recordBarbarian(state, target, subtractUnits(live.units, battle.defenderLosses), leftResources);
   const siege = battle.attackerWins ? besiege(state, target, survivors, movement.catapultTarget) : {};
 
+  if (target.kind === 'bey') provokeLord(state, target.id, movement.arriveAt);
+
   const report = addReport(state, {
     type: 'saldiri',
     at: movement.arriveAt,
     origin: { id: village.id, name: village.name, x: village.x, y: village.y },
-    target: { id: target.id, name: target.name, x: target.x, y: target.y, points: target.points },
+    target: reportTarget(target),
     attackerWins: battle.attackerWins,
     luck: battle.luck,
     wallLevel: target.buildings.sur,
@@ -242,7 +216,7 @@ function spyOn(state, village, movement, target) {
     type: 'casus',
     at: movement.arriveAt,
     origin: { id: village.id, name: village.name, x: village.x, y: village.y },
-    target: { id: target.id, name: target.name, x: target.x, y: target.y, points: target.points },
+    target: reportTarget(target),
     attackerWins: success,
     attackers: movement.units,
     attackerLosses: { gozcu: lost },
@@ -265,11 +239,17 @@ function spyOn(state, village, movement, target) {
   return { type: 'spy-result', villageId: village.id, reportId: report.id, target: target.name, success, at: movement.arriveAt };
 }
 
-function addReport(state, fields) {
-  const report = { id: state.nextId++, read: false, ...fields };
-  state.reports.unshift(report);
-  state.reports.length = Math.min(state.reports.length, COMBAT.maxReports);
-  return report;
+/** Rapora yazılan hedef bilgisi; bey hisarlarında sahibinin adı da. */
+function reportTarget(target) {
+  return {
+    id: target.id,
+    kind: target.kind,
+    name: target.name,
+    x: target.x,
+    y: target.y,
+    points: target.points,
+    ...(target.owner && { owner: target.owner }),
+  };
 }
 
 /** Hareketi dönüşe çevirir: aynı süreyle geri gelir. */

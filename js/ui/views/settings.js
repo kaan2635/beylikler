@@ -1,4 +1,5 @@
 import { GAME } from '../../config/game.js';
+import { DIFFICULTIES } from '../../config/lords.js';
 import { h } from '../dom.js';
 import { toast } from '../toast.js';
 
@@ -13,6 +14,12 @@ export function createSettingsView({ game, refresh }) {
     GAME.speedOptions.map((speed) => h('option', { value: speed }, `${speed}x`)),
   );
   const createdAt = h('p', { class: 'muted' });
+  const difficultySelect = h(
+    'select',
+    { id: 'difficulty' },
+    Object.entries(DIFFICULTIES).map(([key, d]) => h('option', { value: key }, d.name)),
+  );
+  const difficultyInfo = h('p', { class: 'muted' });
 
   const el = h(
     'section',
@@ -44,6 +51,14 @@ export function createSettingsView({ game, refresh }) {
           { class: 'muted' },
           'Test için hızı artırabilirsin. Üretimi ve yeni inşaatları hızlandırır; sıradaki işlerin süresi değişmez.',
         ),
+      ),
+      h(
+        'section',
+        { class: 'panel stack-sm' },
+        h('h2', null, 'Rakip beyler'),
+        h('div', { class: 'form-row' }, h('label', { for: 'difficulty' }, 'Zorluk'), difficultySelect),
+        difficultyInfo,
+        h('p', { class: 'muted' }, 'Zorluk değişince beylerin saldırı takvimi yeniden kurulur; ilk saldırı en az 12 oyun saati sonra gelir.'),
       ),
       h(
         'section',
@@ -81,6 +96,13 @@ export function createSettingsView({ game, refresh }) {
   speedSelect.addEventListener('change', () => {
     game.setSpeed(Number(speedSelect.value), Date.now());
     toast(`Dünya hızı ${speedSelect.value}x olarak ayarlandı.`);
+    refresh();
+  });
+
+  difficultySelect.addEventListener('change', () => {
+    const key = difficultySelect.value;
+    if (game.setDifficulty(key, Date.now())) toast(`Zorluk: ${DIFFICULTIES[key].name}. ${DIFFICULTIES[key].description}`);
+    difficultyInfo.textContent = DIFFICULTIES[key].description;
     refresh();
   });
 
@@ -133,6 +155,8 @@ export function createSettingsView({ game, refresh }) {
   function onShow() {
     nameInput.value = game.village.name;
     speedSelect.value = String(game.state.world.speed);
+    difficultySelect.value = game.state.ai.difficulty;
+    difficultyInfo.textContent = DIFFICULTIES[game.state.ai.difficulty].description;
     exportArea.value = '';
     const created = new Date(game.state.createdAt).toLocaleString('tr-TR');
     createdAt.textContent = `Kuruluş: ${created} · Harita tohumu: ${game.state.world.seed}`;

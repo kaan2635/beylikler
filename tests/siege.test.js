@@ -14,7 +14,7 @@ const DAY = 86_400_000;
 
 /** Belirli gelişmişlikte bir barbar köyü bulana dek dünya saatini ilerletir. */
 function setup(units, { minGrowth = 0, days = 0 } = {}) {
-  const state = createNewGame({ now: T0, seed: 7 });
+  const state = createNewGame({ now: T0, difficulty: 'baris', seed: 7 });
   const village = state.villages[state.activeVillageId];
   Object.assign(village.units, units);
   state.world.clock.time = days * DAY;

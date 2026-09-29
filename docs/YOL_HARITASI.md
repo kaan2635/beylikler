@@ -95,11 +95,23 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Kendi sayfası olan binalara Köy ekranından bağlantı; kayıt şeması 5. sürüm
 - [x] 75 birim testi (sürüm damgası denetimi dahil)
 
-## ⬜ Adım 7 — Yapay zekâ beyler
+## ◐ Adım 7 — Yapay zekâ beyler
 
-- [ ] Kişilikli rakipler: saldırgan, tüccar, savunmacı
-- [ ] Zorluk seviyeleri
-- [ ] Rakiplerin oyuncuya saldırması ve oyuncu için uyarılar
+**7a (tamamlandı): Rakip beyler ve savunma**
+
+- [x] Tohumdan belirlenen 6 rakip bey (Karaman, Germiyan, Aydın… beyleri); merkez çevresinde bir halkada, gölde değil
+- [x] Kişilikler: saldırgan (sık saldırır, koçbaşı getirir), tüccar (hızlı büyür, akıncıyla yağmalar), savunmacı (güçlü garnizon, seyrek saldırı)
+- [x] Beylerin gücü günle artar; ordusu güce, kişiliğe ve zorluğa göre kurulur, güçlendikçe Demirci geliştirmeleri de kazanır
+- [x] Gelen saldırılar: tepe çubuğunda uyarı, Ordu ekranında tahmini güç ve köyün savunması, haritada yaklaşan ordular
+- [x] Savunma savaşı: köydeki askerler, sur ve Demirci; yenilgide gizli depo dışındaki kaynaklar yağmalanır, koçbaşılar suru yıkar
+- [x] Savunma raporları ve "Karşı saldırı"; oyuncu da bey hisarlarına saldırabilir, intikamcı bey erken karşılık verir
+- [x] Zorluk: Barış / Kolay / Normal / Zor; başlangıç koruması; mevcut kayıtlarda en az 12 oyun saati süre
+- [x] Kayıt şeması 6. sürüm; 86 birim testi
+
+**7b (sıradaki)**
+
+- [ ] Sıralama tablosu (oyuncu ve beyler, puana göre)
+- [ ] Beylerin barbar köylerini yağmalayıp büyümesi, birbirleriyle çatışması
 
 ## ⬜ Adım 8 — Fetih ve çoklu köy
 
@@ -124,5 +136,6 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - Kayıt yalnızca o tarayıcıda durur. Başka cihaza geçmek için Ayarlar → Kayıt kodunu kullan.
 - Sistem saati ileri alınarak zaman atlatılabilir. Tek oyunculuda bu bilerek kabul edildi.
 - İnşaat ve eğitim kuyruklarında yalnızca son iş iptal edilebilir.
-- Barbar köyleri henüz saldırmaz; saldıran rakipler Adım 7'de (yapay zekâ beyler) gelecek.
+- Barbar köyleri saldırmaz; yalnızca rakip beyler saldırır.
+- Oyuncu uzun süre uzak kaldıysa aradaki bey saldırıları açılışta sırayla işlenir (çevrimdışı ilerleme).
 - Kuşatma araçları yalnızca kazanılan savaştan sonra yıkım yapar ve sur savaştan önce değil sonra düşer.

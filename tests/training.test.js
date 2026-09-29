@@ -19,7 +19,7 @@ const T0 = Date.UTC(2026, 0, 1);
 
 /** Kışlası olan, bol kaynaklı bir köy. */
 function armyGame({ kisla = 1, resources = 900 } = {}) {
-  const state = createNewGame({ now: T0, seed: 1 });
+  const state = createNewGame({ now: T0, difficulty: 'baris', seed: 1 });
   const village = state.villages[state.activeVillageId];
   village.buildings.konak = 3;
   village.buildings.kisla = kisla;

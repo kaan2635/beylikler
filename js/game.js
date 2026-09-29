@@ -7,6 +7,7 @@ import { startTraining, cancelLastTraining } from './systems/training.js';
 import { sendAttack, recallAttack } from './systems/movements.js';
 import { startResearch, cancelResearch } from './systems/research.js';
 import { trade } from './systems/market.js';
+import { setDifficulty, rescaleLordSchedules } from './systems/ai.js';
 
 /**
  * Oyun durumu ile arayüz arasındaki tek kapı. Arayüz durumu doğrudan değiştirmez:
@@ -149,8 +150,17 @@ export class Game {
 
   setSpeed(speed, now) {
     this.tick(now); // geçen süre eski hızla hesaplansın
+    rescaleLordSchedules(this.state, now, this.state.world.speed, speed);
     this.state.world.speed = speed;
     this.save();
+  }
+
+  /** Rakip beylerin zorluğu: 'baris' | 'kolay' | 'normal' | 'zor'. */
+  setDifficulty(key, now) {
+    this.tick(now);
+    const ok = setDifficulty(this.state, key, now);
+    if (ok) this.save();
+    return ok;
   }
 
   reset(now) {

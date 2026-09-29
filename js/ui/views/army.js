@@ -2,10 +2,12 @@ import { GAME } from '../../config/game.js';
 import { BUILDINGS } from '../../config/buildings.js';
 import { RESOURCES } from '../../config/resources.js';
 import { UNITS, UNIT_IDS, TRAINING_BUILDINGS, COMBAT_TYPES } from '../../config/units.js';
-import { trainingTimeFactor } from '../../core/formulas.js';
+import { trainingTimeFactor, wallBonus } from '../../core/formulas.js';
 import { inspectTraining, maxTrainable } from '../../systems/training.js';
 import { isOutbound } from '../../systems/movements.js';
 import { techMultiplier } from '../../systems/research.js';
+import { incomingEstimate } from '../../systems/ai.js';
+import { COMBAT } from '../../config/combat.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
@@ -13,6 +15,7 @@ import { toast } from '../toast.js';
 
 /** Ordu ekranı: köydeki birlikler ve her eğitim binası için kuyruk + birim kartları. */
 export function createArmyView(ctx) {
+  const incoming = createIncomingPanel();
   const summary = createSummaryPanel();
   const movements = createMovementsPanel(ctx);
   const panels = TRAINING_BUILDINGS.map((buildingId) => createBuildingPanel(buildingId, ctx));
@@ -20,6 +23,7 @@ export function createArmyView(ctx) {
     'section',
     { class: 'stack' },
     h('header', { class: 'view-header' }, h('h1', null, 'Ordu')),
+    incoming.el,
     summary.el,
     movements.el,
     panels.map((panel) => panel.el),
@@ -29,6 +33,7 @@ export function createArmyView(ctx) {
     el,
     update(now) {
       const village = ctx.game.village;
+      incoming.update(village, now);
       summary.update(village);
       movements.update(village, now);
       for (const panel of panels) panel.update(village, ctx.game.state.world, now);
@@ -89,6 +94,81 @@ function createSummaryPanel() {
       setText(attack, fmtInt(totalAttack));
       setText(defense, `${fmtInt(totalDefense.piyade)} / ${fmtInt(totalDefense.suvari)} / ${fmtInt(totalDefense.okcu)}`);
       setText(carry, fmtInt(totalCarry));
+    },
+  };
+}
+
+/** Köyün savunma gücü; sur, köylüler ve Demirci dahil. Bey saldırısının tahminiyle karşılaştırmak için. */
+function villageDefense(village) {
+  const defense = { piyade: 0, suvari: 0, okcu: 0 };
+  for (const id of UNIT_IDS) {
+    const n = village.units[id];
+    if (!n) continue;
+    for (const type of Object.keys(defense)) defense[type] += n * UNITS[id].defense[type] * techMultiplier(village.tech[id]);
+  }
+  const wall = village.buildings.sur;
+  for (const type of Object.keys(defense)) {
+    defense[type] = defense[type] * (1 + wallBonus(wall)) + COMBAT.villageDefense + COMBAT.wallDefensePerLevel * wall;
+  }
+  return defense;
+}
+
+/** Köye gelen bey saldırıları; yalnızca varsa görünür. */
+function createIncomingPanel() {
+  const defense = h('p', { class: 'muted' });
+  const body = h('div', { class: 'queue' });
+  const el = h(
+    'section',
+    { class: 'panel incoming-panel' },
+    h('div', { class: 'panel-head' }, h('h2', null, 'Gelen saldırılar')),
+    defense,
+    body,
+  );
+  let signature = null;
+  let rows = [];
+
+  return {
+    el,
+    update(village, now) {
+      const attacks = [...village.incoming].sort((a, b) => a.arriveAt - b.arriveAt);
+      el.hidden = attacks.length === 0;
+      if (!attacks.length) return;
+      const d = villageDefense(village);
+      setText(
+        defense,
+        `Köyünün savunması: piyadeye ${fmtInt(d.piyade)} · süvariye ${fmtInt(d.suvari)} · okçuya ${fmtInt(d.okcu)}` +
+          ` (sur ${village.buildings.sur}. seviye dahil). Askerlerini köyde tut; Gizli Depo kaynaklarını korur.`,
+      );
+      const next = attacks.map((a) => a.id).join('|');
+      if (next !== signature) {
+        signature = next;
+        rows = attacks.map((attack) => {
+          const remaining = h('span', { class: 'queue-remaining' });
+          const bar = h('span');
+          const row = h(
+            'div',
+            { class: 'queue-row movement is-incoming' },
+            h(
+              'div',
+              { class: 'queue-unit' },
+              h('span', { class: 'unit-icon small' }, icon('saldiri')),
+              h('strong', null, attack.from.owner),
+              h('a', { class: 'card-link', href: `#/harita/${attack.from.x}/${attack.from.y}` }, `${attack.from.name} (${attack.from.x}|${attack.from.y})`),
+              h('span', { class: 'muted movement-units' }, `tahmini saldırı gücü ~${fmtInt(incomingEstimate(attack))}`),
+            ),
+            h('div', { class: 'queue-time' }, remaining, h('span', { class: 'muted' }, `varış ${fmtClock(attack.arriveAt, now)}`)),
+            h('span'),
+            h('div', { class: 'progress' }, bar),
+          );
+          return { row, remaining, bar, attack };
+        });
+        body.replaceChildren(...rows.map((r) => r.row));
+      }
+      for (const { remaining, bar, attack } of rows) {
+        setText(remaining, fmtDuration((attack.arriveAt - now) / 1000));
+        const done = (now - attack.departAt) / (attack.arriveAt - attack.departAt);
+        bar.style.width = `${Math.min(100, Math.max(0, done * 100))}%`;
+      }
     },
   };
 }

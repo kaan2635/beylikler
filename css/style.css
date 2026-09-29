@@ -48,6 +48,9 @@
   --map-attack: #b3261e;
   --map-spy: #8a5a00;
   --map-return: #1f6a2b;
+  --map-lord: #e6dcf0;
+  --map-lord-roof: #5b3a86;
+  --map-lord-flag: #7c4dbb;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -86,6 +89,9 @@
     --map-attack: #ff7a66;
     --map-spy: #ffd166;
     --map-return: #7ddc86;
+    --map-lord: #cdbfe0;
+    --map-lord-roof: #6e4aa0;
+    --map-lord-flag: #b28cf0;
   }
 }
 
@@ -257,6 +263,41 @@ code {
 .tabs a.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+
+.incoming-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--bad);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+  animation: alert-pulse 1.6s ease-in-out infinite;
+}
+
+.incoming-alert .icon {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes alert-pulse {
+  50% {
+    box-shadow: 0 0 0 4px rgb(163 50 31 / 0.35);
+  }
+}
+
+.incoming-panel {
+  border-color: var(--bad);
+  border-left-width: 4px;
+}
+
+.movement.is-incoming .unit-icon {
+  color: var(--bad);
 }
 
 .nav-badge {
@@ -1261,6 +1302,7 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
   .toast,
+  .incoming-alert,
   .progress > span {
     animation: none;
     transition: none;

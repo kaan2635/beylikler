@@ -10,7 +10,9 @@ import { createSmithyView } from './views/smithy.js';
 import { createMarketView } from './views/market.js';
 import { createSettingsView } from './views/settings.js';
 import { initToasts, toast } from './toast.js';
-import { fmtInt } from './format.js';
+import { h } from './dom.js';
+import { icon } from './icons.js';
+import { fmtInt, fmtDuration, fmtClock } from './format.js';
 
 // Adres çubuğundaki #/koy gibi yollar ve karşılık gelen ekranlar.
 // Yolun devamı ekrana parametre olarak gider: #/harita/503/500 → harita, [503, 500].
@@ -33,6 +35,9 @@ export function mountApp(game, { isNew, events }) {
   const resourceBar = createResourceBar(document.getElementById('resource-bar'));
   const viewRoot = document.getElementById('view');
   const reportsBadge = document.getElementById('reports-badge');
+  const incomingAlert = document.getElementById('incoming-alert');
+  const alertText = h('span');
+  incomingAlert.append(icon('saldiri'), alertText);
   const views = {};
   let current = null;
 
@@ -43,7 +48,16 @@ export function mountApp(game, { isNew, events }) {
     const unread = game.state.reports.filter((report) => !report.read).length;
     reportsBadge.hidden = unread === 0;
     reportsBadge.textContent = String(unread);
-    document.title = `${unread ? `(${unread}) ` : ''}${game.village.name} · ${GAME.title}`;
+
+    // Köye gelen bey saldırıları: tepe çubuğunda her sayfadan görünen uyarı.
+    const incoming = Object.values(game.state.villages).flatMap((village) => village.incoming);
+    incomingAlert.hidden = incoming.length === 0;
+    if (incoming.length) {
+      const first = Math.min(...incoming.map((attack) => attack.arriveAt));
+      alertText.textContent = `${incoming.length} saldırı geliyor · ${fmtDuration((first - now) / 1000)}`;
+      incomingAlert.title = `İlk saldırı ${fmtClock(first, now)} varacak. Ayrıntılar Ordu sekmesinde.`;
+    }
+    document.title = `${incoming.length ? '⚔ ' : ''}${unread ? `(${unread}) ` : ''}${game.village.name} · ${GAME.title}`;
   }
 
   function route() {
@@ -85,10 +99,17 @@ function announce(events, whileAway) {
       'attack-result': 'savaş',
       'spy-result': 'casusluk',
       'research-complete': 'geliştirme',
+      'incoming-attack': 'bey saldırısı',
+      'defense-result': 'savunma',
       return: 'dönüş',
     };
     const parts = Object.entries(counts).map(([type, n]) => `${n} ${labels[type]}`);
-    toast(`${whileAway ? 'Sen yokken ' : ''}${parts.join(', ')} gerçekleşti. Ayrıntılar Raporlar'da.`, 'success', 7000);
+    const lostDefense = events.some((event) => event.type === 'defense-result' && !event.defended);
+    toast(
+      `${whileAway ? 'Sen yokken ' : ''}${parts.join(', ')} gerçekleşti. Ayrıntılar Raporlar'da.`,
+      lostDefense ? 'error' : 'success',
+      8000,
+    );
     return;
   }
   for (const event of events) {
@@ -116,6 +137,17 @@ function describe(event) {
     }
     case 'research-complete':
       return { text: `Demirci: ${UNITS[event.unit].name} ${event.level}. seviyeye geliştirildi.`, kind: 'success' };
+    case 'incoming-attack':
+      return {
+        text: `${event.attacker} saldırıya geçti! Varış ${fmtClock(event.arriveAt, event.at)}. Askerlerini ve surunu hazırla.`,
+        kind: 'error',
+      };
+    case 'defense-result': {
+      if (event.defended) return { text: `${event.attacker} saldırısı püskürtüldü!`, kind: 'success' };
+      const wall = event.siege?.wall;
+      const wallText = wall && wall.to < wall.from ? ` Surun ${wall.to ? `${wall.to}. seviyeye indi` : 'yıkıldı'}.` : '';
+      return { text: `${event.attacker} köyünü yağmaladı: ${fmtInt(total(event.loot))} kaynak gitti.${wallText}`, kind: 'error' };
+    }
     case 'spy-result':
       return event.success
         ? { text: `${event.target} gözetlendi. Casus raporu hazır.`, kind: 'success' }
