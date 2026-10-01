@@ -4,6 +4,7 @@ import {
   populationCapacity,
   hiddenCapacity,
   wallBonus,
+  towerDefense,
   konakTimeFactor,
   trainingTimeFactor,
 } from '../core/formulas.js';
@@ -212,6 +213,19 @@ export const BUILDINGS = {
     pop: { base: 5, factor: 1.17 },
     requires: { kisla: 1 },
     effect: { label: 'Savunma bonusu', format: 'bonus', value: (lvl) => wallBonus(lvl) },
+  },
+  kule: {
+    name: 'Gözetleme Kulesi',
+    points: 6,
+    description: 'Yolları gözler: köye gelen orduların tam dökümünü görürsün. Her seviye köyün savunmasına güç katar.',
+    maxLevel: 20,
+    cost: { odun: 160, kil: 140, demir: 90 },
+    costFactor: 1.25,
+    buildTime: 300,
+    timeFactor: 1.22,
+    pop: { base: 3, factor: 1.17 },
+    requires: { konak: 3, sur: 1 },
+    effect: { label: 'Savunma', format: 'bonus', value: (lvl) => towerDefense(lvl) },
   },
 };
 

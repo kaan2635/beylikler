@@ -7,6 +7,7 @@
  * trainTime     tek birimin eğitim süresi (saniye; dünya hızı 1, bina seviyesi 0).
  * attack, type  saldırı gücü ve türü ('piyade' | 'suvari' | 'okcu'); savunan bu türe göre savunur.
  * defense       piyadeye, süvariye ve okçuya karşı savunma gücü.
+ * ilim          eğitim için gereken Divan araştırması (bkz. config/ilim.js), yoksa yok.
  * speed         bir alanı geçme süresi (dakika); ordu en yavaş biriminin hızıyla ilerler.
  * carry         yağmada taşıyabildiği kaynak.
  */
@@ -100,6 +101,22 @@ export const UNITS = {
     defense: { piyade: 20, suvari: 15, okcu: 20 },
     speed: 18,
     carry: 20,
+  },
+  yeniceri: {
+    name: 'Yeniçeri',
+    role: 'Çok yönlü',
+    description: 'Ocağın seçkin piyadesi. Hem sert vurur hem sağlam savunur; Yeniçeri Ocağı araştırmasıyla açılır.',
+    building: 'kisla',
+    requires: { kisla: 12 },
+    ilim: 'yeniceriocagi',
+    cost: { odun: 180, kil: 120, demir: 220 },
+    pop: 2,
+    trainTime: 3200,
+    attack: 80,
+    type: 'piyade',
+    defense: { piyade: 70, suvari: 60, okcu: 65 },
+    speed: 20,
+    carry: 30,
   },
   gozcu: {
     name: 'Gözcü',
@@ -204,6 +221,22 @@ export const UNITS = {
     type: 'piyade',
     defense: { piyade: 100, suvari: 50, okcu: 100 },
     speed: 30,
+    carry: 0,
+  },
+  topcu: {
+    name: 'Topçu',
+    role: 'Kuşatma',
+    description: 'Tophanenin dökme topu. Kazanılan savaşta hem suru hem seçilen binayı dört koçbaşı ve mancınık kadar döver.',
+    building: 'atolye',
+    requires: { atolye: 6 },
+    ilim: 'tophane',
+    cost: { odun: 600, kil: 500, demir: 900 },
+    pop: 10,
+    trainTime: 9000,
+    attack: 160,
+    type: 'piyade',
+    defense: { piyade: 40, suvari: 20, okcu: 40 },
+    speed: 34,
     carry: 0,
   },
   elci: {

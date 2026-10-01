@@ -32,6 +32,7 @@ const DAY = 24 * HOUR;
 
 function game() {
   const state = createNewGame({ now: T0, seed: 5, difficulty: 'baris' });
+  state.world.seasons = false; // yalnız sınıf ve görevli etkileri
   return { state, village: state.villages.v1 };
 }
 

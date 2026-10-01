@@ -1,6 +1,7 @@
 import { h } from './dom.js';
 import { UNITS } from '../config/units.js';
 import { GAME_ICONS } from './art/game-icons.js';
+import { CUSTOM_ICONS } from './art/custom-icons.js';
 
 // Oyuna özgü basit SVG simgeler (harici dosya ya da font gerekmez).
 const ICONS = {
@@ -61,13 +62,21 @@ const ICONS = {
   sandik: line('<path d="M4 10h16v10H4z"/><path d="M4 10a8 5 0 0 1 16 0"/><path d="M4 14h16"/><rect x="10.5" y="12.5" width="3" height="3.5" rx="0.6" fill="currentColor"/>'),
   tac: line('<path d="M3 18h18l1-11-5 4-5-7-5 7-5-4z"/><circle cx="12" cy="4" r="1" fill="currentColor"/><path d="M3 21h18"/>'),
   'nav-diger': line('<circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/>'),
+  'nav-divan': line('<path d="M3 5.5c3-1.2 6-1 9 1V20c-3-2-6-2.2-9-1z"/><path d="M21 5.5c-3-1.2-6-1-9 1V20c3-2 6-2.2 9-1z"/>'),
+  'nav-diplomasi': line('<path d="M2 11l4-4 4 2 3-2 4 1 5 4"/><path d="M6 13l4 4c1 1 2.2 1 3 0l6-6"/><path d="M10 13l2.5 2.5M12.5 11.5l2.5 2.5"/>'),
+  olay: line('<path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7"/><path d="M7 3a2 2 0 0 0-2 2v2h4V5a2 2 0 0 0-2-2z"/><path d="M7 21a2 2 0 0 1-2-2V9"/><path d="M11 8h5M11 12h5M11 16h3"/>'),
+  'mevsim-ilkbahar': line('<path d="M12 21v-9"/><path d="M12 12c0-4.5 3-7 7.5-7 0 4.5-3 7-7.5 7z"/><path d="M12 15c0-3.5-2.5-6-6.5-6 0 3.5 2.5 6 6.5 6z"/>'),
+  'mevsim-yaz': line('<circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2 12h2.5M19.5 12H22M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>'),
+  'mevsim-sonbahar': line('<path d="M5 19C5 10.5 11 5 20 5c0 9-5.5 15-14 15"/><path d="M5 19l9-9"/>'),
+  'mevsim-kis': line('<path d="M12 2v20M3.5 7l17 10M20.5 7l-17 10"/><path d="M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5"/>'),
+  baris: line('<path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/>'),
   'nav-ayarlar': line('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'),
 };
 
 // Kaynak ve birim simgeleri: game-icons.net (CC BY 3.0). Kaynaklar kendi renginde, birimler
 // bulunduğu yerin rengini (currentColor) alır; madalyonda kategori rengine boyanır.
 const ICON_COLORS = { odun: '#c98a4b', kil: '#d9744c', demir: '#a9b4bf', nufus: '#d6b27a', ambar: '#c99a62', akce: '#e2b64c' };
-for (const [key, d] of Object.entries(GAME_ICONS)) {
+for (const [key, d] of Object.entries({ ...GAME_ICONS, ...CUSTOM_ICONS })) {
   ICONS[key] = `<svg viewBox="0 0 512 512"><path fill="${ICON_COLORS[key] ?? 'currentColor'}" d="${d}"/></svg>`;
 }
 

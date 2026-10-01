@@ -257,14 +257,15 @@ function placeLabel(place) {
 function reportActions(report, repeatLabel) {
   const defense = report.type === 'savunma';
   const place = defense ? report.origin : report.target;
-  const repeat = defense
+  const event = report.target?.id === 'haydut'; // olaydaki haydut savaşı: tekrarı ve haritası yok
+  const repeat = defense || event
     ? null
     : h('button', { class: 'btn btn-small', type: 'button', dataset: { action: 'repeat', report: report.id } }, repeatLabel);
   const row = h(
     'div',
     { class: 'form-row' },
     repeat,
-    h('a', { class: `btn btn-small${defense ? '' : ' btn-ghost'}`, href: `#/harita/${place.x}/${place.y}` }, defense ? 'Karşı saldırı' : 'Haritada göster'),
+    event ? null : h('a', { class: `btn btn-small${defense ? '' : ' btn-ghost'}`, href: `#/harita/${place.x}/${place.y}` }, defense ? 'Karşı saldırı' : 'Haritada göster'),
     h('button', { class: 'btn btn-small btn-ghost btn-quiet', type: 'button', dataset: { action: 'delete', report: report.id } }, 'Sil'),
   );
   return { row, repeat };

@@ -30,11 +30,11 @@ export const SLOTS = {
   kisla: [3, 2],
   atolye: [4, 2],
   kervansaray: [0, 3],
+  kule: [4, 0],
 };
 
 // Süs arsaları: koru, gölet, meydan, bahçe.
 const DECOR = [
-  { at: [4, 0], kind: 'grove' },
   { at: [0, 2], kind: 'pond' },
   { at: [1, 3], kind: 'grove2' },
   { at: [2, 3], kind: 'square' },
@@ -43,10 +43,56 @@ const DECOR = [
 ];
 
 // Binaların görsel boyu (arsa genişliğine oranla) ve kademe çarpanı.
-const SIZE = { saray: 1.18, kisla: 1.06, ahir: 1.04, kervansaray: 1.04, konak: 1.02, demirmadeni: 0.9, oduncu: 0.92, kilocagi: 0.84, gizlidepo: 0.8 };
+const SIZE = { kule: 0.78, saray: 1.18, kisla: 1.06, ahir: 1.04, kervansaray: 1.04, konak: 1.02, demirmadeni: 0.9, oduncu: 0.92, kilocagi: 0.84, gizlidepo: 0.8 };
 const TIER_SCALE = [0.72, 0.74, 0.87, 1];
 
 const f = (n) => Math.round(n * 10) / 10;
+
+// Mevsimlere göre renkler: çimen [zemin, çizgi, açık, koyu], yapraklar [koyu, orta, açık],
+// selvi, tarla, toprak ve yol; kışın yaprak tepeleri ve zemin kar tutar, göl buz olur.
+const PALETTES = {
+  ilkbahar: {
+    grass: ['#83a24f', '#6f8f40', '#9cbc63', '#6a853b'],
+    leaf: ['#355124', '#4a6d30', '#6b8f40'],
+    leaf2: ['#3f5a2a', '#557a36', '#789c4a'],
+    cypress: ['#2f4a22', '#46663a'],
+    field: ['#8a8a43', '#a7a04e'],
+    dirt: ['#a7865a', '#8f7049', '#b89a6c'],
+    road: ['#b59a6e', '#a08658', '#c6ad80'],
+    water: ['#8dbad0', '#3f6f86'],
+  },
+  yaz: {
+    grass: ['#8f9f48', '#7b8c3c', '#a8b660', '#768636'],
+    leaf: ['#3a5222', '#4f6e2c', '#73923f'],
+    leaf2: ['#45602a', '#5d7d33', '#82a246'],
+    cypress: ['#2f4a22', '#46663a'],
+    field: ['#c2a64a', '#dcc062'],
+    dirt: ['#b08c5a', '#987349', '#c2a06c'],
+    road: ['#c0a372', '#a98d5c', '#d0b685'],
+    water: ['#86b6cc', '#3a6a82'],
+  },
+  sonbahar: {
+    grass: ['#9a9352', '#857d42', '#b3a45f', '#7d7240'],
+    leaf: ['#7a3e18', '#a8581e', '#d4862c'],
+    leaf2: ['#6e4a1a', '#9a6a22', '#c99a34'],
+    cypress: ['#3a4a24', '#556638'],
+    field: ['#9c7f3e', '#b8964c'],
+    dirt: ['#9d7d52', '#856644', '#ae9064'],
+    road: ['#ad9168', '#977c55', '#bea27a'],
+    water: ['#7aa4b8', '#365d72'],
+  },
+  kis: {
+    grass: ['#e3e9ec', '#cdd7dc', '#ffffff', '#bac7cd'],
+    leaf: ['#2c4026', '#3c5534', '#eef3f5'],
+    leaf2: ['#344a2c', '#46613c', '#f5f8fa'],
+    cypress: ['#2a3f24', '#3d5634'],
+    field: ['#d6dee2', '#eef2f4'],
+    dirt: ['#c8beae', '#b2a894', '#d8d0c3'],
+    road: ['#d2c9ba', '#bcb2a0', '#e1dacd'],
+    water: ['#dceaf0', '#9dbccb'],
+  },
+};
+let pal = PALETTES.ilkbahar; // sceneSvg her çizimde mevsime göre seçer
 
 function translate(col, row) {
   const [sx, sy] = P(col * PITCH + 3, row * PITCH + 3, 0);
@@ -57,9 +103,7 @@ function translate(col, row) {
 function tree(x, y, scale = 1, hue = 0) {
   const [sx, sy] = P(x, y, 0);
   const k = scale;
-  const dark = hue ? '#3f5a2a' : '#355124';
-  const mid = hue ? '#557a36' : '#4a6d30';
-  const light = hue ? '#789c4a' : '#6b8f40';
+  const [dark, mid, light] = hue ? pal.leaf2 : pal.leaf;
   return (
     `<ellipse cx="${f(sx + 3 * k)}" cy="${f(sy)}" rx="${f(9 * k)}" ry="${f(3.6 * k)}" fill="#1e2a10" opacity="0.28"/>` +
     `<rect x="${f(sx - 1.2 * k)}" y="${f(sy - 9 * k)}" width="${f(2.4 * k)}" height="${f(9 * k)}" fill="#5a3d22"/>` +
@@ -77,8 +121,8 @@ function cypress(x, y, scale = 1) {
   const w = 4.4 * scale;
   return (
     `<ellipse cx="${f(sx + 2)}" cy="${f(sy)}" rx="${f(w * 1.4)}" ry="${f(w * 0.5)}" fill="#1e2a10" opacity="0.28"/>` +
-    `<path d="M${f(sx)},${f(sy - h)} C${f(sx + w * 1.3)},${f(sy - h * 0.6)} ${f(sx + w)},${f(sy - 2)} ${f(sx)},${f(sy)} C${f(sx - w)},${f(sy - 2)} ${f(sx - w * 1.3)},${f(sy - h * 0.6)} ${f(sx)},${f(sy - h)}Z" fill="#2f4a22"/>` +
-    `<path d="M${f(sx)},${f(sy - h)} C${f(sx - w * 1.3)},${f(sy - h * 0.6)} ${f(sx - w)},${f(sy - 2)} ${f(sx)},${f(sy)}Z" fill="#46663a" opacity="0.8"/>`
+    `<path d="M${f(sx)},${f(sy - h)} C${f(sx + w * 1.3)},${f(sy - h * 0.6)} ${f(sx + w)},${f(sy - 2)} ${f(sx)},${f(sy)} C${f(sx - w)},${f(sy - 2)} ${f(sx - w * 1.3)},${f(sy - h * 0.6)} ${f(sx)},${f(sy - h)}Z" fill="${pal.cypress[0]}"/>` +
+    `<path d="M${f(sx)},${f(sy - h)} C${f(sx - w * 1.3)},${f(sy - h * 0.6)} ${f(sx - w)},${f(sy - 2)} ${f(sx)},${f(sy)}Z" fill="${pal.cypress[1]}" opacity="0.8"/>`
   );
 }
 
@@ -210,18 +254,18 @@ function walls(level, part) {
 function defs() {
   return `<defs>
     <linearGradient id="scene-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--scene-sky-top)"/><stop offset="1" stop-color="var(--scene-sky-bottom)"/></linearGradient>
-    <radialGradient id="scene-water" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#8dbad0"/><stop offset="1" stop-color="#3f6f86"/></radialGradient>
+    <radialGradient id="scene-water" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="${pal.water[0]}"/><stop offset="1" stop-color="${pal.water[1]}"/></radialGradient>
     <filter id="scene-grain" x="0" y="0" width="100%" height="100%">
       <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="n"/>
       <feColorMatrix type="saturate" values="0" in="n" result="g"/>
       <feComponentTransfer in="g" result="a"><feFuncA type="table" tableValues="0 0.22"/></feComponentTransfer>
       <feComposite in="a" in2="SourceGraphic" operator="in"/>
     </filter>
-    <pattern id="scene-grass" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="#7f9a4c"/><path d="M2 20l2-5M9 8l1-4M15 18l2-5M20 6l1-4M5 11l1-3M18 13l2-4" stroke="#6c8a3d" stroke-width="1"/><circle cx="12" cy="4" r="1" fill="#93ad5c"/><circle cx="3" cy="3" r="0.8" fill="#93ad5c"/><circle cx="20" cy="20" r="1" fill="#6a853b"/></pattern>
-    <pattern id="scene-dirt" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#a7865a"/><circle cx="3" cy="4" r="1" fill="#8f7049"/><circle cx="10" cy="9" r="1.2" fill="#b89a6c"/><circle cx="6" cy="12" r="0.8" fill="#8f7049"/></pattern>
-    <pattern id="scene-road" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#b59a6e"/><circle cx="3" cy="3" r="1" fill="#a08658"/><circle cx="9" cy="8" r="1.1" fill="#c6ad80"/></pattern>
+    <pattern id="scene-grass" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="${pal.grass[0]}"/><path d="M2 20l2-5M9 8l1-4M15 18l2-5M20 6l1-4M5 11l1-3M18 13l2-4" stroke="${pal.grass[1]}" stroke-width="1"/><circle cx="12" cy="4" r="1" fill="${pal.grass[2]}"/><circle cx="3" cy="3" r="0.8" fill="${pal.grass[2]}"/><circle cx="20" cy="20" r="1" fill="${pal.grass[3]}"/></pattern>
+    <pattern id="scene-dirt" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="${pal.dirt[0]}"/><circle cx="3" cy="4" r="1" fill="${pal.dirt[1]}"/><circle cx="10" cy="9" r="1.2" fill="${pal.dirt[2]}"/><circle cx="6" cy="12" r="0.8" fill="${pal.dirt[1]}"/></pattern>
+    <pattern id="scene-road" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="${pal.road[0]}"/><circle cx="3" cy="3" r="1" fill="${pal.road[1]}"/><circle cx="9" cy="8" r="1.1" fill="${pal.road[2]}"/></pattern>
     <pattern id="scene-cobble" width="10" height="8" patternUnits="userSpaceOnUse"><rect width="10" height="8" fill="#8f8573"/><rect x="0.5" y="0.5" width="4" height="3" rx="1" fill="#b0a58f"/><rect x="5.5" y="0.5" width="4" height="3" rx="1" fill="#a39884"/><rect x="3" y="4.5" width="4" height="3" rx="1" fill="#b6ab95"/></pattern>
-    <pattern id="scene-field" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#8a8a43"/><path d="M0 2h8M0 6h8" stroke="#a7a04e" stroke-width="1.6"/></pattern>
+    <pattern id="scene-field" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="${pal.field[0]}"/><path d="M0 2h8M0 6h8" stroke="${pal.field[1]}" stroke-width="1.6"/></pattern>
     <pattern id="scene-stone" width="8" height="6" patternUnits="userSpaceOnUse"><rect width="8" height="6" fill="#8d8779"/><path d="M0 3h8M4 0v3M0 3v3M8 3v3" stroke="#6e695d" stroke-width="0.6"/></pattern>
     <pattern id="scene-stone-dark" width="8" height="6" patternUnits="userSpaceOnUse"><rect width="8" height="6" fill="#6f6a5e"/><path d="M0 3h8M4 0v3M0 3v3M8 3v3" stroke="#57534a" stroke-width="0.6"/></pattern>
     <pattern id="scene-stone-top" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#a7a092"/></pattern>
@@ -271,7 +315,8 @@ function roads() {
  * Sahnenin SVG'si. `levels`: bina → seviye; `upgrading`: yapımı süren binalar;
  * `locked`: gereksinimi karşılanmamış binalar (boş arsa soluk görünür).
  */
-export function sceneSvg(levels, { upgrading = new Set(), locked = new Set(), names = {}, selected = null } = {}) {
+export function sceneSvg(levels, { upgrading = new Set(), locked = new Set(), names = {}, selected = null, season = null } = {}) {
+  pal = PALETTES[season] ?? PALETTES.ilkbahar;
   const minX = -D - 30;
   const maxX = W + 30;
   const minY = -90;

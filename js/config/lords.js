@@ -134,3 +134,29 @@ export const DIFFICULTIES = Object.freeze({
 
 // Çok oyunculu dünyada yeni oyuncunun saldırıya karşı korunduğu süre (oyun günü).
 export const NEWBIE_PROTECTION_DAYS = 3;
+
+// Diplomasi: oyuncunun her beyle ilişkisi (−100..100). İlişki her oyun günü sıfıra doğru
+// `decayPerDay` kadar yaklaşır; hediye ve antlaşmayla yükselir, hisarına saldırınca düşer.
+export const DIPLOMACY = Object.freeze({
+  decayPerDay: 2,
+  attackPenalty: -25, // beyin hisarına saldırınca
+  spyPenalty: -8, // hisarını gözetleyince
+  // Hediye: ambar kapasitesinin `share` kadarı her kaynaktan; ilişkiyi `relation` artırır.
+  gifts: Object.freeze([
+    { id: 'kucuk', name: 'Küçük hediye', share: 0.05, relation: 8 },
+    { id: 'degerli', name: 'Değerli hediye', share: 0.12, relation: 20 },
+    { id: 'gorkemli', name: 'Görkemli hediye', share: 0.25, relation: 40 },
+  ]),
+  // Barış antlaşması: ilişki en az minRelation olmalı; bedeli Akçe + kaynak; süresince bey saldırmaz.
+  peace: Object.freeze({ minRelation: 20, days: 4, akce: 15, share: 0.1, relation: 10 }),
+  // İlişkiye göre saldırı sıklığı: saldırılar arası bekleme bu kadarla çarpılır.
+  // Müttefik bey (Infinity) hiç saldırmaz; ilişki düşünce yeniden saldırabilir.
+  levels: Object.freeze([
+    { min: 70, id: 'muttefik', name: 'Müttefik', interval: Infinity },
+    { min: 40, id: 'dost', name: 'Dost', interval: 1.8 },
+    { min: 15, id: 'ilimli', name: 'Ilımlı', interval: 1.3 },
+    { min: -15, id: 'tarafsiz', name: 'Tarafsız', interval: 1 },
+    { min: -50, id: 'soguk', name: 'Soğuk', interval: 0.9 },
+    { min: -Infinity, id: 'dusman', name: 'Düşman', interval: 0.75 },
+  ]),
+});

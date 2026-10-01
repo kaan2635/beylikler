@@ -1,5 +1,6 @@
 import { GAME } from '../config/game.js';
 import { BUILDINGS } from '../config/buildings.js';
+import { ILIM } from '../config/ilim.js';
 import { UNITS } from '../config/units.js';
 import { trainDuration } from '../core/formulas.js';
 import { bonusOf } from './bonus.js';
@@ -21,9 +22,14 @@ import {
 
 /** Bir birimin eğitim şartlarından eksik olanları metin olarak döndürür (yoksa null). */
 export function missingUnitRequirements(village, unitId) {
-  const missing = Object.entries(UNITS[unitId].requires).filter(([id, lvl]) => village.buildings[id] < lvl);
+  const unit = UNITS[unitId];
+  const missing = Object.entries(unit.requires)
+    .filter(([id, lvl]) => village.buildings[id] < lvl)
+    .map(([id, lvl]) => `${BUILDINGS[id].name} ${lvl}. seviye`);
+  // Divan araştırması gereken birimler (köyün `unlocks` alanını motor kurar, bkz. syncBonuses)
+  if (unit.ilim && !village.unlocks?.has(unitId)) missing.push(`${ILIM[unit.ilim].name} araştırması`);
   if (!missing.length) return null;
-  return `Gerekli: ${missing.map(([id, lvl]) => `${BUILDINGS[id].name} ${lvl}. seviye`).join(', ')}`;
+  return `Gerekli: ${missing.join(', ')}`;
 }
 
 export function totalCost(unit, count) {

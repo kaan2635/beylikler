@@ -9,6 +9,7 @@ export const COMBAT = Object.freeze({
   // Ör. 10. seviye ambarı bir seviye düşürmek 10 mancınık, 3. seviye suru tamamen yıkmak 3+2+1 = 6 koçbaşı.
   ramsPerLevel: 1, // koçbaşı → sur
   catapultsPerLevel: 1, // mancınık → seçilen bina
+  cannonSiege: 4, // bir Topçu hem suru hem seçilen binayı dört koçbaşı / mancınık gibi döver
 });
 
 // Fetih: Elçi, kazanılan saldırıda köyün bağlılığını düşürür; sıfırda köy fethedilir.

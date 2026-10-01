@@ -20,6 +20,10 @@ import { bonusOf } from './systems/bonus.js';
 import { sendExpedition } from './systems/expedition.js';
 import { claimQuest, claimDaily } from './systems/quests.js';
 import { setDifficulty, rescaleLordSchedules } from './systems/ai.js';
+import { startIlim, cancelIlim } from './systems/ilim.js';
+import { chooseEvent, rescaleEvents } from './systems/events.js';
+import { sendGift, makePeace } from './systems/diplomacy.js';
+import { syncBonuses } from './systems/premium.js';
 
 /**
  * Oyun durumu ile arayüz arasındaki tek kapı. Arayüz durumu doğrudan değiştirmez:
@@ -235,6 +239,37 @@ export class Game {
     return this.#act(now, () => buyResourcePack(this.state, this.village, now));
   }
 
+  // ---------- Divan, olaylar ve diplomasi ----------
+
+  /** Divanda araştırma başlatır (maliyet yönetilen köyden). */
+  startIlim(ilimId, now) {
+    return this.#act(now, () => startIlim(this.state, this.village, this.state.world, ilimId, now));
+  }
+
+  cancelIlim(now) {
+    this.tick(now);
+    const current = cancelIlim(this.state);
+    if (current) this.save();
+    return current;
+  }
+
+  /** Bekleyen olayda bir seçenek seçer. */
+  chooseEvent(choiceId, now) {
+    return this.#act(now, () => chooseEvent(this.state, choiceId, now));
+  }
+
+  sendGift(lordId, tierId, now) {
+    return this.#act(now, () => sendGift(this.state, this.village, lordId, tierId));
+  }
+
+  makePeace(lordId, now) {
+    return this.#act(now, () => {
+      const result = makePeace(this.state, this.village, lordId, now);
+      if (result.ok) syncBonuses(this.state);
+      return result;
+    });
+  }
+
   // ---------- Görevler ----------
 
   claimQuest(questId, now) {
@@ -280,6 +315,7 @@ export class Game {
   setSpeed(speed, now) {
     this.tick(now); // geçen süre eski hızla hesaplansın
     rescaleLordSchedules(this.state, now, this.state.world.speed, speed);
+    rescaleEvents(this.state, now, this.state.world.speed, speed);
     this.state.world.speed = speed;
     this.save();
   }

@@ -7,6 +7,8 @@ import { barbarianLive, recordBarbarian, recordDamage } from './barbarians.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { deposit } from './economy.js';
 import { provokeLord, recordPlayerAttackOnLord } from './ai.js';
+import { adjustRelation } from './diplomacy.js';
+import { DIPLOMACY } from '../config/lords.js';
 import { applyEnvoys } from './conquest.js';
 import { deliverTransport } from './market.js';
 import { stationSupport } from './support.js';
@@ -17,6 +19,7 @@ import {
   totalUnits,
   armySpeed,
   armyCarry,
+  siegeEngines,
   armyAttack,
   subtractUnits,
   luckFor,
@@ -84,7 +87,7 @@ export function inspectAttack(state, village, x, y, requested, now, options = {}
     distance: dist,
     seconds,
     arriveAt: now + seconds * 1000,
-    catapultTarget: units.mancinik && !own ? (options.catapultTarget ?? 'konak') : null,
+    catapultTarget: (units.mancinik || units.topcu) && !own ? (options.catapultTarget ?? 'konak') : null,
   };
 
   if (!totalUnits(units)) return { ...info, code: 'empty', reason: 'Göndermek için asker seç' };
@@ -212,7 +215,7 @@ function attack(state, village, movement, target) {
   const available = {};
   for (const id of RESOURCE_IDS) available[id] = Math.max(0, live.resources[id] - live.hidden);
   const loot = battle.attackerWins
-    ? distributeLoot(available, armyCarry(survivors))
+    ? distributeLoot(available, armyCarry(survivors) * bonusOf(village).carry)
     : Object.fromEntries(RESOURCE_IDS.map((id) => [id, 0]));
 
   const leftResources = {};
@@ -278,15 +281,16 @@ function attack(state, village, movement, target) {
  */
 function besiege(state, target, survivors, catapultTarget) {
   const siege = {};
-  if (survivors.kocbasi) {
+  const { rams, catapults } = siegeEngines(survivors);
+  if (rams) {
     const from = target.buildings.sur;
-    const down = siegeLevels(survivors.kocbasi, from, COMBAT.ramsPerLevel);
+    const down = siegeLevels(rams, from, COMBAT.ramsPerLevel);
     if (down) recordDamage(state, target.id, 'sur', down);
     siege.wall = { from, to: from - down };
   }
-  if (survivors.mancinik && catapultTarget) {
+  if (catapults && catapultTarget) {
     const from = target.buildings[catapultTarget];
-    const down = siegeLevels(survivors.mancinik, from, COMBAT.catapultsPerLevel, MIN_BUILDING_LEVEL[catapultTarget] ?? 0);
+    const down = siegeLevels(catapults, from, COMBAT.catapultsPerLevel, MIN_BUILDING_LEVEL[catapultTarget] ?? 0);
     if (down) recordDamage(state, target.id, catapultTarget, down);
     siege.catapult = { building: catapultTarget, from, to: from - down };
   }
@@ -298,6 +302,7 @@ function besiege(state, target, survivors, catapultTarget) {
  * binalarını görür; kayıp oranı (savunan / saldıran) ^ 1.5 olur. Azsa tüm gözcüler yakalanır.
  */
 function spyOn(state, village, movement, target) {
+  if (target.kind === 'bey') adjustRelation(state, target.id, DIPLOMACY.spyPenalty);
   const live = barbarianLive(state, target);
   const scouts = movement.units.gozcu;
   const guards = live.units.gozcu ?? 0;

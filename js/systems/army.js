@@ -21,6 +21,15 @@ export function armyCarry(units) {
   return Object.entries(units).reduce((total, [id, n]) => total + n * UNITS[id].carry, 0);
 }
 
+/** Kuşatma gücü: koçbaşı suru, mancınık seçilen binayı döver; Topçu ikisini birden, dört katı. */
+export function siegeEngines(units) {
+  const cannons = units.topcu ?? 0;
+  return {
+    rams: (units.kocbasi ?? 0) + COMBAT.cannonSiege * cannons,
+    catapults: (units.mancinik ?? 0) + COMBAT.cannonSiege * cannons,
+  };
+}
+
 /** Ordunun toplam saldırı gücü; `tech` verilirse Demirci geliştirmeleri dahil. */
 export function armyAttack(units, tech = {}) {
   return Object.entries(units).reduce((total, [id, n]) => total + n * UNITS[id].attack * techMultiplier(tech[id]), 0);

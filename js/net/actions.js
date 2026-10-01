@@ -79,4 +79,9 @@ export const ACTIONS = {
   buyResourcePack: (g, [], now) => g.buyResourcePack(now),
   claimQuest: (g, [quest], now) => g.claimQuest(str(quest, 40), now),
   claimDaily: (g, [], now) => g.claimDaily(now),
+  startIlim: (g, [ilim], now) => g.startIlim(str(ilim, 30), now),
+  cancelIlim: (g, [], now) => done(g.cancelIlim(now), 'Süren araştırma yok'),
+  chooseEvent: (g, [choice], now) => g.chooseEvent(str(choice, 30), now),
+  sendGift: (g, [lord, tier], now) => g.sendGift(str(lord, 20), str(tier, 20), now),
+  makePeace: (g, [lord], now) => g.makePeace(str(lord, 20), now),
 };

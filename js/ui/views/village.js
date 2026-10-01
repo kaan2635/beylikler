@@ -10,6 +10,11 @@ import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
+import { ILIM } from '../../config/ilim.js';
+import { seasonOf, seasonLeft } from '../../systems/seasons.js';
+import { lordsOf } from '../../systems/world.js';
+import { openEventDialog } from '../event-dialog.js';
+import { bonusText } from '../bonus-text.js';
 
 const FILTER_KEY = 'beylikler:bina-suzgeci';
 
@@ -27,6 +32,7 @@ export function createVillageView({ game, refresh }) {
   const name = h('h1', { class: 'village-name' });
   const coords = h('span', { class: 'muted' });
   const queue = createQueuePanel();
+  const status = createStatusPanel({ game, refresh });
   const cards = BUILDING_IDS.map((id) => createBuildingCard(id));
   const open = (id) => openBuildingDialog({ game, refresh }, id);
   const scene = createScene(open);
@@ -61,7 +67,7 @@ export function createVillageView({ game, refresh }) {
           filter.empty,
         ),
       ),
-      h('aside', { class: 'village-side' }, queue.el, questPanel),
+      h('aside', { class: 'village-side' }, status.el, queue.el, questPanel),
     ),
   );
 
@@ -94,7 +100,8 @@ export function createVillageView({ game, refresh }) {
       setText(name, village.name);
       const points = fmtInt(villagePoints(village.buildings));
       setText(coords, `(${village.x}|${village.y}) · ${continentOf(village.x, village.y)} · ${points} puan`);
-      scene.update(village);
+      scene.update(village, game.state.world);
+      status.update(now);
       quests.update();
       queue.update(village, now, game.state);
       for (const card of cards) card.update(village, game.state.world, now);
@@ -167,15 +174,97 @@ function createScene(onSelect) {
 
   return {
     el,
-    update(village) {
+    update(village, world) {
       const upgrading = new Set(village.buildQueue.map((job) => job.building));
       const locked = new Set(
         BUILDING_IDS.filter((id) => Object.entries(BUILDINGS[id].requires).some(([req, lvl]) => (village.buildings[req] ?? 0) < lvl)),
       );
-      const next = JSON.stringify([village.id, village.buildings, [...upgrading], [...locked]]);
+      const season = seasonOf(world)?.id ?? null;
+      const next = JSON.stringify([village.id, village.buildings, [...upgrading], [...locked], season]);
       if (next === signature) return;
       signature = next;
-      el.innerHTML = sceneSvg(village.buildings, { upgrading, locked, names });
+      el.dataset.season = season ?? '';
+      el.innerHTML = sceneSvg(village.buildings, { upgrading, locked, names, season });
+    },
+  };
+}
+
+/**
+ * Beylik durumu: mevsim, bekleyen olay, Divan'daki araştırma, olaylardan gelen geçici etkiler
+ * ve beylerle barışlar. Köy ekranının yan sütununda en üstte durur.
+ */
+function createStatusPanel({ game, refresh }) {
+  const seasonIcon = h('span', { class: 'status-icon' });
+  const seasonName = h('strong');
+  const seasonLeftText = h('span', { class: 'muted' });
+  const seasonPerks = h('span', { class: 'status-sub' });
+  const eventRow = h('div', { class: 'status-row status-event' });
+  const ilimRow = h('div', { class: 'status-row' });
+  const effects = h('ul', { class: 'status-list' });
+  const el = h(
+    'section',
+    { class: 'panel status-panel' },
+    h('div', { class: 'panel-head' }, h('h2', null, 'Beylik durumu')),
+    h('div', { class: 'status-row' }, seasonIcon, h('div', null, h('div', null, seasonName, ' ', seasonLeftText), seasonPerks)),
+    eventRow,
+    ilimRow,
+    effects,
+  );
+  el.addEventListener('click', (event) => {
+    if (event.target.closest('button[data-action="event"]')) openEventDialog({ game, refresh });
+  });
+  let signature = null;
+
+  return {
+    el,
+    update(now) {
+      const { state } = game;
+      const season = seasonOf(state.world);
+      el.querySelector('.status-row').hidden = !season;
+      if (season) {
+        if (seasonIcon.dataset.season !== season.id) {
+          seasonIcon.dataset.season = season.id;
+          seasonIcon.replaceChildren(icon(`mevsim-${season.id}`));
+        }
+        setText(seasonName, season.name);
+        setText(seasonLeftText, `· ${fmtDuration(seasonLeft(state.world, now) / state.world.speed / 1000)} kaldı`);
+        setText(seasonPerks, season.perks.join(' · '));
+      }
+
+      const pending = state.events?.pending;
+      const ilim = state.player.ilim?.current;
+      const time = state.world.clock.time;
+      const peaces = lordsOf(state.world.seed).filter((lord) => (state.diplomacy?.[lord.id]?.peaceUntil ?? 0) > time);
+      const modifiers = state.player.modifiers ?? [];
+      const next = [pending?.id, ilim?.id, ilim?.endAt, modifiers.map((m) => m.id + m.until).join(), peaces.map((l) => l.id).join()].join('|');
+      if (next !== signature) {
+        signature = next;
+        eventRow.hidden = !pending;
+        if (pending) {
+          eventRow.replaceChildren(
+            h('span', { class: 'status-icon pulse' }, icon(pending.icon ?? 'olay')),
+            h('div', null, h('strong', null, pending.title), h('span', { class: 'status-sub' }, 'Kararını bekliyor')),
+            h('button', { type: 'button', class: 'btn btn-small btn-gold', dataset: { action: 'event' } }, 'Karar ver'),
+          );
+        }
+        ilimRow.replaceChildren(
+          h('span', { class: 'status-icon' }, icon('nav-divan')),
+          ilim
+            ? h('div', null, h('strong', null, ILIM[ilim.id].name), h('span', { class: 'status-sub', dataset: { until: ilim.endAt } }))
+            : h('div', null, h('strong', null, 'Divan boşta'), h('span', { class: 'status-sub' }, 'Bir araştırma başlat')),
+          h('a', { class: 'card-link', href: '#/divan' }, 'Divan →'),
+        );
+        effects.replaceChildren(
+          ...modifiers.map((m) => h('li', null, h('strong', null, m.name), ` · ${bonusText(m.bonus)} · `, h('span', { class: 'muted', dataset: { until: m.until } }))),
+          ...peaces.map((lord) => h('li', null, icon('baris'), h('strong', null, ` ${lord.name} Bey ile barış`), ' · ', h('span', { class: 'muted', dataset: { peace: lord.id } }))),
+        );
+        effects.hidden = !modifiers.length && !peaces.length;
+      }
+      for (const span of el.querySelectorAll('[data-until]')) setText(span, `${fmtDuration((Number(span.dataset.until) - now) / 1000)} kaldı`);
+      for (const span of el.querySelectorAll('[data-peace]')) {
+        const left = ((state.diplomacy?.[span.dataset.peace]?.peaceUntil ?? 0) - time) / state.world.speed;
+        setText(span, `${fmtDuration(left / 1000)} kaldı`);
+      }
     },
   };
 }

@@ -2,11 +2,15 @@ import { GAME } from '../../config/game.js';
 import { BUILDINGS } from '../../config/buildings.js';
 import { RESOURCES } from '../../config/resources.js';
 import { UNITS, UNIT_IDS, TRAINING_BUILDINGS, COMBAT_TYPES } from '../../config/units.js';
-import { trainingTimeFactor, wallBonus } from '../../core/formulas.js';
+import { trainingTimeFactor, wallBonus, towerDefense } from '../../core/formulas.js';
+import { bonusOf } from '../../systems/bonus.js';
 import { inspectTraining, maxTrainable } from '../../systems/training.js';
 import { isOutbound } from '../../systems/movements.js';
 import { techMultiplier } from '../../systems/research.js';
 import { incomingEstimate } from '../../systems/ai.js';
+import { armyAttack } from '../../systems/army.js';
+
+const armyAttackOf = (attack) => armyAttack(attack.units, attack.tech);
 import { defendersOf, supportAt, stationedAway } from '../../systems/support.js';
 import { gameIconSvg } from '../art/sprites.js';
 import { openBuildingDialog } from '../building-dialog.js';
@@ -117,8 +121,10 @@ function villageDefense(state, village) {
     for (const type of Object.keys(defense)) defense[type] += n * UNITS[id].defense[type] * techMultiplier(village.tech[id]);
   }
   const wall = village.buildings.sur;
+  // Savaştaki gibi: sınıf, mevsim, olay etkileri ve Gözetleme Kulesi savunmayı çarpar.
+  const factor = bonusOf(village).defense * (1 + towerDefense(village.buildings.kule));
   for (const type of Object.keys(defense)) {
-    defense[type] = defense[type] * (1 + wallBonus(wall)) + COMBAT.villageDefense + COMBAT.wallDefensePerLevel * wall;
+    defense[type] = defense[type] * factor * (1 + wallBonus(wall)) + COMBAT.villageDefense + COMBAT.wallDefensePerLevel * wall;
   }
   return defense;
 }
@@ -169,7 +175,8 @@ function createIncomingPanel() {
               h('strong', null, attack.from.owner),
               h('a', { class: 'card-link', href: `#/harita/${attack.from.x}/${attack.from.y}` }, `${attack.from.name} (${attack.from.x}|${attack.from.y})`),
               villages.length > 1 ? h('span', null, `→ ${target.name}`) : null,
-              h('span', { class: 'muted movement-units' }, `tahmini saldırı gücü ~${fmtInt(incomingEstimate(attack))}`),
+              // Gözetleme Kulesi olan köy gelen ordunun tam dökümünü görür.
+              h('span', { class: 'muted movement-units' }, target.buildings.kule > 0 ? `${armyList(attack.units)} · saldırı gücü ${fmtInt(armyAttackOf(attack))} (Gözetleme Kulesi)` : `tahmini saldırı gücü ~${fmtInt(incomingEstimate(attack))} · tam döküm için Gözetleme Kulesi kur`),
             ),
             h('div', { class: 'queue-time' }, remaining, h('span', { class: 'muted' }, `varış ${fmtClock(attack.arriveAt, now)}`)),
             h('span'),

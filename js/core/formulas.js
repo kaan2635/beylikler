@@ -31,6 +31,11 @@ export function wallBonus(level) {
   return Math.pow(1.037, level) - 1;
 }
 
+/** Gözetleme Kulesinin savunmaya kattığı oran: seviye başına %1,5. */
+export function towerDefense(level) {
+  return 0.015 * Math.max(0, level);
+}
+
 /** Konak seviyesine göre inşaat süresi çarpanı (1 = indirim yok). */
 export function konakTimeFactor(level) {
   return Math.pow(1.05, -level);

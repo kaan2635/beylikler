@@ -1,0 +1,174 @@
+// Divan ve İlim: Konak'ta yürütülen, bütün beyliğe işleyen araştırmalar.
+//
+// Her araştırma bir kez yapılır ve kalıcıdır. Aynı anda tek araştırma yürür; maliyet o an
+// yönetilen köyden ödenir. `konak`: araştırmayı yapan köyde gereken en az Konak seviyesi;
+// `requires`: önce bitmesi gereken araştırmalar; `hours`: süre (oyun saati, dünya hızıyla
+// kısalır); `bonus`: etkiler (bkz. config/classes.js DEFAULT_BONUS); `unlocks`: açtığı birimler.
+
+export const ILIM_GROUPS = Object.freeze({
+  ekonomi: 'Ekonomi',
+  askeri: 'Askerî',
+  yonetim: 'Yönetim',
+});
+
+export const ILIM = Object.freeze({
+  // 1. kademe — Konak 3
+  sulama: {
+    name: 'Sulama Kanalları',
+    group: 'ekonomi',
+    konak: 3,
+    requires: [],
+    cost: { odun: 300, kil: 350, demir: 250 },
+    hours: 1.5,
+    perks: ['Kaynak üretimi +%5'],
+    bonus: { production: 1.05 },
+  },
+  bickihane: {
+    name: 'Bıçkıhane',
+    group: 'ekonomi',
+    konak: 3,
+    requires: [],
+    cost: { odun: 250, kil: 300, demir: 250 },
+    hours: 1.5,
+    perks: ['Odun üretimi +%10'],
+    bonus: { prodOdun: 1.1 },
+  },
+  tuglahane: {
+    name: 'Tuğlahane',
+    group: 'ekonomi',
+    konak: 3,
+    requires: [],
+    cost: { odun: 300, kil: 250, demir: 250 },
+    hours: 1.5,
+    perks: ['Kil üretimi +%10'],
+    bonus: { prodKil: 1.1 },
+  },
+  madenocagi: {
+    name: 'Maden Ocakları',
+    group: 'ekonomi',
+    konak: 3,
+    requires: [],
+    cost: { odun: 300, kil: 300, demir: 200 },
+    hours: 1.5,
+    perks: ['Demir üretimi +%10'],
+    bonus: { prodDemir: 1.1 },
+  },
+  // 2. kademe — Konak 5
+  ambarmimarisi: {
+    name: 'Ambar Mimarisi',
+    group: 'ekonomi',
+    konak: 5,
+    requires: ['sulama'],
+    cost: { odun: 900, kil: 1000, demir: 700 },
+    hours: 3,
+    perks: ['Ambar kapasitesi +%20'],
+    bonus: { storage: 1.2 },
+  },
+  talim: {
+    name: 'Talim Meydanı',
+    group: 'askeri',
+    konak: 5,
+    requires: [],
+    cost: { odun: 800, kil: 800, demir: 1000 },
+    hours: 3,
+    perks: ['Asker eğitim süresi −%10'],
+    bonus: { trainTime: 0.9 },
+  },
+  ulak: {
+    name: 'Ulak Teşkilatı',
+    group: 'yonetim',
+    konak: 5,
+    requires: [],
+    cost: { odun: 900, kil: 800, demir: 800 },
+    hours: 3,
+    perks: ['Ordu yolculuk süresi −%10'],
+    bonus: { travel: 0.9 },
+  },
+  kervanyolu: {
+    name: 'Kervan Yolları',
+    group: 'yonetim',
+    konak: 5,
+    requires: [],
+    cost: { odun: 1000, kil: 800, demir: 700 },
+    hours: 3,
+    perks: ['Tüccar kapasitesi +%25', 'Tüccarlar %20 hızlı'],
+    bonus: { merchantCapacity: 1.25, merchantTime: 0.8 },
+  },
+  // 3. kademe — Konak 8
+  kalemimarisi: {
+    name: 'Kale Mimarisi',
+    group: 'askeri',
+    konak: 8,
+    requires: ['talim'],
+    cost: { odun: 2000, kil: 2600, demir: 1800 },
+    hours: 6,
+    perks: ['Savunma gücü +%8'],
+    bonus: { defense: 1.08 },
+  },
+  akinusulu: {
+    name: 'Akıncı Usulü',
+    group: 'askeri',
+    konak: 8,
+    requires: ['ulak'],
+    cost: { odun: 2200, kil: 1800, demir: 2200 },
+    hours: 6,
+    perks: ['Yağmada taşınan ganimet +%15'],
+    bonus: { carry: 1.15 },
+  },
+  divanusulu: {
+    name: 'Divan Usulü',
+    group: 'yonetim',
+    konak: 8,
+    requires: ['ambarmimarisi'],
+    cost: { odun: 2400, kil: 2400, demir: 1800 },
+    hours: 6,
+    perks: ['İnşaat süresi −%8'],
+    bonus: { buildTime: 0.92 },
+  },
+  // 4. kademe — Konak 10
+  yeniceriocagi: {
+    name: 'Yeniçeri Ocağı',
+    group: 'askeri',
+    konak: 10,
+    requires: ['kalemimarisi'],
+    cost: { odun: 5000, kil: 4500, demir: 6000 },
+    hours: 10,
+    perks: ['Yeniçeri eğitilebilir (Kışla 12)'],
+    bonus: {},
+    unlocks: ['yeniceri'],
+  },
+  haritacilik: {
+    name: 'Haritacılık',
+    group: 'yonetim',
+    konak: 10,
+    requires: ['akinusulu'],
+    cost: { odun: 4500, kil: 5000, demir: 4500 },
+    hours: 10,
+    perks: ['Keşif bulguları +%15', 'Keşif tehlikeleri −%15'],
+    bonus: { expeditionReward: 1.15, expeditionRisk: 0.85 },
+  },
+  // 5. kademe — Konak 12
+  tophane: {
+    name: 'Tophane',
+    group: 'askeri',
+    konak: 12,
+    requires: ['yeniceriocagi'],
+    cost: { odun: 10000, kil: 9000, demir: 13000 },
+    hours: 16,
+    perks: ['Topçu eğitilebilir (Atölye 6)'],
+    bonus: {},
+    unlocks: ['topcu'],
+  },
+  hazinedefteri: {
+    name: 'Hazine Defterleri',
+    group: 'ekonomi',
+    konak: 12,
+    requires: ['divanusulu'],
+    cost: { odun: 11000, kil: 11000, demir: 9000 },
+    hours: 16,
+    perks: ['Kaynak üretimi +%8', 'Ambar kapasitesi +%10'],
+    bonus: { production: 1.08, storage: 1.1 },
+  },
+});
+
+export const ILIM_IDS = Object.keys(ILIM);

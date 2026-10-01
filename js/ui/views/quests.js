@@ -9,7 +9,7 @@ import {
 } from '../../systems/quests.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
-import { fmtInt, fmtDuration } from '../format.js';
+import { fmtInt, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
 import { openBuildingDialog } from '../building-dialog.js';
 
@@ -124,6 +124,10 @@ export function createQuestsView({ game, refresh }) {
 
   // Başarımlar
   const achievements = h('div', { class: 'achievement-grid' });
+
+  // Olay kroniği: verilen kararlar ve kendi seyrine bırakılan olaylar
+  const chronicle = h('ul', { class: 'news-list chronicle' });
+  let chronicleSignature = null;
   let achievementSignature = null;
 
   const el = h(
@@ -145,11 +149,29 @@ export function createQuestsView({ game, refresh }) {
     ),
     h('section', { class: 'panel stack-sm' }, h('div', { class: 'panel-head' }, h('h2', null, 'Görev zinciri'), count), quests.el),
     h('section', { class: 'panel stack-sm' }, h('div', { class: 'panel-head' }, h('h2', null, 'Başarımlar'), h('span', { class: 'muted' }, 'Her kademe kendiliğinden Akçe kazandırır')), achievements),
+    h('section', { class: 'panel stack-sm' }, h('div', { class: 'panel-head' }, h('h2', null, 'Olay kroniği'), h('span', { class: 'muted' }, 'Beyliğine gelen son olaylar ve kararların')), chronicle),
   );
 
   return {
     el,
     update(now) {
+      const history = game.state.events?.history ?? [];
+      const nextChronicle = history.map((e) => e.at).join('|');
+      if (nextChronicle !== chronicleSignature) {
+        chronicleSignature = nextChronicle;
+        chronicle.replaceChildren(
+          ...(history.length
+            ? history.map((e) =>
+                h(
+                  'li',
+                  null,
+                  h('span', { class: 'muted news-time' }, fmtClock(e.at, now)),
+                  h('span', null, h('strong', null, e.title), ` — ${e.auto ? 'karar verilmedi' : `“${e.choice}”`}. ${e.result}`),
+                ),
+              )
+            : [h('li', { class: 'muted' }, 'Henüz bir olay yaşanmadı. Olaylar ara sıra gelir; tepe çubuğundaki parşömene tıklayıp karar verirsin.')]),
+        );
+      }
       const state = game.state;
       quests.update();
       const progress = questProgress(state);

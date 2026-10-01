@@ -1,9 +1,9 @@
-import { LORD, PERSONALITIES, DIFFICULTIES } from '../config/lords.js';
+import { LORD, PERSONALITIES, DIFFICULTIES, DIPLOMACY } from '../config/lords.js';
 import { COMBAT } from '../config/combat.js';
 import { UNITS } from '../config/units.js';
 import { RESOURCE_IDS } from '../config/resources.js';
 import { RESEARCH } from '../config/tech.js';
-import { hiddenCapacity, travelSeconds } from '../core/formulas.js';
+import { hiddenCapacity, travelSeconds, towerDefense } from '../core/formulas.js';
 import { hash3, mulberry32 } from '../core/random.js';
 import { lordsOf, lordPowerIn, lordVillage, distance, nearbyBarbarians, villagePoints } from './world.js';
 import { barbarianLive, recordBarbarian } from './barbarians.js';
@@ -11,6 +11,7 @@ import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { defendersOf, applyDefenderLosses } from './support.js';
 import { bonusOf } from './bonus.js';
 import { grantAkce } from './premium.js';
+import { attackIntervalFactor, adjustRelation, peaceActive, peaceUntil } from './diplomacy.js';
 import { PREMIUM } from '../config/classes.js';
 import {
   totalUnits,
@@ -60,9 +61,13 @@ function between([min, max], r) {
   return (min + r * (max - min)) * HOUR;
 }
 
-/** Beyin `n`. saldırısından sonraki bekleme (oyun ms). */
+/**
+ * Beyin `n`. saldırısından sonraki bekleme (oyun ms). Oyuncuyla ilişkisi iyiyse daha seyrek,
+ * kötüyse daha sık saldırır (bkz. DIPLOMACY.levels; müttefik bey hiç saldırmaz).
+ */
 function attackInterval(state, lord, n) {
-  return between(PERSONALITIES[lord.personality].attackEveryHours, roll(state, lord, n)) * difficultyOf(state).intervalFactor;
+  const relation = Math.min(3, attackIntervalFactor(state, lord.id));
+  return between(PERSONALITIES[lord.personality].attackEveryHours, roll(state, lord, n)) * difficultyOf(state).intervalFactor * relation;
 }
 
 /** Beyin `n`. yağma ya da savaşından sonraki bekleme (oyun ms). */
@@ -158,6 +163,7 @@ export function recordPlayerAttackOnLord(state, report) {
   const entry = entryOf(state, lordId);
   entry.kills += battlePoints(report.attackerLosses);
   adjustBonus(state, lordId, report.attackerWins ? LORD.bonus.warLoss : LORD.bonus.defendWin);
+  adjustRelation(state, lordId, DIPLOMACY.attackPenalty);
   addNews(state, report.at, `${report.origin.name} → ${report.target.owner}: ${report.attackerWins ? 'hisar yenildi' : 'saldırı püskürtüldü'}.`);
 }
 
@@ -203,6 +209,18 @@ export function launchLordAttack(state, lord, at) {
   const difficulty = difficultyOf(state);
   if (!difficulty.attacks) {
     entry.nextAttackAt = null;
+    return null;
+  }
+  // Barışta ya da müttefikken bey saldırmaz: barış bitince ya da bir süre sonra yeniden bakar.
+  const time = state.world.clock.time;
+  if (peaceActive(state, lord.id, time)) {
+    entry.nextAttackAt = at + toReal(state.world, peaceUntil(state, lord.id) - time + roll(state, lord, 90_000 + entry.attacks) * 12 * HOUR);
+    entry.revenge = false;
+    return null;
+  }
+  if (attackIntervalFactor(state, lord.id) === Infinity) {
+    entry.nextAttackAt = at + toReal(state.world, attackInterval(state, lord, entry.attacks + 1));
+    entry.revenge = false;
     return null;
   }
   const gap = toReal(state.world, (difficulty.minGapHours ?? 0) * HOUR);
@@ -328,7 +346,7 @@ export function resolveIncoming(state, village, attack) {
     luck: luckFor(state.world.seed, attack.id),
     attackerTech: attack.tech,
     defenderTech: village.tech,
-    defenderBonus: bonusOf(village).defense,
+    defenderBonus: bonusOf(village).defense * (1 + towerDefense(village.buildings.kule)),
   });
   applyDefenderLosses(state, village, defenders, battle.defenderLosses);
 

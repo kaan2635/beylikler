@@ -4,6 +4,7 @@ import { advanceClock } from '../systems/world.js';
 import { syncBonuses } from '../systems/premium.js';
 import { clientPeers } from '../systems/multiplayer.js';
 import { nextUnitAt } from '../systems/training.js';
+import { nextSeasonAt } from '../systems/seasons.js';
 
 /**
  * Çok oyunculu oyun: sunucu otoritedir. Arayüz tek oyunculudaki Game sınıfını kullanır;
@@ -43,6 +44,11 @@ const REMOTE = {
   buyResourcePack: 0,
   claimQuest: 1,
   claimDaily: 0,
+  startIlim: 1,
+  cancelIlim: 0,
+  chooseEvent: 1,
+  sendGift: 2,
+  makePeace: 1,
 };
 
 export class OnlineGame extends Game {
@@ -134,6 +140,14 @@ export class OnlineGame extends Game {
       for (const attack of village.incoming) next = Math.min(next, attack.arriveAt);
     }
     for (const until of Object.values(this.state.player?.officers ?? {})) next = Math.min(next, until);
+    // Divan araştırması, olaylar, geçici etkiler ve mevsim değişimi
+    const { ilim } = this.state.player ?? {};
+    if (ilim?.current) next = Math.min(next, ilim.current.endAt);
+    const events = this.state.events;
+    if (events?.pending) next = Math.min(next, events.pending.expiresAt);
+    else if (events?.nextAt != null) next = Math.min(next, events.nextAt);
+    for (const modifier of this.state.player?.modifiers ?? []) next = Math.min(next, modifier.until);
+    next = Math.min(next, nextSeasonAt(this.state.world));
     return next;
   }
 

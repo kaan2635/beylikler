@@ -46,6 +46,10 @@ renklerine boyandı, madalyon içine yerleştirildi (`js/ui/art/game-icons.js`).
 | mounted-knight, siege-ram | Sipahi, Koçbaşı | Skoll |
 | catapult | Mancınık | HeavenlyDog |
 
+Yeniçeri ve Topçu simgeleri ile mevsim, olay, Divan ve diplomasi simgeleri oyun için özgün
+olarak çizildi (`js/ui/art/custom-icons.js`, `js/ui/icons.js`). Gözetleme Kulesi, sur kulelerinin
+görselini (feudalwars, CC0) kullanır.
+
 ## Yazılım
 
 - [PeerJS](https://peerjs.com/) 1.5.5 — MIT lisansı. Oda modunda tarayıcılar arası bağlantı için

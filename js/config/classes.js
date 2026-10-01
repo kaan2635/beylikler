@@ -1,13 +1,20 @@
 // Oyuncu sınıfları (OGame'deki Toplayıcı / General / Kâşif benzeri), Akçe ile tutulan
 // görevliler ve premium ayarları.
 //
-// Etkiler köylerin `bonus` alanında birleşir (bkz. systems/premium.js):
-//   çarpanlar (production, buildTime, trainTime, researchTime, travel, attack, defense,
-//   merchantCapacity, merchantTime, expeditionReward, expeditionRisk) birbiriyle çarpılır;
-//   sayılar (buildQueue, trainQueue, expeditionSlots, farmAssistant) toplanır.
+// Etkiler köylerin `bonus` alanında birleşir (bkz. systems/premium.js). Kaynakları: sınıf,
+// görevliler, mevsim, Divan araştırmaları ve olaylardan gelen geçici etkiler.
+//   çarpanlar (production, prodOdun/Kil/Demir, storage, carry, buildTime, trainTime,
+//   researchTime, travel, attack, defense, merchantCapacity, merchantTime, expeditionReward,
+//   expeditionRisk) birbiriyle çarpılır; sayılar (buildQueue, trainQueue, expeditionSlots,
+//   farmAssistant) toplanır.
 
 export const DEFAULT_BONUS = Object.freeze({
   production: 1,
+  prodOdun: 1, // yalnız odun üretimi
+  prodKil: 1,
+  prodDemir: 1,
+  storage: 1, // ambar kapasitesi
+  carry: 1, // yağmada taşınan ganimet
   buildTime: 1,
   trainTime: 1,
   researchTime: 1,

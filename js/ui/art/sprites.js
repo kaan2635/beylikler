@@ -1,4 +1,5 @@
 import { GAME_ICONS } from './game-icons.js';
+import { CUSTOM_ICONS } from './custom-icons.js';
 
 /**
  * Hazır görseller (ücretsiz lisanslı; bkz. docs/EMEGI_GECENLER.md):
@@ -12,6 +13,7 @@ const BASE = new URL('../../../assets/gorsel/binalar/', import.meta.url).href;
 /** Binanın görseli; seviyeye göre değişenler (sur: ahşap kule → taş kule). */
 export function buildingImage(id, level = 1) {
   if (id === 'sur' && level > 0 && level < 5) return `${BASE}sur-ahsap.webp`;
+  if (id === 'kule') return `${BASE}${level >= 5 ? 'sur' : 'sur-ahsap'}.webp`; // gözetleme kulesi: ahşap, sonra taş
   return `${BASE}${id}.webp`;
 }
 
@@ -40,7 +42,7 @@ export function villageImage(kind, tier, variant = 0) {
 
 /** game-icons.net simgesi (512 × 512 yol) → SVG metni. */
 export function gameIconSvg(key, fill = 'currentColor') {
-  const d = GAME_ICONS[key];
+  const d = GAME_ICONS[key] ?? CUSTOM_ICONS[key];
   if (!d) return '';
   return `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="${fill}" d="${d}"/></svg>`;
 }

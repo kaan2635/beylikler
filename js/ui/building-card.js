@@ -15,12 +15,14 @@ export const BUILDING_PAGES = {
   demirci: { href: '#/demirci', label: 'Geliştirmeler →' },
   pazar: { href: '#/pazar', label: 'Takas yap →' },
   kervansaray: { href: '#/kesif', label: 'Keşif seferi →' },
+  konak: { href: '#/divan', label: 'Divan (araştırma) →' },
+  kule: { href: '#/ordu', label: 'Gelen orduları gör →' },
 };
 
 // Bina listesindeki süzgeç grupları.
 export const BUILDING_GROUPS = {
   kaynak: { label: 'Kaynak', ids: ['oduncu', 'kilocagi', 'demirmadeni', 'ambar', 'ciftlik', 'gizlidepo'] },
-  askeri: { label: 'Askerî', ids: ['kisla', 'ahir', 'atolye', 'demirci', 'sur'] },
+  askeri: { label: 'Askerî', ids: ['kisla', 'ahir', 'atolye', 'demirci', 'sur', 'kule'] },
   yonetim: { label: 'Yönetim', ids: ['konak', 'pazar', 'kervansaray', 'saray'] },
 };
 

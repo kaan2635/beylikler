@@ -42,6 +42,10 @@ export function measure(state, goal) {
       return villages.length;
     case 'lords':
       return Object.values(state.ai?.lords ?? {}).filter((entry) => entry.defeated).length;
+    case 'ilim':
+      return state.player?.ilim?.done?.length ?? 0;
+    case 'diplomacy':
+      return (state.stats?.gifts ?? 0) + (state.stats?.treaties ?? 0);
     default:
       return 0;
   }

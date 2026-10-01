@@ -23,6 +23,7 @@ import { fmtInt, fmtDecimal, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
 import { createAttackForm } from './attack-form.js';
 import { villageImage } from '../art/sprites.js';
+import { relationOf, relationLevel, peaceActive } from '../../systems/diplomacy.js';
 
 const ZOOMS = [16, 24, 32, 44, 60, 80]; // alan başına piksel
 const DEFAULT_ZOOM = 3;
@@ -496,7 +497,8 @@ export function createMapView({ game, refresh }) {
     const { x, y } = selected;
     const village = villageAt(state, x, y);
     const loyalty = village && village.kind !== 'oyuncu' ? Math.floor(loyaltyOf(state, village.id)) : '';
-    const signature = `${x}|${y}|${village?.kind}|${village?.points}|${loyalty}|${state.world.speed}|${own.id}|${bonusOf(own).travel}`;
+    const relation = village?.kind === 'bey' ? `${Math.round(relationOf(state, village.id))}:${peaceActive(state, village.id)}` : '';
+    const signature = `${x}|${y}|${village?.kind}|${village?.points}|${loyalty}|${state.world.speed}|${own.id}|${bonusOf(own).travel}|${relation}`;
     if (signature === infoSignature) return;
     infoSignature = signature;
 
@@ -508,7 +510,11 @@ export function createMapView({ game, refresh }) {
       title = village.name;
       const owner = { oyuncu: 'Sen', bey: village.owner, barbar: 'Barbar köyü', rakip: `${village.owner} (oyuncu)` }[village.kind];
       rows.push(['Sahibi', owner], ['Puan', fmtInt(village.points)]);
-      if (village.kind === 'bey') rows.push(['Kişilik', PERSONALITIES[village.personality].name]);
+      if (village.kind === 'bey') {
+        rows.push(['Kişilik', PERSONALITIES[village.personality].name]);
+        const relation = relationOf(state, village.id);
+        rows.push(['İlişki', `${relationLevel(relation).name} (${Math.round(relation)})${peaceActive(state, village.id) ? ' · barışta' : ''}`]);
+      }
       if (village.kind === 'bey' || village.kind === 'barbar') rows.push(['Bağlılık', fmtInt(loyaltyOf(state, village.id))]);
       if (village.kind === 'rakip') {
         if (village.capital) rows.push(['Durum', 'Başkent (fethedilemez)']);
@@ -556,7 +562,10 @@ export function createMapView({ game, refresh }) {
     } else if (village?.kind === 'rakip') {
       children.push(h('p', { class: 'muted' }, 'Başka bir oyuncunun köyü. Gözcü gönderip ordusunu öğrenebilir, saldırıp yağmalayabilirsin; başkent dışındaki köyler elçilerle fethedilebilir.'));
     } else if (village?.kind === 'bey') {
-      children.push(h('p', { class: 'muted' }, `Rakip bey. ${PERSONALITIES[village.personality].description}`));
+      children.push(
+        h('p', { class: 'muted' }, `Rakip bey. ${PERSONALITIES[village.personality].description}`),
+        game.online ? null : h('a', { class: 'btn btn-small btn-ghost', href: '#/diplomasi' }, icon('nav-diplomasi'), 'Diplomasi'),
+      );
     } else if (inWild(x, y)) {
       children.push(
         h('p', { class: 'muted' }, 'Yerleşimin ötesi. Kervansaraydan buraya keşif seferi gönderirsen kaynak, asker ya da Akçe bulabilirsin; ama eşkıya ve fırtınalar da var.'),

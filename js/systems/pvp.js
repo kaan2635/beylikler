@@ -1,7 +1,7 @@
 import { COMBAT, MIN_BUILDING_LEVEL, CONQUEST } from '../config/combat.js';
 import { RESOURCE_IDS } from '../config/resources.js';
 import { PREMIUM } from '../config/classes.js';
-import { hiddenCapacity } from '../core/formulas.js';
+import { hiddenCapacity, towerDefense } from '../core/formulas.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { defendersOf, applyDefenderLosses, stationSupport } from './support.js';
 import { bonusOf } from './bonus.js';
@@ -12,6 +12,7 @@ import { villagePoints } from './world.js';
 import {
   totalUnits,
   armyCarry,
+  siegeEngines,
   subtractUnits,
   luckFor,
   addReport,
@@ -76,7 +77,7 @@ export function pvpAttack(state, village, movement) {
     attackerTech: village.tech,
     defenderTech: target.tech,
     attackerBonus: bonusOf(village).attack,
-    defenderBonus: bonusOf(target).defense,
+    defenderBonus: bonusOf(target).defense * (1 + towerDefense(target.buildings.kule ?? 0)),
   });
   applyDefenderLosses(defender, target, defenders, battle.defenderLosses);
   const survivors = subtractUnits(movement.units, battle.attackerLosses);
@@ -87,17 +88,18 @@ export function pvpAttack(state, village, movement) {
   if (battle.attackerWins) {
     const hidden = hiddenCapacity(target.buildings.gizlidepo);
     const available = Object.fromEntries(RESOURCE_IDS.map((id) => [id, Math.max(0, target.resources[id] - hidden)]));
-    Object.assign(loot, distributeLoot(available, armyCarry(survivors)));
+    Object.assign(loot, distributeLoot(available, armyCarry(survivors) * bonusOf(village).carry));
     for (const id of RESOURCE_IDS) target.resources[id] -= loot[id];
-    if (survivors.kocbasi) {
-      const down = siegeLevels(survivors.kocbasi, wall, COMBAT.ramsPerLevel);
+    const { rams, catapults } = siegeEngines(survivors);
+    if (rams) {
+      const down = siegeLevels(rams, wall, COMBAT.ramsPerLevel);
       target.buildings.sur -= down;
       siege.wall = { from: wall, to: wall - down };
     }
     const building = movement.catapultTarget;
-    if (survivors.mancinik && building) {
+    if (catapults && building) {
       const from = target.buildings[building];
-      const down = siegeLevels(survivors.mancinik, from, COMBAT.catapultsPerLevel, MIN_BUILDING_LEVEL[building] ?? 0);
+      const down = siegeLevels(catapults, from, COMBAT.catapultsPerLevel, MIN_BUILDING_LEVEL[building] ?? 0);
       target.buildings[building] = from - down;
       siege.catapult = { building, from, to: from - down };
     }

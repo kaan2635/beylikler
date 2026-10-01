@@ -1,6 +1,8 @@
 import { CLASSES, CLASS_IDS, OFFICERS, DEFAULT_BONUS, ADDITIVE_BONUS, PREMIUM } from '../config/classes.js';
 import { RESOURCE_IDS } from '../config/resources.js';
 import { storageCap, produce, deposit } from './economy.js';
+import { seasonOf } from './seasons.js';
+import { ilimBonuses, unlockedUnits } from './ilim.js';
 
 /**
  * Sınıf, Akçe ve görevliler.
@@ -15,27 +17,54 @@ import { storageCap, produce, deposit } from './economy.js';
 const DAY = 86_400_000;
 const MINUTE = 60_000;
 
-/** Oyuncunun sınıfı ve görevdeki görevlilerinden birleşik etki. */
-export function playerBonus(player) {
-  const bonus = { ...DEFAULT_BONUS };
+function playerSources(player) {
   const sources = [];
   if (player?.class && CLASSES[player.class]) sources.push(CLASSES[player.class].bonus);
   for (const id of Object.keys(player?.officers ?? {})) if (OFFICERS[id]) sources.push(OFFICERS[id].bonus);
+  return sources;
+}
+
+function merge(sources) {
+  const bonus = { ...DEFAULT_BONUS };
   for (const source of sources) {
     for (const [key, value] of Object.entries(source)) {
+      if (!(key in DEFAULT_BONUS)) continue;
       bonus[key] = ADDITIVE_BONUS.has(key) ? bonus[key] + value : bonus[key] * value;
     }
   }
   return Object.freeze(bonus);
 }
 
+/** Oyuncunun sınıfı ve görevdeki görevlilerinden birleşik etki. */
+export function playerBonus(player) {
+  return merge(playerSources(player));
+}
+
+/**
+ * Bütün etkiler: sınıf, görevliler, mevsim, Divan araştırmaları ve olaylardan gelen geçici
+ * etkiler (state.player.modifiers).
+ */
+export function stateBonus(state) {
+  return merge([
+    ...playerSources(state.player),
+    ...(state.world && seasonOf(state.world) ? [seasonOf(state.world).bonus] : []),
+    ...ilimBonuses(state),
+    ...(state.player?.modifiers ?? []).map((modifier) => modifier.bonus),
+  ]);
+}
+
 export { bonusOf } from './bonus.js';
 
-/** Tüm köylerin etkisini oyuncunun güncel sınıf ve görevlilerine göre yeniler. */
+/**
+ * Tüm köylerin etkisini yeniler. Etki ve araştırmaların açtığı birimler köye kayda yazılmayan
+ * alanlar olarak eklenir (`bonus`, `unlocks`).
+ */
 export function syncBonuses(state) {
-  const bonus = playerBonus(state.player);
+  const bonus = stateBonus(state);
+  const unlocks = unlockedUnits(state);
   for (const village of Object.values(state.villages)) {
     Object.defineProperty(village, 'bonus', { value: bonus, enumerable: false, writable: true, configurable: true });
+    Object.defineProperty(village, 'unlocks', { value: unlocks, enumerable: false, writable: true, configurable: true });
   }
 }
 
@@ -61,6 +90,9 @@ function spend(state, amount, reason, at) {
   log(state, at, -amount, reason);
   return true;
 }
+
+/** Akçe harcar (diplomasi, olaylar); yetmezse false. */
+export const spendAkce = spend;
 
 const notEnough = (cost, state) => ({ ok: false, code: 'akce', reason: `Bunun için ${cost} Akçe gerekir; hazinende ${Math.floor(state.player.akce ?? 0)} var` });
 

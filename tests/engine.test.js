@@ -12,8 +12,10 @@ import { GAME } from '../js/config/game.js';
 const HOUR = 3_600_000;
 const T0 = Date.UTC(2026, 0, 1);
 
+// Temel formüller sınanır: mevsimsiz dünya (mevsim etkileri seasons.test.js'de).
 function newGame(speed = 1) {
   const state = createNewGame({ now: T0, difficulty: 'baris', speed, seed: 1 });
+  state.world.seasons = false;
   return { state, village: state.villages[state.activeVillageId] };
 }
 

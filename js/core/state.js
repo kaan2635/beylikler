@@ -50,16 +50,18 @@ export function createNewGame({
     quests: { claimed: [] }, // ödülü alınan görevler
     achievements: {}, // başarım → ulaşılan kademe
     victory: null, // Sultanlık ilan edildiyse { at }
+    diplomacy: {}, // beylerle ilişkiler (bkz. systems/diplomacy.js)
+    // events: olaylar ve kararlar; motor ilk ilerlemede kurar (bkz. systems/events.js)
   };
 }
 
 /** Oyuncu: sınıf oyun başında seçilir (null iken arayüz seçim penceresini açar). */
 function newPlayer(name = 'Bey') {
-  return { name, class: null, akce: PREMIUM.startAkce, officers: {}, akceLog: [] };
+  return { name, class: null, akce: PREMIUM.startAkce, officers: {}, akceLog: [], ilim: { done: [], current: null }, modifiers: [] };
 }
 
 function newStats() {
-  return { kills: 0, loot: 0, attacks: 0, attacksWon: 0, spies: 0, expeditions: 0, defenses: 0 };
+  return { kills: 0, loot: 0, attacks: 0, attacksWon: 0, spies: 0, expeditions: 0, defenses: 0, events: 0, gifts: 0, treaties: 0 };
 }
 
 function randomSeed() {
@@ -119,6 +121,14 @@ const MIGRATIONS = {
     }
     return { ...data, ai: { ...data.ai, lords }, version: 10 };
   },
+  // 1.5 içerik: Divan araştırmaları, olaylardan geçici etkiler ve beylerle diplomasi.
+  // Mevsim sayacı ve olay takvimi motorca kurulur.
+  10: (data) => ({
+    ...data,
+    player: { ...data.player, ilim: data.player?.ilim ?? { done: [], current: null }, modifiers: data.player?.modifiers ?? [] },
+    diplomacy: data.diplomacy ?? {},
+    version: 11,
+  }),
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */
@@ -142,6 +152,9 @@ export function migrate(data) {
   data.player.officers ??= {};
   data.player.akceLog ??= [];
   data.player.akce ??= 0;
+  data.player.ilim ??= { done: [], current: null };
+  data.player.modifiers ??= [];
+  data.diplomacy ??= {};
   data.stats = { ...newStats(), ...data.stats };
   data.quests ??= { claimed: [] };
   data.achievements ??= {};

@@ -12,18 +12,21 @@ import { bonusOf } from './bonus.js';
 
 const HOUR = 3_600_000;
 
-/** Kaynak başına saatlik üretim (sınıf ve görevli etkisi dahil). */
+// Kaynağa özgü üretim etkisinin adı (mevsim ve Divan araştırmaları).
+const RESOURCE_BONUS = { odun: 'prodOdun', kil: 'prodKil', demir: 'prodDemir' };
+
+/** Kaynak başına saatlik üretim (sınıf, görevli, mevsim, araştırma ve olay etkileri dahil). */
 export function productionRates(village, world) {
   const rates = {};
-  const factor = bonusOf(village).production;
+  const bonus = bonusOf(village);
   for (const id of RESOURCE_IDS) {
-    rates[id] = productionPerHour(village.buildings[RESOURCES[id].producer], world.speed) * factor;
+    rates[id] = productionPerHour(village.buildings[RESOURCES[id].producer], world.speed) * bonus.production * (bonus[RESOURCE_BONUS[id]] ?? 1);
   }
   return rates;
 }
 
 export function storageCap(village) {
-  return storageCapacity(village.buildings.ambar);
+  return Math.round(storageCapacity(village.buildings.ambar) * (bonusOf(village).storage ?? 1));
 }
 
 export function populationCap(village) {

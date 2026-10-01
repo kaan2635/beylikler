@@ -17,6 +17,11 @@ import { EXPEDITION_OUTCOMES } from '../config/expedition.js';
 import { createQuestsView, claimableQuests } from './views/quests.js';
 import { openVictory } from './victory.js';
 import { createChatView } from './views/chat.js';
+import { createDivanView } from './views/divan.js';
+import { createDiplomacyView } from './views/diplomacy.js';
+import { openEventDialog } from './event-dialog.js';
+import { seasonOf, seasonLeft } from '../systems/seasons.js';
+import { ILIM } from '../config/ilim.js';
 import { openClassPicker } from './class-picker.js';
 import { openHelp } from './help.js';
 import { CLASSES, OFFICERS } from '../config/classes.js';
@@ -41,6 +46,8 @@ const ROUTES = {
   kesif: (ctx) => createExpeditionView(ctx),
   gorevler: (ctx) => createQuestsView(ctx),
   sohbet: (ctx) => createChatView(ctx),
+  divan: (ctx) => createDivanView(ctx),
+  diplomasi: (ctx) => createDiplomacyView(ctx),
 };
 
 // Sekmesi olmayan bina sayfalarında hangi sekme seçili görünsün.
@@ -123,6 +130,15 @@ export function mountApp(game, { isNew, events }) {
   if (onlineChip) onlineChip.hidden = !game.online;
   const more = createMoreMenu();
   document.getElementById('help-button')?.addEventListener('click', openHelp);
+  // Mevsim göstergesi ve bekleyen olay düğmesi
+  const seasonChip = document.getElementById('season-chip');
+  const eventButton = document.getElementById('event-button');
+  const eventLabel = h('span', null, 'Olay');
+  eventButton?.append(icon('olay'), eventLabel);
+  eventButton?.addEventListener('click', () => openEventDialog({ game, refresh }));
+  let seasonShown = null;
+  const diplomacyTab = document.querySelector('[data-route="diplomasi"]');
+  if (diplomacyTab) diplomacyTab.hidden = !!game.online;
   let switchSignature = null;
   villageSwitch.addEventListener('change', () => {
     if (game.setActiveVillage(villageSwitch.value)) toast(`${game.village.name} köyünü yönetiyorsun.`);
@@ -149,6 +165,28 @@ export function mountApp(game, { isNew, events }) {
     updateVillageSwitch();
     resourceBar.update(game);
     akceText.textContent = fmtInt(game.state.player.akce ?? 0);
+    const season = seasonOf(game.state.world);
+    if (seasonChip) {
+      seasonChip.hidden = !season;
+      if (season) {
+        if (seasonShown !== season.id) {
+          seasonShown = season.id;
+          seasonChip.replaceChildren(icon(`mevsim-${season.id}`), h('span', { class: 'season-name' }, season.name), h('span', { class: 'season-left' }));
+          seasonChip.dataset.season = season.id;
+        }
+        const left = seasonLeft(game.state.world, now) / game.state.world.speed / 1000;
+        seasonChip.lastChild.textContent = `${Math.max(0, Math.floor(left / 86400))}g ${Math.floor((left % 86400) / 3600)}s`;
+        seasonChip.title = `${season.name}: ${season.description} ${season.perks.join(', ')}. Mevsim değişimine ${fmtDuration(left)}.`;
+      }
+    }
+    const pendingEvent = game.state.events?.pending;
+    if (eventButton) {
+      eventButton.hidden = !pendingEvent;
+      if (pendingEvent) {
+        eventLabel.textContent = pendingEvent.title;
+        eventButton.title = `Olay: ${pendingEvent.title} — kararını bekliyor (${fmtDuration((pendingEvent.expiresAt - now) / 1000)} kaldı)`;
+      }
+    }
     current?.update(now);
     const unread = game.state.reports.filter((report) => !report.read).length;
     reportsBadge.hidden = unread === 0;
@@ -261,6 +299,11 @@ function announce(events, whileAway) {
       'transport-arrived': 'nakliye',
       'support-arrived': 'destek',
       'officer-expired': 'görevli ayrılığı',
+      season: 'mevsim değişimi',
+      'ilim-complete': 'araştırma',
+      event: 'olay',
+      'event-expired': 'kendiliğinden çözülen olay',
+      'modifier-expired': 'etki sonu',
       'expedition-result': 'keşif',
       achievement: 'başarım',
       victory: 'zafer',
@@ -359,6 +402,16 @@ function describe(event) {
     }
     case 'officer-expired':
       return { text: `${OFFICERS[event.officer].name} görevini tamamladı. Hazine'den yeniden tutabilirsin.`, kind: 'info' };
+    case 'season':
+      return { text: `Mevsim değişti: ${event.name}.`, kind: 'info' };
+    case 'ilim-complete':
+      return { text: `Divan: ${ILIM[event.ilim]?.name ?? event.name} araştırması tamamlandı. Etkisi bütün köylerinde.`, kind: 'success' };
+    case 'event':
+      return { text: `Yeni olay: ${event.title}. Kararını bekliyor — tepe çubuğundaki parşömene tıkla.`, kind: 'info' };
+    case 'event-expired':
+      return { text: `${event.title}: karar verilmedi, olay kendi seyrine bırakıldı. ${event.result ?? ''}`, kind: 'info' };
+    case 'modifier-expired':
+      return { text: `${event.name} etkisi sona erdi.`, kind: 'info' };
     case 'support-arrived':
       return { text: `${fmtInt(total(event.units))} asker destek olarak ${event.target} köyüne vardı.`, kind: 'success' };
     default:

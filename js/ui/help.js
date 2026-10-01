@@ -29,6 +29,26 @@ const TOPICS = [
     text: 'Koruma süresinden sonra ara sıra saldırırlar (Normal\'de en az 40 oyun saati arayla); saldırının gücü köyünün büyüklüğüyle ölçülür. Gelen saldırıyı tepe çubuğundaki kırmızı uyarı gösterir. Sur, savunma askerleri ve Gizli Depo korur. Zorluğu Ayarlar\'dan değiştirebilirsin; Barış\'ta hiç saldırı olmaz.',
   },
   {
+    icon: 'mevsim-ilkbahar',
+    title: 'Mevsimler',
+    text: 'Dünya her 4 oyun gününde bir mevsim değiştirir. İlkbahar üretimi, yaz yolları ve odunu, sonbahar kili ve keşfi artırır; kış üretimi düşürür, orduları yavaşlatır ama savunmaya güç katar. Tepe çubuğundaki mevsim simgesi kalan süreyi gösterir.',
+  },
+  {
+    icon: 'nav-divan',
+    title: 'Divan ve araştırmalar',
+    text: "Konak üzerinden Divan'da kalıcı araştırmalar yaparsın: üretim, ambar, eğitim, savunma… Kademeler Konak seviyesiyle açılır; Yeniçeri Ocağı ve Tophane yeni birlikler getirir.",
+  },
+  {
+    icon: 'olay',
+    title: 'Olaylar',
+    text: 'Ara sıra beyliğine bir olay gelir: kervan, kıtlık, haydutlar, usta bir mimar… Tepe çubuğundaki parşömene tıklayıp seçimini yap. Süresi içinde karar vermezsen olay kendi seyrine bırakılır.',
+  },
+  {
+    icon: 'nav-diplomasi',
+    title: 'Diplomasi',
+    text: 'Beylere hediye göndererek ilişkini düzelt. İyi ilişkideki bey daha seyrek saldırır, müttefik bey hiç saldırmaz; barış antlaşması birkaç gün saldırıyı durdurur. Hisarına saldırırsan ilişki bozulur.',
+  },
+  {
     icon: 'akce',
     title: 'Akçe',
     text: 'Görev, başarım, savunma zaferi ve keşifle kazanılır. Hazine\'de görevli tutmak ya da inşaatı hemen bitirmek için harcanır.',

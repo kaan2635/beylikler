@@ -237,6 +237,18 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Telefonda alt çubuk 5 sekme + "Diğer"; tepe çubuğunda "?" ile "Nasıl oynanır?" rehberi
 - [x] 145 birim testi (saldırı aralığı, köy büyüklüğüne göre sınır, intikam, 9 → 10 kayıt taşıma)
 
+## ✅ Adım 17 — İçerik genişlemesi (1.5.0)
+
+- [x] **Mevsimler:** dünya her 4 oyun gününde mevsim değiştirir (İlkbahar, Yaz, Sonbahar, Kış); üretim, yolculuk, savunma ve keşfe etkiler. Mevsim sınırı motorda bir olaydır (üretim parça parça hesaplanır); köy sahnesi mevsimin renklerini alır (kışın kar, buz tutmuş göl)
+- [x] **Divan ve İlim:** Konak üzerinden 15 kalıcı araştırma, 5 kademe (Konak 3/5/8/10/12): Sulama, Bıçkıhane, Tuğlahane, Maden Ocakları, Ambar Mimarisi, Talim Meydanı, Ulak Teşkilatı, Kervan Yolları, Kale Mimarisi, Akıncı Usulü, Divan Usulü, Yeniçeri Ocağı, Haritacılık, Tophane, Hazine Defterleri
+- [x] **Yeni birlikler:** Yeniçeri (Kışla 12 + Yeniçeri Ocağı; çok yönlü seçkin piyade) ve Topçu (Atölye 6 + Tophane; suru ve binayı dört koçbaşı/mancınık gibi döver); özgün çizilmiş madalyon simgeleri
+- [x] **Gözetleme Kulesi:** yeni bina (Konak 3, Sur 1); seviye başına savunma +%1,5; gelen ordunun tam dökümünü gösterir
+- [x] **Olaylar ve kararlar:** 13 olay (gezgin kervan, bereket yağmuru, kıtlık, salgın, usta mimar, gezgin derviş, haydut çetesi, göçmenler, panayır, bir beyin elçisi, maden damarı, yangın, toprak altından küp); seçenekler bedelleriyle; süre dolarsa olay kendi seyrine bırakılır; geçici etkiler; Görevler'de olay kroniği
+- [x] **Diplomasi:** her beyle ilişki (−100..100, her gün sıfıra yaklaşır); hediye, barış antlaşması; ilişkiye göre saldırı sıklığı, müttefik bey saldırmaz; hisarına saldırmak/gözetlemek ilişkiyi bozar
+- [x] Tepe çubuğunda mevsim göstergesi ve bekleyen olay düğmesi; köy ekranında "Beylik durumu" paneli (mevsim, olay, araştırma, geçici etkiler, barışlar); haritada beyle ilişki
+- [x] 7 yeni görev, 3 yeni başarım; rehberde yeni konular
+- [x] Kayıt şeması 11; 163 birim testi (mevsimler, araştırmalar, Topçu kuşatması, olaylar, diplomasi, kayıt taşıma)
+
 ## Bilinen sınırlamalar
 
 - Kayıt yalnızca o tarayıcıda durur. Başka cihaza geçmek için Ayarlar → Kayıt kodunu kullan.
