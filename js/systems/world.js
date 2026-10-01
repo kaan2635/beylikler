@@ -6,6 +6,7 @@ import { MIN_BUILDING_LEVEL } from '../config/combat.js';
 import { LORD, LORD_NAMES, PERSONALITIES } from '../config/lords.js';
 import { START_VILLAGE_ID } from '../config/game.js';
 import { remainingDamage } from './barbarians.js';
+import { RUINS } from '../config/sites.js';
 
 /**
  * Dünya haritası. Harita kayda yazılmaz: her alanın arazisi ve barbar köyü, dünya tohumundan
@@ -14,7 +15,7 @@ import { remainingDamage } from './barbarians.js';
  */
 
 // Aynı tohumdan birbirinden bağımsız sayı dizileri almak için her kullanıma ayrı bir tuz.
-const SALT = { terrain: 0x51ed270b, forest: 0x2c1b3c6d, village: 0x7a3d9f11, detail: 0x1b873593, lords: 0x68e31da4 };
+const SALT = { terrain: 0x51ed270b, forest: 0x2c1b3c6d, village: 0x7a3d9f11, detail: 0x1b873593, lords: 0x68e31da4, ruin: 0x2f6b7c11 };
 const DAY = 86_400_000;
 
 export function inWorld(x, y) {
@@ -279,9 +280,65 @@ export function lordAt(state, x, y) {
   return lordVillage(state, lord);
 }
 
-/** Oyuncuya ait olmayan köy (bey hisarı ya da barbar köyü); yoksa null. */
+// ---------- Harabeler ve Moğol ordugâhı ----------
+
+/**
+ * (x, y)'deki harabe; yoksa null. Yeri ve adı tohumdan gelir; yağmalanma zamanı kayıtta
+ * (state.barbarians[id].lootedAt, dünya saati) durur. Yağmalanan harabe bir süre boştur.
+ */
+export function ruinAt(state, x, y) {
+  if (!inWorld(x, y)) return null;
+  const { seed } = state.world;
+  const rng = mulberry32(hash3(seed ^ SALT.ruin, x, y));
+  if (rng() >= RUINS.chance) return null;
+  const fromCenter = distance(x, y, WORLD.center, WORLD.center);
+  if (fromCenter > WORLD.settledRadius) return null;
+  if (terrainAt(seed, x, y) === 'gol' || lordTiles(seed).has(`${x}|${y}`)) return null;
+  if (nearStartVillage(state, x, y) || ownVillageAt(state, x, y) || peerAt(state, x, y)) return null;
+  if (barbarianAt(state, x, y)) return null;
+  const tier = fromCenter < RUINS.tierDistance[0] ? 1 : fromCenter < RUINS.tierDistance[1] ? 2 : 3;
+  const id = `r${x}_${y}`;
+  const looted = state.barbarians?.[id]?.lootedAt;
+  const refillAt = looted != null ? looted + RUINS.respawnDays * DAY : null;
+  return {
+    id,
+    kind: 'harabe',
+    name: RUINS.names[Math.floor(rng() * RUINS.names.length)],
+    owner: 'Eşkıyalar',
+    x,
+    y,
+    tier,
+    empty: refillAt != null && state.world.clock.time < refillAt,
+    refillAt,
+    buildings: { sur: 0 },
+    points: 0,
+  };
+}
+
+/** Moğol ordugâhı (akın sürerken haritada); yoksa null. */
+export function campAt(state, x, y) {
+  const camp = state.invasion?.camp;
+  if (!camp || camp.x !== x || camp.y !== y) return null;
+  return { id: 'akin', kind: 'akin', name: 'Moğol Ordugâhı', owner: 'Moğol Noyanı', x, y, buildings: { sur: 0 }, points: 0 };
+}
+
+/** Oyuncuya ait olmayan köy ya da yer (bey hisarı, Moğol ordugâhı, harabe, barbar köyü); yoksa null. */
 export function npcAt(state, x, y) {
-  return lordAt(state, x, y) ?? barbarianAt(state, x, y);
+  return lordAt(state, x, y) ?? campAt(state, x, y) ?? ruinAt(state, x, y) ?? barbarianAt(state, x, y);
+}
+
+/** (x, y) çevresindeki harabeler, yakından uzağa. */
+export function nearbyRuins(state, x, y, radius) {
+  const list = [];
+  for (let ty = y - radius; ty <= y + radius; ty++) {
+    for (let tx = x - radius; tx <= x + radius; tx++) {
+      const d = distance(x, y, tx, ty);
+      if (d > radius) continue;
+      const ruin = ruinAt(state, tx, ty);
+      if (ruin) list.push({ ...ruin, distance: d });
+    }
+  }
+  return list.sort((a, b) => a.distance - b.distance);
 }
 
 /** Saldırılabilecek köy: başka bir oyuncunun köyü, bey hisarı ya da barbar köyü. */

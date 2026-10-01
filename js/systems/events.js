@@ -11,6 +11,8 @@ import { armyAttack, subtractUnits, luckFor, addReport, battlePoints, resourceTo
 import { grantAkce, spendAkce, syncBonuses } from './premium.js';
 import { adjustRelation, relationOf } from './diplomacy.js';
 import { bonusOf } from './bonus.js';
+import { BUILDINGS } from '../config/buildings.js';
+import { rollItem, giveItem, addHeroXp, heroHealthy } from './hero.js';
 
 /**
  * Olaylar ve kararlar. Oyuncunun kaydında:
@@ -323,7 +325,156 @@ const CATALOG = [
       };
     },
   },
+  {
+    id: 'demirciusta',
+    weight: 1.5,
+    when: (ctx) => !!ctx.state.hero && ctx.day >= 2,
+    build(ctx) {
+      return {
+        title: 'Usta demirci',
+        text: `Ünlü bir usta demirci köyünden geçiyor; demir ve kereste verirsen ${ctx.state.hero.name} için bir şey dövecek.`,
+        icon: 'saldiri',
+        choices: [
+          choice('dov', 'Dövsün (kahramana bir eşya)', { cost: { demir: share(ctx, 0.12), odun: share(ctx, 0.06) }, effects: [{ kind: 'item', quality: 1.8 }] }),
+          choice('gec', 'Yoluna devam etsin'),
+        ],
+        fallback: 'gec',
+      };
+    },
+  },
+  {
+    id: 'ozan',
+    weight: 1.5,
+    when: () => true,
+    build() {
+      return {
+        title: 'Gezgin ozan',
+        text: 'Kopuzlu bir ozan meydanda beyliğin destanını yakmak istiyor. Destan dilden dile yayılırsa şanın artar.',
+        icon: 'kupa',
+        choices: [
+          choice('destan', 'Destanını yaksın (şan +12)', { cost: { akce: 8 }, effects: [{ kind: 'renown', amount: 12 }] }),
+          choice('dinle', 'Meydanda dinlensin (12 saat üretim +%5)', { effects: [modifier('Ozanın türküsü', { production: 1.05 }, 12)] }),
+        ],
+        fallback: 'dinle',
+      };
+    },
+  },
+  {
+    id: 'dugun',
+    weight: 1.5,
+    when: (ctx) => !!pickLord(ctx),
+    build(ctx) {
+      const lord = pickLord(ctx);
+      return {
+        title: `${lord.name} Beyin düğünü`,
+        text: `${lord.name} Bey oğlunu evlendiriyor ve seni düğüne çağırdı. Hediyeyle gitmek bütün beylere iyi görünür.`,
+        icon: 'nav-diplomasi',
+        choices: [
+          choice('hediye', 'Hediyeyle git', { cost: each(ctx, 0.06), effects: [{ kind: 'relation', lordId: lord.id, delta: 30 }, { kind: 'relationAll', delta: 6, except: lord.id }] }),
+          choice('gitme', 'Gitme', { effects: [{ kind: 'relation', lordId: lord.id, delta: -10 }] }),
+        ],
+        fallback: 'gitme',
+      };
+    },
+  },
+  {
+    id: 'zelzele',
+    weight: 1.2,
+    when: (ctx) => ctx.day >= 3 && !!crackedBuilding(ctx.village),
+    build(ctx) {
+      const building = crackedBuilding(ctx.village);
+      return {
+        title: 'Zelzele',
+        text: `Yer sarsıldı! ${BUILDINGS[building].name} duvarlarında derin çatlaklar var; hemen onarılmazsa bir katı çökecek.`,
+        icon: 'ambar',
+        choices: [
+          choice('onar', 'Hemen onar', { cost: { kil: share(ctx, 0.12), odun: share(ctx, 0.06) } }),
+          choice('bekle', `Bekle (${BUILDINGS[building].name} bir seviye düşer)`, { effects: [{ kind: 'damageBuilding', building }] }),
+        ],
+        fallback: 'bekle',
+      };
+    },
+  },
+  {
+    id: 'yabanci',
+    weight: 1.2,
+    when: (ctx) => !!ctx.state.hero && ctx.day >= 3,
+    build() {
+      return {
+        title: 'Yabancı tüccar',
+        text: 'Uzak diyarlardan gelen bir tüccar heybesinden nadir eşyalar çıkardı. Fiyatı yüksek ama malı sağlam.',
+        icon: 'akce',
+        choices: [
+          choice('al', 'Bir eşya satın al (en az nadir)', { cost: { akce: 15 }, effects: [{ kind: 'item', quality: 2, minRarity: 'nadir' }] }),
+          choice('gec', 'Teşekkür et, geç'),
+        ],
+        fallback: 'gec',
+      };
+    },
+  },
+  {
+    id: 'kurultay',
+    weight: 1.2,
+    when: (ctx) => ctx.day >= 4 && !!pickLord(ctx),
+    build(ctx) {
+      return {
+        title: 'Kurultay',
+        text: 'Beyler büyük kurultayda toplanıyor. Bir ziyafet verirsen sözün dinlenir, şanın artar.',
+        icon: 'nav-siralama',
+        choices: [
+          choice('ziyafet', 'Ziyafet ver (bütün beylerle ilişki +10, şan +10)', { cost: each(ctx, 0.08), effects: [{ kind: 'relationAll', delta: 10 }, { kind: 'renown', amount: 10 }] }),
+          choice('katilma', 'Katılma (beyler biraz gücenir)', { effects: [{ kind: 'relationAll', delta: -4 }] }),
+        ],
+        fallback: 'katilma',
+      };
+    },
+  },
+  {
+    id: 'ustalar',
+    weight: 1.2,
+    when: (ctx) => ctx.village.buildings.kisla >= 1,
+    build(ctx) {
+      const n = Math.max(3, Math.min(30, Math.round(ctx.points / 40)));
+      return {
+        title: 'Sığınmacı ustalar',
+        text: 'Savaştan kaçan taş ustaları ve kılıç ustaları köyüne sığındı. İnşaatta çalışabilirler ya da sancağa katılabilirler.',
+        icon: 'nufus',
+        choices: [
+          choice('insaat', 'İnşaatta çalışsınlar (2 gün inşaat %15 kısa)', { cost: { odun: share(ctx, 0.05) }, effects: [modifier('Usta eller', { buildTime: 0.85 }, 48)] }),
+          choice('asker', `Sancağa katılsınlar (${n} Kılıççı)`, { cost: { demir: share(ctx, 0.05) }, effects: [{ kind: 'units', units: { kilicci: n } }] }),
+          choice('gonder', 'Yollarına devam etsinler'),
+        ],
+        fallback: 'gonder',
+      };
+    },
+  },
+  {
+    id: 'av',
+    weight: 1.2,
+    when: (ctx) => !!ctx.state.hero && !ctx.state.hero.away && heroHealthy(ctx.state.hero, ctx.state.world.clock.at) && !!pickLord(ctx),
+    build(ctx) {
+      const lord = pickLord(ctx);
+      return {
+        title: 'Sürek avı',
+        text: `${lord.name} Bey büyük bir sürek avı düzenliyor; ${ctx.state.hero.name}'ı da çağırdı.`,
+        icon: 'tasima',
+        choices: [
+          choice('katil', 'Kahraman ava katılsın (tecrübe +80, ilişki +8)', { effects: [{ kind: 'heroXp', amount: 80 }, { kind: 'relation', lordId: lord.id, delta: 8 }] }),
+          choice('gecme', 'Katılma'),
+        ],
+        fallback: 'gecme',
+      };
+    },
+  },
 ];
+
+/** Zelzelede çatlayacak bina: kuyruğu olmayan, 3. seviye ve üstü bir bina (Konak hariç). */
+function crackedBuilding(village) {
+  const busy = new Set(village.buildQueue.map((job) => job.building));
+  const candidates = Object.entries(village.buildings).filter(([id, level]) => id !== 'konak' && level >= 3 && !busy.has(id) && BUILDINGS[id]);
+  if (!candidates.length) return null;
+  return candidates.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+}
 
 /** Elçisini gönderecek bey: ilişkisi en kötü, fethedilmemiş, barışta olmayan. */
 function pickLord(ctx) {
@@ -476,6 +627,34 @@ function applyEffect(state, village, effect, pending, at) {
     }
     case 'battle':
       return banditBattle(state, village, effect, pending, at);
+    case 'item': {
+      const rng = mulberry32(hash3(state.world.seed ^ EVENT_SALT, pending.id, 991));
+      const given = giveItem(state, rollItem(rng, { quality: effect.quality ?? 1, minRarity: effect.minRarity ?? 'siradan' }));
+      if (!given.stored) {
+        grantAkce(state, given.akce, 'Heybe dolu: eşya satıldı', at);
+        return `${given.item.name} bulundu ama heybe dolu; ${given.akce} Akçeye satıldı.`;
+      }
+      return `Kahramanın heybesine yeni bir eşya girdi: ${given.item.name}.`;
+    }
+    case 'heroXp': {
+      if (!state.hero) return null;
+      addHeroXp(state, effect.amount, at, bonusOf(village).heroXp);
+      return `${state.hero.name} tecrübe kazandı.`;
+    }
+    case 'renown':
+      state.stats.renownBonus = (state.stats.renownBonus ?? 0) + effect.amount;
+      return `Şanın ${effect.amount} arttı.`;
+    case 'relationAll': {
+      for (const lord of lordsOf(state.world.seed)) {
+        if (lord.id !== effect.except && !lordDefeated(state, lord.id)) adjustRelation(state, lord.id, effect.delta);
+      }
+      return effect.delta > 0 ? 'Beylerin gözünde itibarın arttı.' : 'Beyler biraz gücendi.';
+    }
+    case 'damageBuilding': {
+      const level = village.buildings[effect.building] ?? 0;
+      if (level > 0) village.buildings[effect.building] = level - 1;
+      return `${BUILDINGS[effect.building].name} bir seviye çöktü (${level} → ${Math.max(0, level - 1)}).`;
+    }
     default:
       return null;
   }

@@ -4,6 +4,9 @@ import { CATAPULT_TARGETS, CONQUEST } from '../../config/combat.js';
 import { loyaltyOf } from '../../systems/barbarians.js';
 import { RESOURCE_IDS } from '../../config/resources.js';
 import { inspectAttack, totalUnits } from '../../systems/movements.js';
+import { heroAvailable, heroEffects } from '../../systems/hero.js';
+import { terrainDefense } from '../../core/formulas.js';
+import { terrainAt } from '../../systems/world.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
@@ -36,6 +39,19 @@ export function createAttackForm({ game, refresh }) {
   catapultSelect.addEventListener('change', () => refresh());
   const catapultRow = h('div', { class: 'form-row' }, h('label', { for: 'catapult-target' }, 'Mancınık hedefi'), catapultSelect);
 
+  // Kahraman: orduya katılırsa gücünü, Kılıç ve Akın özelliklerini, atının hızını katar.
+  const heroBox = h('input', { type: 'checkbox', id: 'attack-hero' });
+  heroBox.addEventListener('change', () => refresh());
+  const heroNote = h('span', { class: 'muted' });
+  const heroRow = h(
+    'label',
+    { class: 'hero-toggle', for: 'attack-hero' },
+    heroBox,
+    h('span', { class: 'hero-toggle-icon' }, icon('nav-kahraman')),
+    h('span', null, h('strong', null, 'Kahraman katılsın'), heroNote),
+  );
+  const terrainNote = h('p', { class: 'muted hint' });
+
   const empty = h('p', { class: 'muted' }, 'Köyde asker yok. Ordu sekmesinden asker eğitebilirsin.');
   const heading = h('h4', { class: 'info-subtitle' }, 'Birlik gönder');
   const spyHint = h('p', { class: 'muted hint' }, 'Yalnız gözcü gönderirsen casusluk yapılır: köyün askerleri, kaynakları ve binaları görünür.');
@@ -58,6 +74,8 @@ export function createAttackForm({ game, refresh }) {
     empty,
     h('div', { class: 'send-grid' }, UNIT_IDS.map((id) => rows[id].row)),
     catapultRow,
+    heroRow,
+    terrainNote,
     envoyHint,
     spyHint,
     summary,
@@ -67,7 +85,7 @@ export function createAttackForm({ game, refresh }) {
   el.hidden = true;
 
   const readUnits = () => Object.fromEntries(UNIT_IDS.map((id) => [id, Number(rows[id].input.value || 0)]));
-  const options = () => ({ catapultTarget: catapultSelect.value });
+  const options = () => ({ catapultTarget: catapultSelect.value, ...(heroBox.checked && { hero: true }) });
   const isSupport = () => target?.kind === 'oyuncu';
   const latest = (type) => (target && !isSupport() ? game.state.reports.find((r) => r.type === type && r.target.id === target.id) : null);
 
@@ -98,8 +116,10 @@ export function createAttackForm({ game, refresh }) {
     if (result.ok) {
       const what = result.mission === 'casus' ? `${fmtInt(result.units.gozcu)} gözcü` : `${fmtInt(totalUnits(result.units))} asker`;
       const how = result.mission === 'destek' ? ' destek olarak' : '';
-      toast(`${what}${how} ${result.target.name} köyüne yola çıktı. Varış ${fmtClock(result.arriveAt, now)}.`, 'success');
+      const hero = result.hero ? ` Kahraman ${game.state.hero.name} başlarında.` : '';
+      toast(`${what}${how} ${result.target.name} hedefine yola çıktı. Varış ${fmtClock(result.arriveAt, now)}.${hero}`, 'success');
       for (const id of UNIT_IDS) rows[id].input.value = '0';
+      heroBox.checked = false;
     } else {
       toast(result.reason, 'error');
     }
@@ -164,6 +184,25 @@ export function createAttackForm({ game, refresh }) {
       empty.hidden = available > 0;
       renderIntel(now);
       renderLastAttack(now);
+
+      const hero = game.state.hero;
+      const heroCheck = heroAvailable(game.state, village, now);
+      heroRow.hidden = !hero;
+      heroBox.disabled = !heroCheck.ok;
+      if (!heroCheck.ok) heroBox.checked = false;
+      heroRow.classList.toggle('disabled', !heroCheck.ok);
+      if (hero) {
+        const fx = heroEffects(hero);
+        setText(
+          heroNote,
+          heroCheck.ok
+            ? `${hero.name} (${hero.level}. sv): +${fmtInt(fx.power)} güç${fx.attack ? `, saldırı +%${Math.round(fx.attack * 100)}` : ''}${fx.carry ? `, ganimet +%${Math.round(fx.carry * 100)}` : ''}. Yenilirse yaralanır.`
+            : heroCheck.reason,
+        );
+      }
+      const terrain = support ? 0 : terrainDefense(terrainAt(game.state.world.seed, target.x, target.y));
+      terrainNote.hidden = !terrain;
+      if (terrain) setText(terrainNote, `Arazi: hedef ${terrain >= 0.2 ? 'tepede' : 'ormanda'}; savunanlar +%${Math.round(terrain * 100)} güçlü.`);
 
       const check = inspectAttack(game.state, village, target.x, target.y, readUnits(), now, options());
       catapultRow.hidden = !check.units.mancinik;

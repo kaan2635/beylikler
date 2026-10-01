@@ -50,6 +50,13 @@ Yeniçeri ve Topçu simgeleri ile mevsim, olay, Divan ve diplomasi simgeleri oyu
 olarak çizildi (`js/ui/art/custom-icons.js`, `js/ui/icons.js`). Gözetleme Kulesi, sur kulelerinin
 görselini (feudalwars, CC0) kullanır.
 
+2.0 ile gelen görseller de oyun için özgün olarak kodla çizildi; dışarıdan yeni dosya
+eklenmedi: kahraman portresi (`js/ui/art/portrait.js`), harabeler, Moğol ordugâhı, bey
+toprakları ve yürüyen ordular (`js/ui/art/map-sites.js`), binaların görünüş aşamaları
+(`js/ui/art/stages.js`; yukarıdaki bina görselleri çit, taş avlu, sancak, fener ve yan yapılarla
+birleştirilir), canlı köy sahnesi (`js/ui/art/scene.js`) ve kahraman, eşya, şan, harabe,
+ordugâh ve tarihçe simgeleri (`js/ui/icons.js`).
+
 ## Yazılım
 
 - [PeerJS](https://peerjs.com/) 1.5.5 — MIT lisansı. Oda modunda tarayıcılar arası bağlantı için

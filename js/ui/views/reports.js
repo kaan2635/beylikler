@@ -3,7 +3,8 @@ import { RESOURCE_IDS, RESOURCES } from '../../config/resources.js';
 import { BUILDINGS } from '../../config/buildings.js';
 import { inspectAttack } from '../../systems/movements.js';
 import { inspectExpedition } from '../../systems/expedition.js';
-import { EXPEDITION_OUTCOMES } from '../../config/expedition.js';
+import { EXPEDITION_OUTCOMES, REGIONS } from '../../config/expedition.js';
+import { RARITIES, ITEM_SLOTS } from '../../config/hero.js';
 import { outcomeTone, expeditionSummary } from './expedition.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
@@ -140,7 +141,7 @@ export function createReportsView({ game, refresh }) {
         if (!entry.repeat) continue; // savunma raporlarında tekrar yok
         const check =
           report.type === 'kesif'
-            ? inspectExpedition(game.state, game.village, report.attackers, report.holdHours, now)
+            ? inspectExpedition(game.state, game.village, report.attackers, report.holdHours, now, { region: report.region })
             : inspectAttack(game.state, game.village, report.target.x, report.target.y, report.attackers, now);
         entry.repeat.disabled = !check.ok;
         entry.repeat.title = check.ok ? (report.type === 'kesif' ? 'Aynı birliği aynı süreyle yeniden keşfe gönder' : 'Aynı orduyu aynı köye yeniden gönder') : check.reason;
@@ -199,8 +200,10 @@ function renderExpeditionReport(report, now) {
   const body = [
     h('p', { class: 'expedition-text' }, report.text),
     report.note ? h('p', { class: 'muted' }, report.note) : null,
-    h('p', { class: 'muted' }, `Sefer: ${sent.join(', ')} · ${report.holdHours} saat keşif`),
+    h('p', { class: 'muted' }, `Sefer: ${sent.join(', ')} · ${report.holdHours} saat keşif${report.region ? ` · ${REGIONS[report.region]?.name ?? ''}` : ''}${report.hero ? ` · Kahraman ${report.hero.name}` : ''}`),
   ];
+  if (report.item) body.push(itemLine(report.item, 'Kahramanın heybesine girdi'));
+  if (report.renown) body.push(h('p', { class: 'cost' }, icon('san'), h('strong', null, `+${report.renown} şan`), ' beyliğin adı yayıldı.'));
   if (lootTotal) {
     body.push(
       h(
@@ -370,7 +373,9 @@ function renderAttackReport(report, now) {
         h('span', { class: 'stat', title: 'Savunma gücü (sur ve köylüler dahil)' }, icon('savunma'), fmtInt(report.defense)),
         h('span', { class: 'muted' }, `Şans ${luck > 0 ? '+' : luck < 0 ? '−' : ''}%${Math.abs(luck)}`),
         h('span', { class: 'muted' }, report.wallLevel ? `Sur ${report.wallLevel}. seviye` : 'Sur yok'),
+        report.hero ? h('span', { class: 'stat', title: 'Savaşa katılan kahraman' }, icon('nav-kahraman'), report.hero.name) : null,
       ),
+      balance(report),
       h(
         'div',
         { class: 'table-wrap' },
@@ -416,6 +421,8 @@ function renderAttackReport(report, now) {
           : h('span', { class: 'muted' }, 'yok'),
       ),
       siege.map((line) => h('p', { class: 'siege-line' }, line)),
+      report.reward?.akce ? h('p', { class: 'cost' }, icon('akce'), h('strong', null, `${fmtInt(report.reward.akce)} Akçe`), ' hazineye eklendi.') : null,
+      report.reward?.item ? itemLine(report.reward.item, report.reward.sold ? `Heybe dolu olduğu için ${report.reward.sold} Akçeye satıldı` : 'Kahramanın heybesine girdi') : null,
       report.conquest
         ? h(
             'p',
@@ -433,6 +440,30 @@ function renderAttackReport(report, now) {
     ),
   );
   return { item, repeat };
+}
+
+/** Saldırı ve savunma gücünü yan yana gösteren terazi. */
+function balance(report) {
+  const total = Math.max(1, report.attack + report.defense);
+  const share = Math.round((report.attack / total) * 100);
+  return h(
+    'div',
+    { class: 'balance', title: `Saldırı %${share} · Savunma %${100 - share}` },
+    h('span', { class: 'balance-attack', style: `width:${share}%` }),
+    h('span', { class: 'balance-defense', style: `width:${100 - share}%` }),
+  );
+}
+
+/** Bulunan eşya satırı: nadirlik renginde ad ve etkiler. */
+function itemLine(item, note) {
+  return h(
+    'p',
+    { class: `item-line rarity-${item.rarity}` },
+    icon(ITEM_SLOTS[item.slot]?.icon ?? 'nisan'),
+    h('strong', { class: 'item-name' }, item.name),
+    h('span', { class: 'item-rarity' }, ` ${RARITIES[item.rarity].name} ${ITEM_SLOTS[item.slot]?.name.toLowerCase() ?? ''}`),
+    h('span', { class: 'muted' }, ` · ${note}`),
+  );
 }
 
 function cell(value, loss = false) {

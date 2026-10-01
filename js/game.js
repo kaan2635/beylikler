@@ -23,7 +23,8 @@ import { setDifficulty, rescaleLordSchedules } from './systems/ai.js';
 import { startIlim, cancelIlim } from './systems/ilim.js';
 import { chooseEvent, rescaleEvents } from './systems/events.js';
 import { sendGift, makePeace } from './systems/diplomacy.js';
-import { syncBonuses } from './systems/premium.js';
+import { syncBonuses, grantAkce } from './systems/premium.js';
+import { spendPoint, equipItem, unequipItem, sellItem, renameHero, ensureHero } from './systems/hero.js';
 
 /**
  * Oyun durumu ile arayüz arasındaki tek kapı. Arayüz durumu doğrudan değiştirmez:
@@ -158,16 +159,19 @@ export class Game {
     return this.sendAttack(report.target.x, report.target.y, report.attackers, now, { catapultTarget: report.catapultTarget });
   }
 
-  /** Yönetilen köyden keşif seferi düzenler; `holdHours` bilinmeyen topraklarda geçecek oyun saati. */
-  sendExpedition(units, holdHours, now) {
-    return this.#act(now, () => sendExpedition(this.state, this.village, units, holdHours, now));
+  /**
+   * Yönetilen köyden keşif seferi düzenler; `holdHours` keşifte geçecek oyun saati.
+   * `options`: { region, hero } (bölge ve kahramanın katılması).
+   */
+  sendExpedition(units, holdHours, now, options = {}) {
+    return this.#act(now, () => sendExpedition(this.state, this.village, units, holdHours, now, options));
   }
 
-  /** Keşif raporundaki birliği aynı süreyle yeniden sefere çıkarır. */
+  /** Keşif raporundaki birliği aynı bölgeye aynı süreyle yeniden sefere çıkarır (kahramansız). */
   repeatExpedition(reportId, now) {
     const report = this.state.reports.find((r) => r.id === reportId && r.type === 'kesif');
     if (!report) return { ok: false, reason: 'Rapor bulunamadı' };
-    return this.sendExpedition(report.attackers, report.holdHours, now);
+    return this.sendExpedition(report.attackers, report.holdHours, now, { region: report.region ?? 'sinir' });
   }
 
   /** Yağma asistanı (Serasker): raporlardaki orduları kendi köylerine toplu olarak yeniden gönderir. */
@@ -270,10 +274,55 @@ export class Game {
     });
   }
 
+  // ---------- Kahraman ----------
+
+  /** Kahramanın bir özelliğine puan verir. */
+  heroSpend(attr, now) {
+    return this.#act(now, () => {
+      const result = spendPoint(this.state, attr);
+      if (result.ok) syncBonuses(this.state);
+      return result;
+    });
+  }
+
+  heroEquip(itemId, now) {
+    return this.#act(now, () => {
+      const result = equipItem(this.state, itemId);
+      if (result.ok) syncBonuses(this.state);
+      return result;
+    });
+  }
+
+  heroUnequip(slot, now) {
+    return this.#act(now, () => {
+      const result = unequipItem(this.state, slot);
+      if (result.ok) syncBonuses(this.state);
+      return result;
+    });
+  }
+
+  /** Heybedeki eşyayı satar; Akçe hazineye girer. */
+  heroSell(itemId, now) {
+    return this.#act(now, () => {
+      const result = sellItem(this.state, itemId);
+      if (result.ok) grantAkce(this.state, result.akce, `Eşya satıldı: ${result.item.name}`, now);
+      return result;
+    });
+  }
+
+  renameHero(name) {
+    ensureHero(this.state);
+    const ok = renameHero(this.state, name);
+    if (ok) this.save();
+    return ok;
+  }
+
   // ---------- Görevler ----------
 
   claimQuest(questId, now) {
-    return this.#act(now, () => claimQuest(this.state, this.village, questId, now));
+    const result = this.#act(now, () => claimQuest(this.state, this.village, questId, now));
+    if (result.heroEvents?.length) this.emit(result.heroEvents);
+    return result;
   }
 
   claimDaily(now) {

@@ -3,7 +3,7 @@ import { RESOURCES } from '../config/resources.js';
 import { TRAINING_BUILDINGS } from '../config/units.js';
 import { inspectUpgrade } from '../systems/construction.js';
 import { plannedLevel } from '../core/village.js';
-import { buildingImage, tierOf } from './art/sprites.js';
+import { stageSvg, stageOf, stageName, nextStage, stageLevels, STAGE_NAMES } from './art/stages.js';
 import { h, setText } from './dom.js';
 import { icon } from './icons.js';
 import { fmtInt, fmtDuration, fmtClock, fmtEffect } from './format.js';
@@ -64,6 +64,17 @@ export function createBuildingCard(buildingId, { detailed = false } = {}) {
   const requireBlock = detailed && requirements.length ? h('div', { class: 'requires' }, h('span', { class: 'eyebrow' }, 'Gereksinimler'), h('ul', { class: 'require-list' }, requirements.map((r) => r.item))) : null;
   const queueNote = detailed ? h('p', { class: 'queue-note' }) : null;
 
+  // Görünüş aşaması: şimdiki adı ve bir sonrakine kalan seviye; pencerede bütün aşamalar.
+  const stageLine = h('div', { class: 'stage-line' });
+  const stageSteps = detailed
+    ? stageLevels(buildingId).map((level, i) => {
+        const thumb = h('span', { class: 'stage-thumb' });
+        thumb.innerHTML = stageSvg(buildingId, level);
+        return { level, el: h('li', null, thumb, h('strong', null, STAGE_NAMES[buildingId]?.[i] ?? ''), h('span', { class: 'muted' }, `${level}. seviye`)) };
+      })
+    : [];
+  const stageBlock = detailed ? h('div', { class: 'stage-block' }, h('span', { class: 'eyebrow' }, 'Görünüş'), h('ol', { class: 'stage-steps' }, stageSteps.map((step) => step.el))) : null;
+
   const art = h('div', { class: 'building-art' });
   const title = h('h3', null, def.name);
   const openers = detailed
@@ -79,6 +90,8 @@ export function createBuildingCard(buildingId, { detailed = false } = {}) {
     h('div', { class: 'card-head' }, ...openers),
     detailed ? h('p', { class: 'card-desc' }, def.description) : null,
     effect,
+    stageLine,
+    stageBlock,
     requireBlock,
     costRow,
     queueNote,
@@ -92,11 +105,21 @@ export function createBuildingCard(buildingId, { detailed = false } = {}) {
       const planned = plannedLevel(village, buildingId);
       const check = inspectUpgrade(village, world, buildingId, now);
 
-      // Görsel yalnızca kademe değişince yenilenir (1–4, 5–14, 15+); inşa edilmemişse soluk.
-      const tier = `${tierOf(current)}`;
+      // Görsel yalnızca görünüş aşaması değişince yenilenir (bkz. art/stages.js); inşa edilmemişse soluk.
+      const tier = `${stageOf(buildingId, current)}`;
       if (tier !== artTier) {
         artTier = tier;
-        art.replaceChildren(h('img', { src: buildingImage(buildingId, current), alt: '', loading: detailed ? null : 'lazy', decoding: 'async', class: current > 0 ? null : 'ghost' }));
+        art.innerHTML = stageSvg(buildingId, current);
+      }
+      const upcoming = nextStage(buildingId, Math.max(1, current));
+      const nowName = current > 0 ? stageName(buildingId, current) : null;
+      stageLine.replaceChildren(
+        ...(nowName ? [h('span', { class: 'stage-name' }, nowName)] : [h('span', null, 'İnşa edilmedi')]),
+        upcoming ? h('span', null, `· ${upcoming.level}. seviyede ${upcoming.name}`) : h('span', null, '· en görkemli hâli'),
+      );
+      for (const step of stageSteps) {
+        step.el.classList.toggle('reached', current >= step.level);
+        step.el.classList.toggle('current', current > 0 && stageOf(buildingId, current) === stageOf(buildingId, step.level));
       }
       setText(badge, current > 0 ? `${current}. seviye` : 'Yok');
       if (pageLink) pageLink.hidden = current === 0;

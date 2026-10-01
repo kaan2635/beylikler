@@ -169,6 +169,37 @@ export const ILIM = Object.freeze({
     perks: ['Kaynak üretimi +%8', 'Ambar kapasitesi +%10'],
     bonus: { production: 1.08, storage: 1.1 },
   },
+  // 6. kademe — Konak 15
+  medrese: {
+    name: 'Medrese',
+    group: 'yonetim',
+    konak: 15,
+    requires: ['hazinedefteri'],
+    cost: { odun: 18000, kil: 20000, demir: 16000 },
+    hours: 20,
+    perks: ['Kahraman tecrübesi +%25'],
+    bonus: { heroXp: 1.25 },
+  },
+  muhendishane: {
+    name: 'Mühendishane',
+    group: 'askeri',
+    konak: 15,
+    requires: ['tophane'],
+    cost: { odun: 20000, kil: 16000, demir: 22000 },
+    hours: 20,
+    perks: ['Koçbaşı, mancınık ve topun yıkım gücü +%50'],
+    bonus: { siege: 1.5 },
+  },
+  sancakiserif: {
+    name: 'Sancak-ı Şerif',
+    group: 'askeri',
+    konak: 15,
+    requires: ['kalemimarisi', 'akinusulu'],
+    cost: { odun: 20000, kil: 20000, demir: 20000 },
+    hours: 20,
+    perks: ['Saldırı ve savunma +%5'],
+    bonus: { attack: 1.05, defense: 1.05 },
+  },
 });
 
 export const ILIM_IDS = Object.keys(ILIM);

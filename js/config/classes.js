@@ -15,6 +15,8 @@ export const DEFAULT_BONUS = Object.freeze({
   prodDemir: 1,
   storage: 1, // ambar kapasitesi
   carry: 1, // yağmada taşınan ganimet
+  heroXp: 1, // kahramanın kazandığı tecrübe
+  siege: 1, // koçbaşı, mancınık ve topun yıkım gücü
   buildTime: 1,
   trainTime: 1,
   researchTime: 1,

@@ -49,6 +49,31 @@ const TOPICS = [
     text: 'Beylere hediye göndererek ilişkini düzelt. İyi ilişkideki bey daha seyrek saldırır, müttefik bey hiç saldırmaz; barış antlaşması birkaç gün saldırıyı durdurur. Hisarına saldırırsan ilişki bozulur.',
   },
   {
+    icon: 'nav-kahraman',
+    title: 'Kahraman',
+    text: 'Beyliğinin alpı seviye atladıkça özellik puanı kazanır: Kılıç, Kalkan, Bereket, Akın. Köyündeyken üretime ve savunmaya güç katar; saldırı ya da keşif formunda "Kahraman katılsın" seçilirse orduya önderlik eder. Yenilen ordudaki kahraman yaralanır ve bir süre iyileşir. Kılıç, zırh, at ve nişan kuşanabilir.',
+  },
+  {
+    icon: 'san',
+    title: 'Şan ve unvan',
+    text: 'Zaferler, savunmalar, fetihler, görevler, başarımlar, harabeler, Moğol akınları ve araştırmalar şan getirir. Şan arttıkça Sancakbeyi, Beylerbeyi, Paşa ve Hünkâr olursun; her unvan bütün köylerine kalıcı ayrıcalık sağlar.',
+  },
+  {
+    icon: 'harabe',
+    title: 'Harabeler ve arazi',
+    text: 'Haritadaki kadim harabelerin eşkıya muhafızlarını yen: hazine, Akçe ve kahramana eşya. Yağmalanan harabe birkaç gün sonra yeniden dolar; uzaktakiler daha güçlüdür. Tepedeki köyler +%20, ormandakiler +%10 savunma kazanır.',
+  },
+  {
+    icon: 'ordugah',
+    title: 'Moğol akını',
+    text: 'Bir haftadan sonra Moğollar köyünün yakınına ordugâh kurar ve dalga dalga saldırır. Tepe çubuğundaki uyarı ordugâhı gösterir. Ordugâhı dağıtırsan akın biter ve büyük ödül alırsın; bütün dalgaları püskürtmek de ödüllendirilir. Barış zorluğunda akın olmaz.',
+  },
+  {
+    icon: 'nav-kesif',
+    title: 'Keşif bölgeleri',
+    text: 'Kervansaray seviyesi arttıkça yeni bölgeler açılır: ormanda kaynak, bozkırda at ve göçebeler, dağda hazine, harabelerde eşya ve harita, sahilde kervanlar. Her sefer keşif ustalığını artırır; kahraman katılırsa bulgular artar, tehlike azalır.',
+  },
+  {
     icon: 'akce',
     title: 'Akçe',
     text: 'Görev, başarım, savunma zaferi ve keşifle kazanılır. Hazine\'de görevli tutmak ya da inşaatı hemen bitirmek için harcanır.',

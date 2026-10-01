@@ -31,6 +31,11 @@ export function wallBonus(level) {
   return Math.pow(1.037, level) - 1;
 }
 
+/** Arazinin savunana kattığı oran: tepedeki köy +%20, ormandaki +%10. */
+export function terrainDefense(terrain) {
+  return terrain === 'tepe' ? 0.2 : terrain === 'orman' ? 0.1 : 0;
+}
+
 /** Gözetleme Kulesinin savunmaya kattığı oran: seviye başına %1,5. */
 export function towerDefense(level) {
   return 0.015 * Math.max(0, level);

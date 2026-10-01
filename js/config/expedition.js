@@ -11,11 +11,17 @@ export const EXPEDITION = Object.freeze({
   // Sonuç olasılıkları (ağırlık). Tehlikeli olanlar Kâşif sınıfında yarıya iner; uzun keşif
   // boşa dönme olasılığını azaltır.
   weights: {
-    bos: 28, // bir şey bulunamadı
-    kaynak: 32, // terk edilmiş kervan, maden, orman…
+    bos: 22, // bir şey bulunamadı
+    kaynak: 30, // terk edilmiş kervan, maden, orman…
     asker: 10, // paralı askerler sancağa katılır
     akce: 9, // hazine
-    gecikme: 8, // dönüş gecikir
+    esya: 6, // kahraman için bir eşya
+    hazine: 2, // büyük hazine: Akçe ve taşıma sınırı olmadan kaynak
+    kervan: 4, // tüccar kervanı: mallar taşıma sınırı olmadan köye gelir
+    kabile: 3, // göçebe oba: atlı paralı askerler ve şan
+    at: 3, // yılkı atları: akıncılar
+    harita: 3, // kadim harita: şan, kahramana tecrübe
+    gecikme: 7, // dönüş gecikir
     erken: 5, // kestirme yol: erken dönüş
     eskiya: 6, // eşkıya pususu (savaş)
     kayip: 2, // fırtına, bataklık: sefer kaybolur
@@ -23,17 +29,88 @@ export const EXPEDITION = Object.freeze({
   risky: ['gecikme', 'eskiya', 'kayip'],
   emptyLessPerHour: 0.06, // her ek keşif saati "boş" olasılığını %6 azaltır
 
-  resourceBase: 1500, // bulunan kaynak ölçeği…
-  resourcePerDay: 300, // …dünya günüyle büyür
+  resourceBase: 2000, // bulunan kaynak ölçeği…
+  resourcePerDay: 400, // …dünya günüyle büyür
   holdBonus: 0.15, // her ek keşif saati bulguyu %15 artırır
   resourceSplit: { odun: 0.4, kil: 0.35, demir: 0.25 },
-  unitsShare: [0.05, 0.2], // bulunan asker: seferdekilerin %5–20'si
-  akce: [10, 60],
+  unitsShare: [0.08, 0.25], // bulunan asker: seferdekilerin %8–25'i
+  akce: [15, 80],
+  treasureAkce: [40, 120], // büyük hazine
+  caravan: [0.8, 1.4], // tüccar kervanının getirdiği, kaynak ölçeğine oranla
+  horses: [0.1, 0.3], // yılkı atları: seferdekilerin %10–30'u kadar akıncı
+  mapRenown: 8, // kadim harita: şan
+  mapXp: 80, // kadim harita: kahramana tecrübe
+  tribeRenown: 5,
+  heroReward: 1.2, // kahraman sefere katılırsa bulgular +%20…
+  heroRisk: 0.8, // …tehlikeler −%20
+  heroXpPerHour: 25, // kahramanın keşif saati başına tecrübesi
+  masteryPer: 0.01, // her tamamlanan sefer bulguları %1 artırır (keşif ustalığı)…
+  masteryMax: 0.3, // …en fazla %30
   delay: [0.5, 1], // dönüş %50–100 uzar
   early: 0.5, // dönüş yarıya iner
   bandits: [0.3, 1.1], // eşkıya gücü: seferin saldırı gücünün 0,3–1,1 katı
   banditLoot: 0.5, // eşkıyayı yenen, kaynak ölçeğinin yarısı kadar ganimet alır
 });
+
+// Keşif bölgeleri: her birinin uzaklığı, gereken Kervansaray seviyesi ve sonuç olasılıklarına
+// etkisi (çarpan) farklıdır. `split` bulunan kaynağın dağılımı, `pool` katılan paralı askerlerin
+// türleri, `itemQuality` bulunan eşyanın nadirlik eğilimidir.
+export const REGIONS = Object.freeze({
+  sinir: {
+    name: 'Sınır Boyları',
+    description: 'Yerleşimin hemen ötesi. Ne çok tehlikeli ne çok bereketli.',
+    kervansaray: 1,
+    distance: 15,
+    mods: {},
+    itemQuality: 1,
+  },
+  orman: {
+    name: 'Kara Ormanlar',
+    description: 'Kerestesi bol, yolları dar. Eşkıya pusuya yatar.',
+    kervansaray: 1,
+    distance: 12,
+    mods: { kaynak: 1.4, eskiya: 1.3, at: 0.3, hazine: 0.5, kervan: 0.5 },
+    split: { odun: 0.6, kil: 0.2, demir: 0.2 },
+    itemQuality: 1,
+  },
+  bozkir: {
+    name: 'Uçsuz Bozkır',
+    description: 'Yılkı atları ve göçebe obalar. Ama günlerce hiçbir şey bulunmayabilir.',
+    kervansaray: 1,
+    distance: 14,
+    mods: { at: 3, asker: 1.4, kabile: 2.5, bos: 1.3, kaynak: 0.7 },
+    pool: ['akinci', 'atliokcu', 'deli'],
+    itemQuality: 1,
+  },
+  dag: {
+    name: 'Dumanlı Dağlar',
+    description: 'Demir damarları ve unutulmuş hazineler; çığ ve kar fırtınası da.',
+    kervansaray: 3,
+    distance: 16,
+    mods: { kaynak: 1.2, hazine: 1.8, esya: 1.3, kayip: 1.6, gecikme: 1.6 },
+    split: { odun: 0.2, kil: 0.25, demir: 0.55 },
+    itemQuality: 1.4,
+  },
+  harabe: {
+    name: 'Kadim Harabeler',
+    description: 'Eski uygarlıkların kalıntıları: eşyalar, haritalar, sikkeler… ve onları bekleyen eşkıyalar.',
+    kervansaray: 6,
+    distance: 18,
+    mods: { esya: 2.5, akce: 1.6, harita: 2.5, eskiya: 1.8, kaynak: 0.6 },
+    itemQuality: 1.8,
+  },
+  sahil: {
+    name: 'Mavi Kıyılar',
+    description: 'Uzak limanlar ve tüccar kervanları; korsanlar da hiç eksik olmaz.',
+    kervansaray: 10,
+    distance: 22,
+    mods: { kervan: 3, hazine: 2.5, akce: 1.5, eskiya: 1.4, kayip: 1.2, bos: 0.8 },
+    split: { odun: 0.3, kil: 0.3, demir: 0.4 },
+    itemQuality: 2.2,
+  },
+});
+
+export const REGION_IDS = Object.keys(REGIONS);
 
 // Sonuçların arayüzdeki adları; `good` rapor rozetinin rengini belirler.
 export const EXPEDITION_OUTCOMES = Object.freeze({
@@ -47,6 +124,12 @@ export const EXPEDITION_OUTCOMES = Object.freeze({
   eskiyaZafer: { name: 'Eşkıya püskürtüldü', good: true },
   eskiyaYenilgi: { name: 'Eşkıyaya yenildi', good: false },
   kayip: { name: 'Sefer kayboldu', good: false },
+  esya: { name: 'Eşya bulundu', good: true },
+  hazine: { name: 'Büyük hazine', good: true },
+  kervan: { name: 'Tüccar kervanı', good: true },
+  kabile: { name: 'Göçebe oba', good: true },
+  at: { name: 'Yılkı atları', good: true },
+  harita: { name: 'Kadim harita', good: true },
 });
 
 // Rapor metinleri: her sonuç için birkaç anlatım; tohumdan biri seçilir.
@@ -93,5 +176,30 @@ export const EXPEDITION_TEXTS = Object.freeze({
   kayip: [
     'Birlik bataklığa saplandı; bir daha haber alınamadı.',
     'Kum fırtınası birliği yuttu. Geriye yalnızca izleri kaldı.',
+  ],
+  esya: [
+    'Yıkık bir kulenin dibinde, paslanmamış bir sandık bulundu. İçinden değerli bir eşya çıktı.',
+    'Ölmüş bir şövalyenin yanında parlayan bir eşya vardı; birlik onu beyine getirdi.',
+    'Bir mağaranın derinliklerinde, kimsenin dokunmadığı bir hazine odası bulundu.',
+  ],
+  hazine: [
+    'Toprağa gömülü bir hazine sandığı! Akçeler ve yük yük mal, katırlarla köye taşınıyor.',
+    'Batık bir geminin ambarı kıyıya vurmuş; birlik zenginliği toplayıp dönüyor.',
+  ],
+  kervan: [
+    'Yolda büyük bir tüccar kervanıyla karşılaşıldı; mallarını beyliğe satmak için birlikle geliyorlar.',
+    'Limanda yükünü boşaltan tüccarlar, beyliğin korumasında köye mal taşımayı kabul etti.',
+  ],
+  kabile: [
+    'Göçebe bir oba ile dostluk kuruldu; obanın yiğitleri sancağa katıldı.',
+    'Bir Türkmen boyunun beyi, birliği ağırladı ve atlı yiğitlerini beyliğe gönderdi.',
+  ],
+  at: [
+    'Bozkırda başıboş bir yılkı sürüsü bulundu; atlar evcilleştirildi, yiğitler atlandı.',
+    'Terk edilmiş bir at çiftliğinde semerli atlar vardı. Akıncılar yeni binekleriyle dönüyor.',
+  ],
+  harita: [
+    'Eski bir manastırın kütüphanesinde kadim bir harita bulundu; beyliğin şanı yayılıyor.',
+    'Bir dervişin bıraktığı harita, unutulmuş yolları gösteriyor. Kahraman yeni şeyler öğrendi.',
   ],
 });

@@ -1,7 +1,10 @@
 import { BUILDINGS, BUILDING_IDS } from '../../config/buildings.js';
 import { maxBuildQueue } from '../../systems/construction.js';
 import { finishCost } from '../../systems/premium.js';
-import { sceneSvg } from '../art/scene.js';
+import { sceneSvg, skyState } from '../art/scene.js';
+import { titleOf, renownOf, nextTitle } from '../../systems/renown.js';
+import { heroHealthy } from '../../systems/hero.js';
+import { heroWhere } from './hero.js';
 import { createQuestList } from './quests.js';
 import { createBuildingCard, upgradeFromButton, BUILDING_GROUPS } from '../building-card.js';
 import { openBuildingDialog } from '../building-dialog.js';
@@ -101,6 +104,7 @@ export function createVillageView({ game, refresh }) {
       const points = fmtInt(villagePoints(village.buildings));
       setText(coords, `(${village.x}|${village.y}) · ${continentOf(village.x, village.y)} · ${points} puan`);
       scene.update(village, game.state.world);
+      scene.light(game.state.world);
       status.update(now);
       quests.update();
       queue.update(village, now, game.state);
@@ -158,8 +162,10 @@ function createBuildingFilter(cards) {
 
 /** Köy sahnesi: binalar seviyelerine göre çizilir; tıklanan binanın kartına gidilir. */
 function createScene(onSelect) {
+  const clock = h('span', { class: 'scene-clock', title: 'Oyun saati: köyde gece ve gündüz buna göre değişir' });
   const el = h('section', { class: 'scene-panel', 'aria-label': 'Köy görünümü' });
   let signature = null;
+  let lightSig = null;
   const pick = (event) => {
     const target = event.target.closest('[data-building]');
     if (target) onSelect(target.dataset.building);
@@ -185,6 +191,23 @@ function createScene(onSelect) {
       signature = next;
       el.dataset.season = season ?? '';
       el.innerHTML = sceneSvg(village.buildings, { upgrading, locked, names, season });
+      el.append(clock);
+    },
+    /** Gece ve gündüz: oyun saatine göre ışık, güneş ve ay (sahne yeniden çizilmeden). */
+    light(world) {
+      const sky = skyState(world);
+      const hh = Math.floor(sky.hour);
+      const mm = Math.floor((sky.hour % 1) * 60);
+      const sig = `${hh}:${Math.floor(mm / 5)}`;
+      if (sig === lightSig) return;
+      lightSig = sig;
+      el.style.setProperty('--night', sky.night.toFixed(3));
+      el.style.setProperty('--sun-x', sky.sun[0].toFixed(1));
+      el.style.setProperty('--sun-y', sky.sun[1].toFixed(1));
+      el.style.setProperty('--moon-x', sky.moon[0].toFixed(1));
+      el.style.setProperty('--moon-y', sky.moon[1].toFixed(1));
+      const part = hh < 5 ? 'Gece' : hh < 7 ? 'Şafak' : hh < 11 ? 'Sabah' : hh < 15 ? 'Öğle' : hh < 18 ? 'İkindi' : hh < 20 ? 'Akşam' : 'Gece';
+      clock.replaceChildren(icon(sky.night > 0.5 ? 'ay' : 'gunes'), `${part} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`);
     },
   };
 }
@@ -199,6 +222,9 @@ function createStatusPanel({ game, refresh }) {
   const seasonLeftText = h('span', { class: 'muted' });
   const seasonPerks = h('span', { class: 'status-sub' });
   const eventRow = h('div', { class: 'status-row status-event' });
+  const invasionRow = h('div', { class: 'status-row status-event' });
+  const heroRow = h('div', { class: 'status-row' });
+  const titleRow = h('div', { class: 'status-row' });
   const ilimRow = h('div', { class: 'status-row' });
   const effects = h('ul', { class: 'status-list' });
   const el = h(
@@ -207,9 +233,21 @@ function createStatusPanel({ game, refresh }) {
     h('div', { class: 'panel-head' }, h('h2', null, 'Beylik durumu')),
     h('div', { class: 'status-row' }, seasonIcon, h('div', null, h('div', null, seasonName, ' ', seasonLeftText), seasonPerks)),
     eventRow,
+    invasionRow,
+    titleRow,
+    heroRow,
     ilimRow,
     effects,
   );
+  const heroName = h('strong');
+  const heroSub = h('span', { class: 'status-sub' });
+  heroRow.append(h('span', { class: 'status-icon' }, icon('nav-kahraman')), h('div', null, heroName, heroSub), h('a', { class: 'card-link', href: '#/kahraman' }, 'Kahraman →'));
+  const titleName = h('strong');
+  const titleSub = h('span', { class: 'status-sub' });
+  titleRow.append(h('span', { class: 'status-icon' }, icon('tac')), h('div', null, titleName, titleSub));
+  const invasionText = h('span', { class: 'status-sub' });
+  const invasionLink = h('a', { class: 'btn btn-small btn-gold' }, 'Ordugâh');
+  invasionRow.append(h('span', { class: 'status-icon pulse' }, icon('ordugah')), h('div', null, h('strong', null, 'Moğol akını!'), invasionText), invasionLink);
   el.addEventListener('click', (event) => {
     if (event.target.closest('button[data-action="event"]')) openEventDialog({ game, refresh });
   });
@@ -229,6 +267,30 @@ function createStatusPanel({ game, refresh }) {
         setText(seasonName, season.name);
         setText(seasonLeftText, `· ${fmtDuration(seasonLeft(state.world, now) / state.world.speed / 1000)} kaldı`);
         setText(seasonPerks, season.perks.join(' · '));
+      }
+
+      // Unvan ve şan
+      const title = titleOf(state);
+      const upcoming = nextTitle(state);
+      const renown = renownOf(state);
+      setText(titleName, `${title.name} · ${fmtInt(renown)} şan`);
+      setText(titleSub, upcoming ? `${upcoming.name} unvanına ${fmtInt(Math.max(0, upcoming.renown - renown))} şan kaldı` : 'En yüksek unvan');
+      // Kahraman
+      const hero = state.hero;
+      heroRow.hidden = !hero;
+      if (hero) {
+        setText(heroName, `${hero.name} · ${hero.level}. seviye${hero.points ? ` · ${hero.points} puan` : ''}`);
+        setText(heroSub, heroWhere(state, hero, now));
+        heroSub.classList.toggle('loss', !heroHealthy(hero, now));
+      }
+      // Moğol akını
+      const invasion = state.invasion;
+      const camp = invasion?.phase === 'active' ? invasion.camp : null;
+      invasionRow.hidden = !camp;
+      if (camp) {
+        invasionLink.href = `#/harita/${camp.x}/${camp.y}`;
+        const next = invasion.nextWaveAt ? `sıradaki dalga ${fmtDuration((invasion.nextWaveAt - now) / 1000)} sonra` : invasion.leaveAt ? `ordugâh ${fmtDuration((invasion.leaveAt - now) / 1000)} sonra çekilir` : '';
+        setText(invasionText, `Ordugâh (${camp.x}|${camp.y}) · ${invasion.wavesLeft} dalga kaldı${next ? ` · ${next}` : ''}`);
       }
 
       const pending = state.events?.pending;

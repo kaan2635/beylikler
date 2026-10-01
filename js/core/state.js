@@ -61,7 +61,22 @@ function newPlayer(name = 'Bey') {
 }
 
 function newStats() {
-  return { kills: 0, loot: 0, attacks: 0, attacksWon: 0, spies: 0, expeditions: 0, defenses: 0, events: 0, gifts: 0, treaties: 0 };
+  return {
+    kills: 0,
+    loot: 0,
+    attacks: 0,
+    attacksWon: 0,
+    spies: 0,
+    expeditions: 0,
+    defenses: 0,
+    events: 0,
+    gifts: 0,
+    treaties: 0,
+    ruins: 0,
+    invasions: 0,
+    invasionWaves: 0,
+    renownBonus: 0,
+  };
 }
 
 function randomSeed() {
@@ -129,6 +144,9 @@ const MIGRATIONS = {
     diplomacy: data.diplomacy ?? {},
     version: 11,
   }),
+  // 2.0: kahraman, şan ve unvan, harabeler, Moğol akını, tarihçe. Kahraman, akın takvimi ve
+  // tarihçe motorca kurulur; unvan, kayıttaki başarılardan hesaplanan şana göre hemen verilir.
+  11: (data) => ({ ...data, player: { ...data.player, title: data.player?.title ?? 0 }, version: 12 }),
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */

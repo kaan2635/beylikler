@@ -22,11 +22,11 @@ export function armyCarry(units) {
 }
 
 /** Kuşatma gücü: koçbaşı suru, mancınık seçilen binayı döver; Topçu ikisini birden, dört katı. */
-export function siegeEngines(units) {
+export function siegeEngines(units, factor = 1) {
   const cannons = units.topcu ?? 0;
   return {
-    rams: (units.kocbasi ?? 0) + COMBAT.cannonSiege * cannons,
-    catapults: (units.mancinik ?? 0) + COMBAT.cannonSiege * cannons,
+    rams: Math.floor(((units.kocbasi ?? 0) + COMBAT.cannonSiege * cannons) * factor),
+    catapults: Math.floor(((units.mancinik ?? 0) + COMBAT.cannonSiege * cannons) * factor),
   };
 }
 

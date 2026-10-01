@@ -70,6 +70,20 @@ const ICONS = {
   'mevsim-sonbahar': line('<path d="M5 19C5 10.5 11 5 20 5c0 9-5.5 15-14 15"/><path d="M5 19l9-9"/>'),
   'mevsim-kis': line('<path d="M12 2v20M3.5 7l17 10M20.5 7l-17 10"/><path d="M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5"/>'),
   baris: line('<path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/>'),
+  // 2.0: kahraman, eşya yuvaları, şan, harabe, Moğol ordugâhı, tarihçe.
+  'nav-kahraman': line('<path d="M12 2.5c-1.2 3.2-6.5 6.2-6.5 11.5h13c0-5.3-5.3-8.3-6.5-11.5z"/><path d="M4.5 14h15"/><path d="M12 14v5"/><path d="M6.5 14v3.5c0 2 2 3.5 3.5 4M17.5 14v3.5c0 2-2 3.5-3.5 4"/>'),
+  'nav-tarihce': line('<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/><circle cx="19" cy="6" r="1.2" fill="currentColor"/>'),
+  silah: line('<path d="M19.5 3H21v1.5L10 15.5 8.5 14z"/><path d="M6 12l6 6"/><path d="M8.5 15.5L4 20"/>'),
+  zirh: line('<path d="M8 3h8l4 4-2 3v10H6V10L4 7z"/><path d="M9 3c0 2 1.3 3 3 3s3-1 3-3"/><path d="M6 14h12M12 6v14"/>'),
+  at: line('<path d="M8 21v-5.5C5.5 14.5 4.5 12 5.5 9.5L10 4l1.5 2 4 1c2.5.8 4 3 4 5.5l-2.2 1-2.8-2-1.3 3.8L15 21"/><circle cx="11" cy="8.5" r=".9" fill="currentColor"/>'),
+  nisan: line('<circle cx="12" cy="15" r="5.5"/><path d="M8 3l4 6.5L16 3"/><path d="M12 12l1 2 2.2.3-1.6 1.5.4 2.2-2-1.1-2 1.1.4-2.2-1.6-1.5 2.2-.3z" fill="currentColor"/>'),
+  san: line('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>'),
+  yara: line('<path d="M5.6 13.9l8.3-8.3a3 3 0 0 1 4.2 4.2l-8.3 8.3a3 3 0 0 1-4.2-4.2z"/><path d="M10 10l4 4"/>'),
+  harabe: line('<path d="M3 21h18"/><path d="M5 21V10h4v11"/><path d="M4 10h6"/><path d="M14 21v-7l1.5-1.5L17 14v7"/><path d="M13 9l2-2 1.5 1 2.5-2"/>'),
+  ordugah: line('<path d="M2.5 20.5L12 5l9.5 15.5z"/><path d="M9 20.5l3-6 3 6"/><path d="M12 5V2l3.5 1.2L12 4.4"/>'),
+  harita2: line('<path d="M4 5l5-2 6 2 5-2v15l-5 2-6-2-5 2z"/><path d="M9 3v15M15 5v15"/><path d="M11 10l2 2M13 10l-2 2"/>'),
+  gunes: line('<circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22"/>'),
+  ay: line('<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>'),
   'nav-ayarlar': line('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'),
 };
 

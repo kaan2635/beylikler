@@ -1,7 +1,10 @@
 import { COMBAT, MIN_BUILDING_LEVEL, CONQUEST } from '../config/combat.js';
 import { RESOURCE_IDS } from '../config/resources.js';
 import { PREMIUM } from '../config/classes.js';
-import { hiddenCapacity, towerDefense } from '../core/formulas.js';
+import { hiddenCapacity, towerDefense, terrainDefense } from '../core/formulas.js';
+import { HERO } from '../config/hero.js';
+import { heroGuard, woundHero, heroAfterBattle, returnHero } from './hero.js';
+import { terrainAt } from './world.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { defendersOf, applyDefenderLosses, stationSupport } from './support.js';
 import { bonusOf } from './bonus.js';
@@ -69,6 +72,9 @@ export function pvpAttack(state, village, movement) {
 
   const defenders = defendersOf(defender, target);
   const wall = target.buildings.sur;
+  // İki tarafın kahramanı: saldıranınki orduyla gelir, savunanınki köyündeyse savunur.
+  const hero = movement.hero;
+  const guard = heroGuard(defender, target, at);
   const battle = resolveBattle({
     attackers: movement.units,
     defenders,
@@ -76,9 +82,12 @@ export function pvpAttack(state, village, movement) {
     luck: luckFor(state.world.seed, movement.id),
     attackerTech: village.tech,
     defenderTech: target.tech,
-    attackerBonus: bonusOf(village).attack,
-    defenderBonus: bonusOf(target).defense * (1 + towerDefense(target.buildings.kule ?? 0)),
+    attackerBonus: bonusOf(village).attack * (1 + (hero?.attack ?? 0)),
+    defenderBonus: bonusOf(target).defense * (1 + towerDefense(target.buildings.kule ?? 0)) * (1 + terrainDefense(terrainAt(state.world.seed, target.x, target.y))),
+    heroAttack: hero?.power ?? 0,
+    heroDefense: guard,
   });
+  if (guard && battle.attackerWins) woundHero(defender, at);
   applyDefenderLosses(defender, target, defenders, battle.defenderLosses);
   const survivors = subtractUnits(movement.units, battle.attackerLosses);
 
@@ -88,9 +97,9 @@ export function pvpAttack(state, village, movement) {
   if (battle.attackerWins) {
     const hidden = hiddenCapacity(target.buildings.gizlidepo);
     const available = Object.fromEntries(RESOURCE_IDS.map((id) => [id, Math.max(0, target.resources[id] - hidden)]));
-    Object.assign(loot, distributeLoot(available, armyCarry(survivors) * bonusOf(village).carry));
+    Object.assign(loot, distributeLoot(available, armyCarry(survivors) * bonusOf(village).carry * (1 + (hero?.carry ?? 0))));
     for (const id of RESOURCE_IDS) target.resources[id] -= loot[id];
-    const { rams, catapults } = siegeEngines(survivors);
+    const { rams, catapults } = siegeEngines(survivors, bonusOf(village).siege);
     if (rams) {
       const down = siegeLevels(rams, wall, COMBAT.ramsPerLevel);
       target.buildings.sur -= down;
@@ -149,6 +158,7 @@ export function pvpAttack(state, village, movement) {
     siege,
     ...(conquest && { conquest }),
     ...(movement.catapultTarget && { catapultTarget: movement.catapultTarget }),
+    ...(hero && { hero: { name: hero.name } }),
   });
   const defense = addReport(defender, {
     type: 'savunma',
@@ -180,10 +190,14 @@ export function pvpAttack(state, village, movement) {
     grantAkce(defender, PREMIUM.rewards.defense, `Savunma zaferi: ${target.name}`, at);
   }
 
+  const heroEvents = heroAfterBattle(state, village, movement, battle.attackerWins, HERO.xp.lordWin, battlePoints(battle.defenderLosses));
+  if (hero && battle.attackerWins && (totalUnits(survivors) === 0 || conquest?.conquered)) returnHero(state);
+
   if (totalUnits(survivors) > 0 && !conquest?.conquered) turnBack(movement, survivors, loot);
   else village.movements.splice(village.movements.indexOf(movement), 1);
 
   return {
+    also: heroEvents,
     type: 'attack-result',
     villageId: village.id,
     reportId: report.id,

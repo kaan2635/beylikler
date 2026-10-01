@@ -26,7 +26,7 @@ function untilFirstAttack(state, village) {
   advance(state, T0); // takvimi kur
   const first = Math.min(...Object.values(state.ai.lords).map((e) => e.nextAttackAt));
   const events = advance(state, first);
-  return { first, event: events.find((e) => e.type === 'incoming-attack'), attack: village.incoming[0] };
+  return { first, event: events.find((e) => e.type === 'incoming-attack' && !e.invasion), attack: village.incoming[0] };
 }
 
 test('rakip beyler tohumdan belirlenir: 6 bey, her kişilikten ikişer, halkada, gölde değil', () => {
@@ -81,7 +81,7 @@ test('başlangıç korumasında saldırı olmaz; sonra saldırı yola çıkar, u
   advance(state, T0);
   const protection = DIFFICULTIES.normal.protectionDays * DAY;
   for (const entry of Object.values(state.ai.lords)) assert.ok(entry.nextAttackAt >= T0 + protection);
-  assert.deepEqual(advance(state, T0 + protection - 1).filter((e) => e.type === 'incoming-attack'), []);
+  assert.deepEqual(advance(state, T0 + protection - 1).filter((e) => e.type === 'incoming-attack' && !e.invasion), []);
 
   const { event, attack } = untilFirstAttack(state, village);
   assert.equal(event.type, 'incoming-attack');
@@ -144,7 +144,7 @@ test('koçbaşılı güçlü saldırı kazanırsa oyuncunun surunu yıkar', () =
 test('Barış zorluğunda hiç saldırı olmaz; zorluk değişince takvim yeniden kurulur', () => {
   const { state, village } = game('baris');
   const events = advance(state, T0 + 60 * DAY);
-  assert.equal(events.filter((e) => e.type === 'incoming-attack').length, 0);
+  assert.equal(events.filter((e) => e.type === 'incoming-attack' && !e.invasion).length, 0);
   assert.equal(village.incoming.length, 0);
 
   const now = T0 + 60 * DAY;
@@ -202,7 +202,7 @@ test('saldırılar arasında en az minGapHours geçer; beyler sırayla gelir', (
     const { state } = game(difficulty, 7);
     advance(state, T0); // takvimi kur
     const launched = advance(state, T0 + 40 * DAY)
-      .filter((e) => e.type === 'incoming-attack')
+      .filter((e) => e.type === 'incoming-attack' && !e.invasion)
       .map((e) => e.at);
     assert.ok(launched.length > 0, `${difficulty}: hiç saldırı yok`);
     const gap = DIFFICULTIES[difficulty].minGapHours * HOUR;
@@ -212,7 +212,7 @@ test('saldırılar arasında en az minGapHours geçer; beyler sırayla gelir', (
   const count = (d) => {
     const { state } = game(d, 7);
     advance(state, T0);
-    return advance(state, T0 + 40 * DAY).filter((e) => e.type === 'incoming-attack').length;
+    return advance(state, T0 + 40 * DAY).filter((e) => e.type === 'incoming-attack' && !e.invasion).length;
   };
   assert.ok(count('kolay') < count('normal') && count('normal') < count('zor'));
 });

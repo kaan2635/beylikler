@@ -3,6 +3,8 @@ import { RESOURCE_IDS } from '../config/resources.js';
 import { storageCap, produce, deposit } from './economy.js';
 import { seasonOf } from './seasons.js';
 import { ilimBonuses, unlockedUnits } from './ilim.js';
+import { heroHomeBonus } from './hero.js';
+import { TITLES } from '../config/titles.js';
 
 /**
  * Sınıf, Akçe ve görevliler.
@@ -41,12 +43,13 @@ export function playerBonus(player) {
 }
 
 /**
- * Bütün etkiler: sınıf, görevliler, mevsim, Divan araştırmaları ve olaylardan gelen geçici
- * etkiler (state.player.modifiers).
+ * Bütün etkiler: sınıf, görevliler, unvan, mevsim, Divan araştırmaları ve olaylardan gelen
+ * geçici etkiler (state.player.modifiers).
  */
 export function stateBonus(state) {
   return merge([
     ...playerSources(state.player),
+    TITLES[state.player?.title ?? 0]?.bonus ?? {},
     ...(state.world && seasonOf(state.world) ? [seasonOf(state.world).bonus] : []),
     ...ilimBonuses(state),
     ...(state.player?.modifiers ?? []).map((modifier) => modifier.bonus),
@@ -62,8 +65,16 @@ export { bonusOf } from './bonus.js';
 export function syncBonuses(state) {
   const bonus = stateBonus(state);
   const unlocks = unlockedUnits(state);
+  // Kahramanın köyü fethedilip elden çıktıysa başkente döner.
+  if (state.hero && !state.villages[state.hero.home]) {
+    state.hero.home = (Object.values(state.villages).find((v) => v.capital) ?? Object.values(state.villages)[0]).id;
+  }
+  // Köyündeki kahraman o köyün üretimini ve savunmasını artırır.
+  const hero = heroHomeBonus(state);
+  const heroBonus = hero ? Object.freeze({ ...bonus, production: bonus.production * hero.production, defense: bonus.defense * hero.defense }) : null;
   for (const village of Object.values(state.villages)) {
-    Object.defineProperty(village, 'bonus', { value: bonus, enumerable: false, writable: true, configurable: true });
+    const value = heroBonus && village.id === hero.villageId ? heroBonus : bonus;
+    Object.defineProperty(village, 'bonus', { value, enumerable: false, writable: true, configurable: true });
     Object.defineProperty(village, 'unlocks', { value: unlocks, enumerable: false, writable: true, configurable: true });
   }
 }

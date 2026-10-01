@@ -20,13 +20,20 @@ import { createChatView } from './views/chat.js';
 import { createDivanView } from './views/divan.js';
 import { createDiplomacyView } from './views/diplomacy.js';
 import { openEventDialog } from './event-dialog.js';
+import { createHeroView } from './views/hero.js';
+import { createHistoryView } from './views/history.js';
+import { maybeShowWhatsNew, openIntro } from './whats-new.js';
+import { titleOf } from '../systems/renown.js';
+import { heroHealthy } from '../systems/hero.js';
+import { RARITIES } from '../config/hero.js';
+import { REGIONS } from '../config/expedition.js';
 import { seasonOf, seasonLeft } from '../systems/seasons.js';
 import { ILIM } from '../config/ilim.js';
 import { openClassPicker } from './class-picker.js';
 import { openHelp } from './help.js';
 import { CLASSES, OFFICERS } from '../config/classes.js';
 import { initToasts, toast } from './toast.js';
-import { h } from './dom.js';
+import { h, setText } from './dom.js';
 import { icon } from './icons.js';
 import { fmtInt, fmtDuration, fmtClock } from './format.js';
 
@@ -48,6 +55,8 @@ const ROUTES = {
   sohbet: (ctx) => createChatView(ctx),
   divan: (ctx) => createDivanView(ctx),
   diplomasi: (ctx) => createDiplomacyView(ctx),
+  kahraman: (ctx) => createHeroView(ctx),
+  tarihce: (ctx) => createHistoryView(ctx),
 };
 
 // Sekmesi olmayan bina sayfalarında hangi sekme seçili görünsün.
@@ -117,6 +126,14 @@ export function mountApp(game, { isNew, events }) {
   const alertText = h('span');
   incomingAlert.append(icon('saldiri'), alertText);
   const villageSwitch = document.getElementById('village-switch');
+  const titleChip = document.getElementById('title-chip');
+  const titleText = h('span', { class: 'title-name' });
+  const heroState = h('span', { class: 'title-hero' });
+  titleChip?.append(icon('tac'), titleText, heroState);
+  const heroBadge = document.getElementById('hero-badge');
+  const invasionAlert = document.getElementById('invasion-alert');
+  const invasionText = h('span');
+  invasionAlert?.append(icon('ordugah'), h('span', { class: 'invasion-label' }, 'Moğol akını · '), invasionText);
   const overviewTab = document.querySelector('[data-route="koyler"]');
   // Sekmelere simge
   for (const link of document.querySelectorAll('.tabs [data-route]')) link.prepend(icon(`nav-${link.dataset.route}`));
@@ -201,6 +218,34 @@ export function mountApp(game, { isNew, events }) {
       onlineChip.title = game.room?.host ? 'Oda senin tarayıcında açık. Davet için: Ayarlar → Çok oyunculu' : 'Çok oyunculu dünya · sohbet';
     }
 
+    // Unvan ve kahraman: tepe çubuğunda; dağıtılmamış puan varsa rozet.
+    const hero = game.state.hero;
+    if (titleChip) {
+      titleChip.hidden = !game.state.player.class;
+      setText(titleText, titleOf(game.state).name);
+      const wounded = hero && !heroHealthy(hero, now);
+      setText(heroState, hero ? (wounded ? 'yaralı' : hero.away ? 'seferde' : `${hero.level}. sv`) : '');
+      titleChip.classList.toggle('wounded', !!wounded);
+      titleChip.classList.toggle('has-points', !!hero?.points);
+      titleChip.title = hero ? `${titleOf(game.state).name} · Kahraman ${hero.name}, ${hero.level}. seviye${hero.points ? ` · ${hero.points} puan dağıtılabilir` : ''}` : 'Kahraman';
+    }
+    if (heroBadge) {
+      heroBadge.hidden = !hero?.points;
+      heroBadge.textContent = String(hero?.points ?? 0);
+    }
+    // Moğol akını: ordugâh kurulduysa her sayfadan görünen uyarı.
+    const invasion = game.state.invasion;
+    if (invasionAlert) {
+      const camp = invasion?.phase === 'active' ? invasion.camp : null;
+      invasionAlert.hidden = !camp;
+      if (camp) {
+        invasionAlert.href = `#/harita/${camp.x}/${camp.y}`;
+        const next = invasion.nextWaveAt ? fmtDuration((invasion.nextWaveAt - now) / 1000) : invasion.leaveAt ? `çekilme ${fmtDuration((invasion.leaveAt - now) / 1000)}` : '';
+        invasionText.textContent = `${invasion.wavesLeft} dalga${next ? ` · ${next}` : ''}`;
+        invasionAlert.title = `Moğol ordugâhı (${camp.x}|${camp.y}). Ordugâhı dağıtırsan akın biter ve büyük ödül kazanırsın.`;
+      }
+    }
+
     // Köye gelen bey saldırıları: tepe çubuğunda her sayfadan görünen uyarı.
     const incoming = Object.values(game.state.villages).flatMap((village) => village.incoming);
     incomingAlert.hidden = incoming.length === 0;
@@ -271,14 +316,19 @@ export function mountApp(game, { isNew, events }) {
   route();
 
   const welcome = () => toast('Beyliğine hoş geldin! Sahnede bir binaya tıklayıp yükselt; ne yapacağını Görevler gösterir. Rehber için tepedeki ? düğmesi.', 'success', 9000);
-  if (!game.state.player.class) {
+  const pickClass = () =>
     openClassPicker(game, (classId) => {
       refresh();
       if (isNew) welcome();
       else toast(`Sınıfın: ${CLASSES[classId].name}. Başlangıç Akçen Hazine'de seni bekliyor.`, 'success', 7000);
     });
+  if (!game.state.player.class) {
+    if (isNew) openIntro(pickClass);
+    else pickClass();
   } else if (isNew) {
     welcome();
+  } else {
+    maybeShowWhatsNew();
   }
   announce(events, true);
   if (events.some((event) => event.type === 'victory')) openVictory(game);
@@ -305,11 +355,24 @@ function announce(events, whileAway) {
       'event-expired': 'kendiliğinden çözülen olay',
       'modifier-expired': 'etki sonu',
       'expedition-result': 'keşif',
+      'hero-level': 'kahraman seviyesi',
+      'hero-wounded': 'kahraman yarası',
+      'hero-healed': 'kahraman iyileşmesi',
+      'title-up': 'unvan',
+      'invasion-start': 'Moğol akını',
+      'invasion-end': 'akın sonu',
       achievement: 'başarım',
       victory: 'zafer',
       return: 'dönüş',
     };
-    const parts = Object.entries(counts).map(([type, n]) => `${n} ${labels[type]}`);
+    const parts = Object.entries(counts).filter(([type]) => labels[type]).map(([type, n]) => `${n} ${labels[type]}`);
+    // Unvan ve akın gibi önemli olaylar toplu bildirimde kaybolmasın.
+    for (const event of events) {
+      if (['title-up', 'invasion-start', 'invasion-end'].includes(event.type)) {
+        const message = describe(event);
+        if (message) toast(message.text, message.kind, 9000);
+      }
+    }
     const lostDefense = events.some((event) => event.type === 'defense-result' && !event.defended);
     toast(
       `${whileAway ? 'Sen yokken ' : ''}${parts.join(', ')} gerçekleşti. Ayrıntılar Raporlar'da.`,
@@ -353,6 +416,7 @@ function describe(event) {
     case 'research-complete':
       return { text: `Demirci: ${UNITS[event.unit].name} ${event.level}. seviyeye geliştirildi.`, kind: 'success' };
     case 'incoming-attack':
+      if (event.invasion) return { text: `Moğol akın dalgası yola çıktı! Varış ${fmtClock(event.arriveAt, event.at)}. Surunu ve askerlerini hazırla.`, kind: 'error' };
       return {
         text: `${event.attacker} saldırıya geçti! Varış ${fmtClock(event.arriveAt, event.at)}. Askerlerini ve surunu hazırla.`,
         kind: 'error',
@@ -381,14 +445,34 @@ function describe(event) {
       const overflow = lost > 0 ? ` Ambar dolu olduğu için ${fmtInt(lost)} kaynak kayboldu.` : '';
       return { text: `Tüccarlar ${event.target} köyüne ${fmtInt(total(event.stored))} kaynak ulaştırdı.${overflow}`, kind: 'success' };
     }
+    case 'hero-level':
+      return { text: `${event.name} ${event.level}. seviyeye ulaştı! Kahraman sayfasında özellik puanı seni bekliyor.`, kind: 'success' };
+    case 'hero-wounded':
+      return { text: `${event.name} yaralandı; köyünde iyileşiyor (${fmtClock(event.until, event.at)}).`, kind: 'error' };
+    case 'hero-healed':
+      return { text: `${event.name} iyileşti ve yeniden sefere hazır.`, kind: 'success' };
+    case 'title-up':
+      return { text: `Şanın yayıldı: artık ${event.name} unvanını taşıyorsun! ${event.perks.join(', ')}.`, kind: 'success' };
+    case 'invasion-start':
+      return { text: `Moğol ordusu (${event.x}|${event.y}) yakınına ordugâh kurdu! İlk dalga ${fmtClock(event.firstWaveAt, event.at)} yola çıkacak. Hedef: ${event.target}.`, kind: 'error' };
+    case 'invasion-end': {
+      if (event.outcome === 'destroyed') {
+        const item = event.reward.item ? ` Ganimetler arasında ${RARITIES[event.reward.item.rarity].name.toLowerCase()} bir eşya: ${event.reward.item.name}.` : '';
+        return { text: `Moğol ordugâhı dağıtıldı! +${event.reward.akce} Akçe.${item}`, kind: 'success' };
+      }
+      return event.reward.akce
+        ? { text: `Moğol akını püskürtüldü, ordugâh söküldü. +${event.reward.akce} Akçe.`, kind: 'success' }
+        : { text: 'Moğol ordusu yağmasını tamamlayıp çekildi.', kind: 'info' };
+    }
     case 'achievement':
       return { text: `Başarım: ${event.title} ${'★'.repeat(event.tier)} · +${event.akce} Akçe`, kind: 'success' };
     case 'victory':
       return { text: 'Bütün beyler diz çöktü. Sultanlık ilan edildi!', kind: 'success' };
     case 'expedition-result': {
       const name = EXPEDITION_OUTCOMES[event.outcome].name;
-      const extra =
-        event.outcome === 'akce'
+      const extra = event.item
+        ? ` Kahramana ${RARITIES[event.item.rarity].name.toLowerCase()} bir eşya: ${event.item.name}.`
+        : event.outcome === 'akce' || event.outcome === 'hazine'
           ? ` ${fmtInt(event.akce)} Akçe bulundu!`
           : total(event.loot)
             ? ` ${fmtInt(total(event.loot))} kaynak yolda.`

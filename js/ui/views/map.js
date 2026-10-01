@@ -1,7 +1,10 @@
 import { UNITS, UNIT_IDS } from '../../config/units.js';
 import { TERRAIN, WORLD } from '../../config/world.js';
-import { PERSONALITIES } from '../../config/lords.js';
-import { travelSeconds } from '../../core/formulas.js';
+import { PERSONALITIES, LORD } from '../../config/lords.js';
+import { travelSeconds, terrainDefense } from '../../core/formulas.js';
+import { RUINS, INVASION } from '../../config/sites.js';
+import { siteLive } from '../../systems/sites.js';
+import { drawRuin, drawCamp, drawTerritory, drawLordLabel, drawMarcher, LORD_COLORS } from '../art/map-sites.js';
 import {
   villageAt,
   terrainAt,
@@ -13,6 +16,8 @@ import {
   lordsOf,
   lordVillage,
   lordDefeated,
+  lordPowerIn,
+  nearbyRuins,
 } from '../../systems/world.js';
 import { loyaltyOf } from '../../systems/barbarians.js';
 import { bonusOf } from '../../systems/bonus.js';
@@ -30,6 +35,10 @@ const DEFAULT_ZOOM = 3;
 const NEARBY_RADIUS = 15;
 const NEARBY_LIMIT = 25;
 const RULER = 18; // üst ve sol kenardaki koordinat şeridinin kalınlığı (px)
+const RUIN_RADIUS = 30;
+const RUIN_LIMIT = 12;
+const DAY = 86_400_000;
+const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 // Harita imleri bina görsellerinden bir kez yüklenir; yüklenince harita yeniden çizilir.
 const sprites = new Map();
@@ -60,7 +69,10 @@ function inWild(x, y) {
 /** Harita ekranı: tuval üzerinde sürüklenebilir dünya, seçili alanın bilgisi ve yakın köyler. */
 export function createMapView({ game, refresh }) {
   const attackForm = createAttackForm({ game, refresh });
-  onSpriteLoad = () => requestDraw();
+  onSpriteLoad = () => {
+    layerKey = null; // yüklenen görsel durgun katmana hemen girsin
+    requestDraw();
+  };
   const canvas = h('canvas', {
     class: 'map-canvas',
     tabindex: 0,
@@ -84,6 +96,8 @@ export function createMapView({ game, refresh }) {
   const bulkButton = h('button', { type: 'button', class: 'btn btn-small btn-gold', onclick: onBulk }, icon('serasker'), 'Tümüne tekrar saldır');
   const bulkHint = h('a', { class: 'card-link muted', href: '#/hazine' }, 'Serasker ile tümüne tek tıkla saldır →');
   let lordsSignature = null;
+  const ruinsBody = h('tbody');
+  let ruinsSignature = null;
 
   const el = h(
     'section',
@@ -157,6 +171,26 @@ export function createMapView({ game, refresh }) {
       h(
         'div',
         { class: 'panel-head' },
+        h('h2', null, 'Yakındaki harabeler'),
+        h('span', { class: 'muted' }, `${RUIN_RADIUS} alan içinde · muhafızları yenene hazine, Akçe ve kahramana eşya`),
+      ),
+      h(
+        'div',
+        { class: 'table-wrap' },
+        h(
+          'table',
+          { class: 'data-table' },
+          h('thead', null, h('tr', null, h('th', null, 'Harabe'), h('th', null, 'Zorluk'), h('th', { class: 'num' }, 'Mesafe'), h('th', null, 'Durum'))),
+          ruinsBody,
+        ),
+      ),
+    ),
+    h(
+      'section',
+      { class: 'panel' },
+      h(
+        'div',
+        { class: 'panel-head' },
         h('h2', null, 'Rakip beyler'),
         h('span', { class: 'muted' }, 'Zamanla güçlenir ve sana saldırırlar; sen de onlara saldırabilirsin'),
       ),
@@ -177,7 +211,7 @@ export function createMapView({ game, refresh }) {
     ),
   );
 
-  lordsBody.addEventListener('click', (event) => {
+  const jumpTo = (event) => {
     const button = event.target.closest('button[data-x]');
     if (!button) return;
     const x = Number(button.dataset.x);
@@ -185,7 +219,9 @@ export function createMapView({ game, refresh }) {
     centerOn(x, y);
     select({ x, y });
     canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  });
+  };
+  lordsBody.addEventListener('click', jumpTo);
+  ruinsBody.addEventListener('click', jumpTo);
 
   const cam = { cx: WORLD.center + 0.5, cy: WORLD.center + 0.5, zoom: DEFAULT_ZOOM };
   let selected = null;
@@ -373,6 +409,68 @@ export function createMapView({ game, refresh }) {
     }
   }
 
+  // Durgun katman (arazi, ızgara, bey toprakları, köyler) ayrı bir tuvale saniyede bir ya da
+  // kamera değişince çizilir. Her karede yalnız onun kopyası ve hareketli olanlar (harabe
+  // parıltısı, ordugâh, yürüyen ordular) çizilir; böylece canlı harita ucuz kalır.
+  const layer = document.createElement('canvas');
+  const lctx = layer.getContext('2d');
+  let layerKey = null;
+  let layerSites = [];
+  let colors = null;
+
+  function drawStatic(state, t, w, hgt, dpr, toScreenX, toScreenY, bounds) {
+    const seed = state.world.seed;
+    const { x0, x1, y0, y1 } = bounds;
+    lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    lctx.fillStyle = colors.outside;
+    lctx.fillRect(0, 0, w, hgt);
+    // Önce arazi, sonra köyler: köy çizimleri karesinden biraz taşar, komşu arazi üstüne binmesin.
+    const villages = [];
+    const sites = [];
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        if (!inWorld(x, y)) continue;
+        const sx = toScreenX(x);
+        const sy = toScreenY(y);
+        const village = villageAt(state, x, y);
+        drawTerrain(lctx, colors, village ? 'cayir' : terrainAt(seed, x, y), tileDetail(seed, x, y), sx, sy, t);
+        if (village?.kind === 'harabe' || village?.kind === 'akin') sites.push([village, sx - toScreenX(0), sy - toScreenY(0)]);
+        else if (village) villages.push([village, sx, sy]);
+        else if (inWild(x, y)) {
+          lctx.fillStyle = colors.wild; // yabani topraklar: sisle örtülü
+          lctx.fillRect(sx, sy, t + 0.5, t + 0.5);
+        }
+      }
+    }
+    if (t >= 24) {
+      lctx.strokeStyle = colors.grid;
+      lctx.lineWidth = 1;
+      lctx.beginPath();
+      for (let x = x0; x <= x1 + 1; x++) {
+        const sx = Math.round(toScreenX(x)) + 0.5;
+        lctx.moveTo(sx, 0);
+        lctx.lineTo(sx, hgt);
+      }
+      for (let y = y0; y <= y1 + 1; y++) {
+        const sy = Math.round(toScreenY(y)) + 0.5;
+        lctx.moveTo(0, sy);
+        lctx.lineTo(w, sy);
+      }
+      lctx.stroke();
+    }
+    // Bey toprakları: hisarın çevresinde beyin renginde alan (gücüyle genişler).
+    for (const lord of lordsOf(seed)) {
+      if (lordDefeated(state, lord.id)) continue;
+      const radius = (4 + 5 * Math.min(1, lordPowerIn(state, lord) / LORD.maxPower)) * t;
+      const cx = toScreenX(lord.x) + t / 2;
+      const cy = toScreenY(lord.y) + t / 2;
+      if (cx + radius < 0 || cx - radius > w || cy + radius < 0 || cy - radius > hgt) continue;
+      drawTerritory(lctx, cx, cy, radius, LORD_COLORS[lord.index % LORD_COLORS.length]);
+    }
+    for (const [village, sx, sy] of villages) drawVillage(lctx, colors, village, sx, sy, t);
+    return sites;
+  }
+
   function draw() {
     const w = canvas.clientWidth;
     const hgt = canvas.clientHeight;
@@ -380,53 +478,52 @@ export function createMapView({ game, refresh }) {
     const dpr = canvas.width / w;
     const state = game.state;
     const seed = state.world.seed;
-    const colors = readColors(canvas);
     const t = tileSize();
     const toScreenX = (x) => (x - cam.cx) * t + w / 2;
     const toScreenY = (y) => (y - cam.cy) * t + hgt / 2;
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = colors.outside;
-    ctx.fillRect(0, 0, w, hgt);
+    const now = Date.now();
 
     const x0 = Math.floor(cam.cx - w / 2 / t);
     const x1 = Math.floor(cam.cx + w / 2 / t);
     const y0 = Math.floor(cam.cy - hgt / 2 / t);
     const y1 = Math.floor(cam.cy + hgt / 2 / t);
 
-    // Önce arazi, sonra köyler: köy çizimleri karesinden biraz taşar, komşu arazi üstüne binmesin.
-    const villages = [];
-    for (let y = y0; y <= y1; y++) {
-      for (let x = x0; x <= x1; x++) {
-        if (!inWorld(x, y)) continue;
-        const sx = toScreenX(x);
-        const sy = toScreenY(y);
-        const village = villageAt(state, x, y);
-        drawTerrain(ctx, colors, village ? 'cayir' : terrainAt(seed, x, y), tileDetail(seed, x, y), sx, sy, t);
-        if (village) villages.push([village, sx, sy]);
-        else if (inWild(x, y)) {
-          ctx.fillStyle = colors.wild; // yabani topraklar: sisle örtülü
-          ctx.fillRect(sx, sy, t + 0.5, t + 0.5);
-        }
+    const key = `${cam.cx}|${cam.cy}|${t}|${canvas.width}|${canvas.height}|${Math.floor(now / 1000)}`;
+    if (key !== layerKey) {
+      layerKey = key;
+      colors = readColors(canvas);
+      if (layer.width !== canvas.width || layer.height !== canvas.height) {
+        layer.width = canvas.width;
+        layer.height = canvas.height;
+      }
+      layerSites = drawStatic(state, t, w, hgt, dpr, toScreenX, toScreenY, { x0, x1, y0, y1 });
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(layer, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Harabeler ve ordugâh her karede (parıltı, atan halka, dalgalanan tuğ).
+    let animated = false;
+    for (const [village, ox, oy] of layerSites) {
+      const sx = ox + toScreenX(0);
+      const sy = oy + toScreenY(0);
+      if (village.kind === 'harabe') {
+        drawRuin(ctx, village, sx, sy, t, now);
+        animated ||= !village.empty && t >= 24;
+      } else {
+        drawCamp(ctx, sx, sy, t, now);
+        animated = true;
       }
     }
-    if (t >= 24) {
-      ctx.strokeStyle = colors.grid;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let x = x0; x <= x1 + 1; x++) {
-        const sx = Math.round(toScreenX(x)) + 0.5;
-        ctx.moveTo(sx, 0);
-        ctx.lineTo(sx, hgt);
+    if (t >= 32) {
+      for (const lord of lordsOf(seed)) {
+        if (lordDefeated(state, lord.id)) continue;
+        const cx = toScreenX(lord.x) + t / 2;
+        const top = toScreenY(lord.y) - t * 0.15;
+        if (cx < -80 || cx > w + 80 || top < 0 || top > hgt + 20) continue;
+        drawLordLabel(ctx, `${lord.name} Bey`, cx, top, LORD_COLORS[lord.index % LORD_COLORS.length]);
       }
-      for (let y = y0; y <= y1 + 1; y++) {
-        const sy = Math.round(toScreenY(y)) + 0.5;
-        ctx.moveTo(0, sy);
-        ctx.lineTo(w, sy);
-      }
-      ctx.stroke();
     }
-    for (const [village, sx, sy] of villages) drawVillage(ctx, colors, village, sx, sy, t);
 
     if (hover && !drag) {
       ctx.fillStyle = colors.hover;
@@ -438,22 +535,11 @@ export function createMapView({ game, refresh }) {
       ctx.strokeRect(toScreenX(selected.x) + 1.5, toScreenY(selected.y) + 1.5, t - 3, t - 3);
     }
 
-    // Yoldaki ordular ve tüccarlar: köyden hedefe kesikli çizgi ve şu anki yerleri. Tüm köyler.
-    const now = Date.now();
-    const drawArmy = (from, to, color, departAt, arriveAt) => {
+    // Yoldaki ordular ve tüccarlar: köyden hedefe kesikli yol ve üzerinde yürüyen sancaklı kalkan.
+    const drawArmy = (from, to, color, departAt, arriveAt, kind) => {
       const progress = Math.min(1, Math.max(0, (now - departAt) / (arriveAt - departAt)));
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 5]);
-      ctx.beginPath();
-      ctx.moveTo(from[0], from[1]);
-      ctx.lineTo(to[0], to[1]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(from[0] + (to[0] - from[0]) * progress, from[1] + (to[1] - from[1]) * progress, Math.max(4, t / 7), 0, Math.PI * 2);
-      ctx.fill();
+      drawMarcher(ctx, from, to, color, progress, t, now, kind);
+      animated = true;
     };
     const movementColor = {
       saldiri: colors.attack,
@@ -473,14 +559,16 @@ export function createMapView({ game, refresh }) {
         const [from, to] = movement.type === 'donus' ? [turnPoint, home] : [home, away];
         // Keşif birliği sınıra varınca keşif süresi boyunca orada kalır.
         const endAt = movement.type === 'kesif' ? movement.exploreAt : movement.arriveAt;
-        drawArmy(from, to, movementColor[movement.type], movement.departAt, endAt);
+        drawArmy(from, to, movementColor[movement.type], movement.departAt, endAt, movement.type);
       }
       // Köye gelen bey orduları.
       for (const attack of own.incoming) {
         const from = [toScreenX(attack.from.x) + t / 2, toScreenY(attack.from.y) + t / 2];
-        drawArmy(from, home, colors.lordFlag, attack.departAt, attack.arriveAt);
+        drawArmy(from, home, attack.invasion ? '#5a1d14' : colors.lordFlag, attack.departAt, attack.arriveAt, 'saldiri');
       }
     }
+    // Hareket ya da parıltı varken harita akıcı çizilir (sayfa açıkken ve hareket azaltılmadıysa).
+    if (animated && el.isConnected && !document.hidden && !reducedMotion()) requestDraw();
 
     drawRulers(ctx, colors, { x0, x1, y0, y1, t, w, hgt, toScreenX, toScreenY });
   }
@@ -498,7 +586,8 @@ export function createMapView({ game, refresh }) {
     const village = villageAt(state, x, y);
     const loyalty = village && village.kind !== 'oyuncu' ? Math.floor(loyaltyOf(state, village.id)) : '';
     const relation = village?.kind === 'bey' ? `${Math.round(relationOf(state, village.id))}:${peaceActive(state, village.id)}` : '';
-    const signature = `${x}|${y}|${village?.kind}|${village?.points}|${loyalty}|${state.world.speed}|${own.id}|${bonusOf(own).travel}|${relation}`;
+    const site = village?.kind === 'harabe' || village?.kind === 'akin' ? `${village.empty}|${state.invasion?.wavesLeft}|${Math.floor(Date.now() / 30_000)}` : '';
+    const signature = `${x}|${y}|${village?.kind}|${village?.points}|${loyalty}|${state.world.speed}|${own.id}|${bonusOf(own).travel}|${relation}|${site}`;
     if (signature === infoSignature) return;
     infoSignature = signature;
 
@@ -506,6 +595,22 @@ export function createMapView({ game, refresh }) {
     let title;
     if (!inWorld(x, y)) {
       title = 'Dünyanın sınırı';
+    } else if (village?.kind === 'harabe') {
+      title = village.name;
+      const live = siteLive(state, village);
+      rows.push(['Sahibi', 'Eşkıya muhafızlar'], ['Zorluk', `${['Kolay', 'Orta', 'Zor'][village.tier - 1]} (${village.tier}. kademe)`]);
+      if (village.empty) {
+        const left = (village.refillAt - state.world.clock.time) / state.world.speed / 1000;
+        rows.push(['Durum', `Yağmalandı · ${fmtDuration(left)} sonra yeniden dolar`]);
+      } else {
+        rows.push(['Muhafızlar', armyText(live.units) || 'yok'], ['Hazine', `~${fmtInt(Object.values(live.resources).reduce((a, b) => a + b, 0))} kaynak, ${RUINS.akce[village.tier - 1]} Akçe, bir eşya`]);
+      }
+    } else if (village?.kind === 'akin') {
+      title = village.name;
+      const invasion = state.invasion;
+      rows.push(['Sahibi', village.owner], ['Ordu', armyText(siteLive(state, village).units) || 'yok'], ['Kalan dalga', String(invasion?.wavesLeft ?? 0)]);
+      if (invasion?.nextWaveAt) rows.push(['Sıradaki dalga', fmtClock(invasion.nextWaveAt, Date.now())]);
+      else if (invasion?.leaveAt) rows.push(['Çekilme', fmtClock(invasion.leaveAt, Date.now())]);
     } else if (village) {
       title = village.name;
       const owner = { oyuncu: 'Sen', bey: village.owner, barbar: 'Barbar köyü', rakip: `${village.owner} (oyuncu)` }[village.kind];
@@ -527,6 +632,8 @@ export function createMapView({ game, refresh }) {
       title = TERRAIN[terrainAt(state.world.seed, x, y)].name;
       rows.push(['Durum', 'Boş arazi']);
     }
+    const terrainBonus = village && village.kind !== 'oyuncu' && inWorld(x, y) ? terrainDefense(terrainAt(state.world.seed, x, y)) : 0;
+    if (terrainBonus) rows.push(['Arazi', `${TERRAIN[terrainAt(state.world.seed, x, y)].name} · savunma +%${Math.round(terrainBonus * 100)}`]);
     const dist = distance(own.x, own.y, x, y);
     if (dist > 0) rows.push(['Mesafe', `${fmtDecimal(dist)} alan (${own.name} köyünden)`]);
 
@@ -561,6 +668,24 @@ export function createMapView({ game, refresh }) {
       );
     } else if (village?.kind === 'rakip') {
       children.push(h('p', { class: 'muted' }, 'Başka bir oyuncunun köyü. Gözcü gönderip ordusunu öğrenebilir, saldırıp yağmalayabilirsin; başkent dışındaki köyler elçilerle fethedilebilir.'));
+    } else if (village?.kind === 'harabe') {
+      children.push(
+        h(
+          'p',
+          { class: 'muted' },
+          village.empty
+            ? 'Bu harabe yakın zamanda yağmalandı; hazinesi yeniden birikiyor.'
+            : 'Kadim bir yapının kalıntıları. Muhafızlarını yenen hazineyi, Akçeyi ve kahraman için bir eşyayı alır. Uzaktaki harabeler daha güçlü korunur ama daha değerlidir.',
+        ),
+      );
+    } else if (village?.kind === 'akin') {
+      children.push(
+        h(
+          'p',
+          { class: 'muted' },
+          `Moğol akıncılarının ordugâhı. Buradan köyüne dalga dalga saldırırlar. Ordugâhı dağıtırsan akın biter: +${INVASION.rewards.akce} Akçe, nadir ya da efsanevi bir eşya ve büyük şan.`,
+        ),
+      );
     } else if (village?.kind === 'bey') {
       children.push(
         h('p', { class: 'muted' }, `Rakip bey. ${PERSONALITIES[village.personality].description}`),
@@ -575,6 +700,37 @@ export function createMapView({ game, refresh }) {
       children.push(h('p', { class: 'muted' }, 'Göle köy kurulamaz.'));
     }
     info.replaceChildren(...children);
+  }
+
+  /** Yakındaki harabeler: durumlarıyla. */
+  function renderRuins() {
+    const state = game.state;
+    const own = game.village;
+    const list = nearbyRuins(state, own.x, own.y, RUIN_RADIUS).slice(0, RUIN_LIMIT);
+    const minute = Math.floor(Date.now() / 60_000);
+    const signature = `${own.id}|${minute}|${list.map((r) => `${r.id}:${r.empty}`).join('|')}`;
+    if (signature === ruinsSignature) return;
+    ruinsSignature = signature;
+    ruinsBody.replaceChildren(
+      ...(list.length
+        ? list.map((r) =>
+            h(
+              'tr',
+              null,
+              h('td', { class: 'wrap' }, h('button', { type: 'button', class: 'link-btn', dataset: { x: r.x, y: r.y } }, r.name), h('span', { class: 'cell-sub' }, `(${r.x}|${r.y})`)),
+              h('td', null, h('span', { class: 'ruin-tier', title: `${r.tier}. kademe` }, `${'★'.repeat(r.tier)}${'☆'.repeat(3 - r.tier)}`)),
+              h('td', { class: 'num' }, fmtDecimal(r.distance)),
+              h(
+                'td',
+                null,
+                r.empty
+                  ? h('span', { class: 'result result-underway' }, `Boş · ${fmtDuration((r.refillAt - state.world.clock.time) / state.world.speed / 1000)}`)
+                  : h('span', { class: 'result result-win' }, 'Hazine bekliyor'),
+              ),
+            ),
+          )
+        : [h('tr', null, h('td', { class: 'muted', colspan: 4 }, 'Yakında harabe yok; haritanın uzak köşelerine bak.'))]),
+    );
   }
 
   /** Rakip beyler: yakından uzağa. */
@@ -697,6 +853,7 @@ export function createMapView({ game, refresh }) {
       renderInfo();
       renderNearby(now);
       renderLords();
+      renderRuins();
       attackForm.update(now);
       requestDraw(); // barbar köyleri büyür, ordular yol alır
     },

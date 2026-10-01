@@ -15,6 +15,12 @@ import { stationSupport } from './support.js';
 import { bonusOf } from './bonus.js';
 import { resolveExpedition } from './expedition.js';
 import { pvpAttack, pvpSpy } from './pvp.js';
+import { heroAvailable, heroTravelFactor, departHero, returnHero, heroEffects, heroAfterBattle } from './hero.js';
+import { syncBonuses } from './premium.js';
+import { HERO } from '../config/hero.js';
+import { terrainDefense } from '../core/formulas.js';
+import { terrainAt } from './world.js';
+import { attackSite, siteLive } from './sites.js';
 import {
   totalUnits,
   armySpeed,
@@ -75,8 +81,11 @@ export function inspectAttack(state, village, x, y, requested, now, options = {}
   const speed = armySpeed(units);
   const dist = distance(village.x, village.y, x, y);
   const bonus = bonusOf(village);
-  const seconds = Math.max(1, Math.round(travelSeconds(dist, speed, state.world.speed) * bonus.travel));
-  const attack = armyAttack(units, village.tech) * bonus.attack;
+  const withHero = !!options.hero;
+  const travel = withHero ? heroTravelFactor(state) : 1; // kahramanın atı orduyu hızlandırır
+  const seconds = Math.max(1, Math.round(travelSeconds(dist, speed, state.world.speed) * bonus.travel * travel));
+  const hero = withHero && state.hero ? heroEffects(state.hero) : null;
+  const attack = (armyAttack(units, village.tech) + (hero?.power ?? 0)) * bonus.attack * (1 + (hero?.attack ?? 0));
   const own = ownVillageAt(state, x, y);
   const info = {
     ok: false,
@@ -88,9 +97,15 @@ export function inspectAttack(state, village, x, y, requested, now, options = {}
     seconds,
     arriveAt: now + seconds * 1000,
     catapultTarget: (units.mancinik || units.topcu) && !own ? (options.catapultTarget ?? 'konak') : null,
+    hero: withHero,
   };
 
   if (!totalUnits(units)) return { ...info, code: 'empty', reason: 'Göndermek için asker seç' };
+  if (withHero) {
+    const available = heroAvailable(state, village, now);
+    if (!available.ok) return { ...info, code: 'hero', reason: available.reason };
+    if (info.mission === 'casus') return { ...info, code: 'hero', reason: 'Kahraman yalnız gözcülerle gitmez; birliğe savaşçı kat' };
+  }
   const short = Object.keys(units).find((id) => units[id] > village.units[id]);
   if (short) return { ...info, code: 'units', reason: `Köyde yeterli ${UNITS[short].name} yok` };
   if (own) {
@@ -126,6 +141,10 @@ export function sendAttack(state, village, x, y, requested, now, options = {}) {
     ...(check.catapultTarget && { catapultTarget: check.catapultTarget }),
   };
   village.movements.push(movement);
+  if (check.hero) {
+    departHero(state, movement);
+    syncBonuses(state); // köyünden ayrılan kahramanın etkisi kalkar
+  }
   if (pvp) {
     // Saldıran oyuncunun yeni oyuncu koruması biter; savunan, gelen saldırıyı görür.
     if (state.player) state.player.protectUntil = 0;
@@ -171,7 +190,7 @@ export function recallAttack(village, movementId, now, state = null) {
 
 /** Hareketin varış anında olanları uygular ve olayını döndürür. Motor zaman sırasıyla çağırır. */
 export function completeMovement(state, village, movement) {
-  if (movement.type === 'donus') return arriveHome(village, movement);
+  if (movement.type === 'donus') return arriveHome(state, village, movement);
   if (movement.type === 'nakliye') return deliverTransport(state, village, movement);
   if (movement.type === 'destek') return arriveSupport(state, village, movement);
   if (movement.type === 'kesif') return resolveExpedition(state, village, movement);
@@ -197,31 +216,39 @@ function arriveSupport(state, village, movement) {
     return null;
   }
   stationSupport(village, host.id, movement.units);
+  if (movement.hero && state.hero) {
+    state.hero.home = host.id; // kahraman artık bu köyde
+    returnHero(state);
+  }
   village.movements.splice(village.movements.indexOf(movement), 1);
   return { type: 'support-arrived', villageId: village.id, targetId: host.id, target: host.name, units: movement.units, at: movement.arriveAt };
 }
 
 function attack(state, village, movement, target) {
+  if (target.kind === 'harabe' || target.kind === 'akin') return attackSite(state, village, movement, target);
   const live = barbarianLive(state, target);
+  const hero = movement.hero;
   const battle = resolveBattle({
     attackers: movement.units,
     defenders: live.units,
     wallLevel: target.buildings.sur,
     luck: luckFor(state.world.seed, movement.id),
     attackerTech: village.tech,
-    attackerBonus: bonusOf(village).attack,
+    attackerBonus: bonusOf(village).attack * (1 + (hero?.attack ?? 0)),
+    defenderBonus: 1 + terrainDefense(terrainAt(state.world.seed, target.x, target.y)),
+    heroAttack: hero?.power ?? 0,
   });
   const survivors = subtractUnits(movement.units, battle.attackerLosses);
   const available = {};
   for (const id of RESOURCE_IDS) available[id] = Math.max(0, live.resources[id] - live.hidden);
   const loot = battle.attackerWins
-    ? distributeLoot(available, armyCarry(survivors) * bonusOf(village).carry)
+    ? distributeLoot(available, armyCarry(survivors) * bonusOf(village).carry * (1 + (hero?.carry ?? 0)))
     : Object.fromEntries(RESOURCE_IDS.map((id) => [id, 0]));
 
   const leftResources = {};
   for (const id of RESOURCE_IDS) leftResources[id] = live.resources[id] - loot[id];
   recordBarbarian(state, target, subtractUnits(live.units, battle.defenderLosses), leftResources);
-  const siege = battle.attackerWins ? besiege(state, target, survivors, movement.catapultTarget) : {};
+  const siege = battle.attackerWins ? besiege(state, target, survivors, movement.catapultTarget, bonusOf(village).siege) : {};
 
   // Elçiler: bağlılığı düşürür, sıfırlanırsa köy fethedilir (birlikler ve ganimet köyde kalır).
   const afterSiege = {
@@ -251,6 +278,7 @@ function attack(state, village, movement, target) {
     siege,
     ...(conquest && { conquest }),
     ...(movement.catapultTarget && { catapultTarget: movement.catapultTarget }),
+    ...(hero && { hero: { name: hero.name } }),
   });
   state.stats.kills += battlePoints(battle.defenderLosses);
   state.stats.loot += resourceTotal(loot);
@@ -258,11 +286,16 @@ function attack(state, village, movement, target) {
   if (battle.attackerWins) state.stats.attacksWon = (state.stats.attacksWon ?? 0) + 1;
   if (target.kind === 'bey' && !conquest?.conquered) recordPlayerAttackOnLord(state, report);
 
+  // Kahraman: yenilgide yaralanır; zaferde tecrübe kazanır, ordu dönmüyorsa hemen köyüne döner.
+  const heroEvents = heroAfterBattle(state, village, movement, battle.attackerWins, target.kind === 'bey' ? HERO.xp.lordWin : HERO.xp.winBase, battlePoints(battle.defenderLosses));
+  if (hero && battle.attackerWins && (totalUnits(survivors) === 0 || conquest?.conquered)) returnHero(state);
+
   // Fetihte birlikler yeni köyde kalır; aksi halde sağ kalanlar ganimetle döner.
   if (totalUnits(survivors) > 0 && !conquest?.conquered) turnBack(movement, survivors, loot);
   else village.movements.splice(village.movements.indexOf(movement), 1);
 
   return {
+    also: heroEvents,
     type: 'attack-result',
     villageId: village.id,
     reportId: report.id,
@@ -279,9 +312,9 @@ function attack(state, village, movement, target) {
  * Kazanılan savaştan sonra sağ kalan koçbaşılar suru, mancınıklar seçilen binayı yıkar.
  * Yıkım barbar köyüne yazılır; köy onu zamanla onarır.
  */
-function besiege(state, target, survivors, catapultTarget) {
+function besiege(state, target, survivors, catapultTarget, factor = 1) {
   const siege = {};
-  const { rams, catapults } = siegeEngines(survivors);
+  const { rams, catapults } = siegeEngines(survivors, factor);
   if (rams) {
     const from = target.buildings.sur;
     const down = siegeLevels(rams, from, COMBAT.ramsPerLevel);
@@ -303,7 +336,7 @@ function besiege(state, target, survivors, catapultTarget) {
  */
 function spyOn(state, village, movement, target) {
   if (target.kind === 'bey') adjustRelation(state, target.id, DIPLOMACY.spyPenalty);
-  const live = barbarianLive(state, target);
+  const live = target.kind === 'harabe' || target.kind === 'akin' ? siteLive(state, target) : barbarianLive(state, target);
   const scouts = movement.units.gozcu;
   const guards = live.units.gozcu ?? 0;
   const success = scouts > guards;
@@ -352,7 +385,8 @@ function reportTarget(target) {
 }
 
 /** Hareketi dönüşe çevirir: aynı süreyle geri gelir. */
-function arriveHome(village, movement) {
+function arriveHome(state, village, movement) {
+  if (movement.hero) returnHero(state);
   for (const [id, n] of Object.entries(movement.units)) village.units[id] += n;
   const stored = deposit(village, movement.loot ?? {});
   village.movements.splice(village.movements.indexOf(movement), 1);

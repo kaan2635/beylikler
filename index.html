@@ -15,98 +15,111 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <!-- Aşağıdaki blok tools/stamp.js ile üretilir; elle düzenleme, npm run stamp çalıştır. -->
     <!-- sürüm-damgası:başla -->
-    <link rel="stylesheet" href="css/style.css?v=80e5b95991" />
+    <link rel="stylesheet" href="css/style.css?v=722196dc32" />
     <script type="importmap">
       {
         "imports": {
           "./js/config/buildings.js": "./js/config/buildings.js?v=30a259f3b3",
-          "./js/config/classes.js": "./js/config/classes.js?v=e92fdb9384",
+          "./js/config/classes.js": "./js/config/classes.js?v=5040a5826a",
           "./js/config/combat.js": "./js/config/combat.js?v=550571732e",
           "./js/config/events.js": "./js/config/events.js?v=282ae13d90",
-          "./js/config/expedition.js": "./js/config/expedition.js?v=0f36b6f170",
-          "./js/config/game.js": "./js/config/game.js?v=e03a8f4708",
-          "./js/config/ilim.js": "./js/config/ilim.js?v=6a88008fc6",
+          "./js/config/expedition.js": "./js/config/expedition.js?v=795f1301f4",
+          "./js/config/game.js": "./js/config/game.js?v=f108e468b2",
+          "./js/config/hero.js": "./js/config/hero.js?v=98b34c219d",
+          "./js/config/ilim.js": "./js/config/ilim.js?v=59a6c52e86",
           "./js/config/lords.js": "./js/config/lords.js?v=5690469e4a",
-          "./js/config/quests.js": "./js/config/quests.js?v=588a54dfab",
+          "./js/config/quests.js": "./js/config/quests.js?v=5b0e4ec76b",
           "./js/config/resources.js": "./js/config/resources.js?v=cb79e93d26",
           "./js/config/seasons.js": "./js/config/seasons.js?v=c93f3545bc",
+          "./js/config/sites.js": "./js/config/sites.js?v=1fa92a4ef5",
           "./js/config/tech.js": "./js/config/tech.js?v=15752493b4",
+          "./js/config/titles.js": "./js/config/titles.js?v=eb43893320",
           "./js/config/units.js": "./js/config/units.js?v=27683cdf41",
           "./js/config/world.js": "./js/config/world.js?v=075c2eb978",
-          "./js/core/engine.js": "./js/core/engine.js?v=037af28841",
-          "./js/core/formulas.js": "./js/core/formulas.js?v=bc6e1c6ce2",
+          "./js/core/engine.js": "./js/core/engine.js?v=1e57196bc0",
+          "./js/core/formulas.js": "./js/core/formulas.js?v=00d9205722",
           "./js/core/random.js": "./js/core/random.js?v=8b15337135",
           "./js/core/save-codec.js": "./js/core/save-codec.js?v=bfba8eba96",
-          "./js/core/state.js": "./js/core/state.js?v=52a0b8f24e",
+          "./js/core/state.js": "./js/core/state.js?v=d68030ebb3",
           "./js/core/village.js": "./js/core/village.js?v=43b0118869",
-          "./js/game.js": "./js/game.js?v=9d143bbec1",
+          "./js/game.js": "./js/game.js?v=7f09c0b3d0",
           "./js/main.js": "./js/main.js?v=73da66fbd4",
-          "./js/net/actions.js": "./js/net/actions.js?v=4d9fb325cf",
+          "./js/net/actions.js": "./js/net/actions.js?v=8685df8d19",
           "./js/net/api.js": "./js/net/api.js?v=0cdd80955c",
           "./js/net/host.js": "./js/net/host.js?v=725c2a9a0e",
-          "./js/net/online-game.js": "./js/net/online-game.js?v=b7fd50ec99",
+          "./js/net/online-game.js": "./js/net/online-game.js?v=d81f01a92c",
           "./js/net/p2p.js": "./js/net/p2p.js?v=56c136e155",
           "./js/storage/local-store.js": "./js/storage/local-store.js?v=32dd81302d",
-          "./js/systems/ai.js": "./js/systems/ai.js?v=f5a7e970c5",
-          "./js/systems/army.js": "./js/systems/army.js?v=d176b25c1d",
+          "./js/systems/ai.js": "./js/systems/ai.js?v=07da792b59",
+          "./js/systems/army.js": "./js/systems/army.js?v=2e05c8854a",
           "./js/systems/barbarians.js": "./js/systems/barbarians.js?v=3625757644",
           "./js/systems/bonus.js": "./js/systems/bonus.js?v=e30406b689",
-          "./js/systems/combat.js": "./js/systems/combat.js?v=07c080280e",
+          "./js/systems/combat.js": "./js/systems/combat.js?v=6ea15ea8ae",
           "./js/systems/conquest.js": "./js/systems/conquest.js?v=117615685a",
           "./js/systems/construction.js": "./js/systems/construction.js?v=b7f6f483b2",
           "./js/systems/diplomacy.js": "./js/systems/diplomacy.js?v=ebca8df473",
           "./js/systems/economy.js": "./js/systems/economy.js?v=7f04a8db59",
-          "./js/systems/events.js": "./js/systems/events.js?v=7f4513e021",
-          "./js/systems/expedition.js": "./js/systems/expedition.js?v=514d14d9e5",
+          "./js/systems/events.js": "./js/systems/events.js?v=c0bc96e050",
+          "./js/systems/expedition.js": "./js/systems/expedition.js?v=10f15177f6",
+          "./js/systems/hero.js": "./js/systems/hero.js?v=aab453ae9d",
+          "./js/systems/history.js": "./js/systems/history.js?v=f49714b088",
           "./js/systems/ilim.js": "./js/systems/ilim.js?v=20796a7340",
           "./js/systems/market.js": "./js/systems/market.js?v=68c1200b89",
-          "./js/systems/movements.js": "./js/systems/movements.js?v=c7374c1af8",
+          "./js/systems/movements.js": "./js/systems/movements.js?v=793f89788b",
           "./js/systems/multiplayer.js": "./js/systems/multiplayer.js?v=3be1a41073",
-          "./js/systems/premium.js": "./js/systems/premium.js?v=a30cd5156e",
-          "./js/systems/pvp.js": "./js/systems/pvp.js?v=fe0f92c4d6",
-          "./js/systems/quests.js": "./js/systems/quests.js?v=be625e815e",
+          "./js/systems/premium.js": "./js/systems/premium.js?v=fc04091db7",
+          "./js/systems/pvp.js": "./js/systems/pvp.js?v=b7791df962",
+          "./js/systems/quests.js": "./js/systems/quests.js?v=0cb647839e",
           "./js/systems/ranking.js": "./js/systems/ranking.js?v=18bad2b297",
+          "./js/systems/renown.js": "./js/systems/renown.js?v=4b3a1e7f3b",
           "./js/systems/research.js": "./js/systems/research.js?v=f141919ed7",
           "./js/systems/seasons.js": "./js/systems/seasons.js?v=0869bbd0d5",
+          "./js/systems/sites.js": "./js/systems/sites.js?v=cf8329415c",
           "./js/systems/support.js": "./js/systems/support.js?v=3b4c02a925",
           "./js/systems/training.js": "./js/systems/training.js?v=813ef5f726",
-          "./js/systems/world.js": "./js/systems/world.js?v=4ee2259491",
-          "./js/ui/app.js": "./js/ui/app.js?v=a154ca5d55",
+          "./js/systems/world.js": "./js/systems/world.js?v=d9a9deda3e",
+          "./js/ui/app.js": "./js/ui/app.js?v=c53a4c51c1",
           "./js/ui/art/credits.js": "./js/ui/art/credits.js?v=27d92578ec",
           "./js/ui/art/custom-icons.js": "./js/ui/art/custom-icons.js?v=c0d48d75e4",
           "./js/ui/art/game-icons.js": "./js/ui/art/game-icons.js?v=e5f3340ee1",
           "./js/ui/art/iso.js": "./js/ui/art/iso.js?v=a613796ed2",
-          "./js/ui/art/scene.js": "./js/ui/art/scene.js?v=714d60dba1",
+          "./js/ui/art/map-sites.js": "./js/ui/art/map-sites.js?v=b17eafa79e",
+          "./js/ui/art/portrait.js": "./js/ui/art/portrait.js?v=ab59a9961d",
+          "./js/ui/art/scene.js": "./js/ui/art/scene.js?v=54b97a0448",
           "./js/ui/art/sprites.js": "./js/ui/art/sprites.js?v=cfaae27c34",
+          "./js/ui/art/stages.js": "./js/ui/art/stages.js?v=235dbb616a",
           "./js/ui/bonus-text.js": "./js/ui/bonus-text.js?v=f6c187c162",
-          "./js/ui/building-card.js": "./js/ui/building-card.js?v=38a223c81f",
+          "./js/ui/building-card.js": "./js/ui/building-card.js?v=433ba01c39",
           "./js/ui/building-dialog.js": "./js/ui/building-dialog.js?v=0229853727",
           "./js/ui/class-picker.js": "./js/ui/class-picker.js?v=415da1eaf2",
           "./js/ui/dom.js": "./js/ui/dom.js?v=99613f402c",
           "./js/ui/event-dialog.js": "./js/ui/event-dialog.js?v=b3f9ba5754",
           "./js/ui/format.js": "./js/ui/format.js?v=423ebdf8a0",
-          "./js/ui/help.js": "./js/ui/help.js?v=9fd18cfd5b",
-          "./js/ui/icons.js": "./js/ui/icons.js?v=14bfc4719f",
+          "./js/ui/help.js": "./js/ui/help.js?v=06ecebd87f",
+          "./js/ui/icons.js": "./js/ui/icons.js?v=3abb0a911a",
           "./js/ui/online-login.js": "./js/ui/online-login.js?v=61ce3c8146",
           "./js/ui/resource-bar.js": "./js/ui/resource-bar.js?v=ff89b2f72e",
           "./js/ui/toast.js": "./js/ui/toast.js?v=1cd41d825e",
           "./js/ui/victory.js": "./js/ui/victory.js?v=bf17d58e35",
           "./js/ui/views/army.js": "./js/ui/views/army.js?v=97281502c0",
-          "./js/ui/views/attack-form.js": "./js/ui/views/attack-form.js?v=16afc22d3a",
+          "./js/ui/views/attack-form.js": "./js/ui/views/attack-form.js?v=b7818be54a",
           "./js/ui/views/chat.js": "./js/ui/views/chat.js?v=073e7790fe",
           "./js/ui/views/diplomacy.js": "./js/ui/views/diplomacy.js?v=735911a81f",
           "./js/ui/views/divan.js": "./js/ui/views/divan.js?v=8e81221b6a",
-          "./js/ui/views/expedition.js": "./js/ui/views/expedition.js?v=3a4d07255b",
-          "./js/ui/views/map.js": "./js/ui/views/map.js?v=238a6d988c",
+          "./js/ui/views/expedition.js": "./js/ui/views/expedition.js?v=ba57c46aef",
+          "./js/ui/views/hero.js": "./js/ui/views/hero.js?v=475b8934a1",
+          "./js/ui/views/history.js": "./js/ui/views/history.js?v=65ce49073d",
+          "./js/ui/views/map.js": "./js/ui/views/map.js?v=cf6a38aab6",
           "./js/ui/views/market.js": "./js/ui/views/market.js?v=a3e6a723cf",
           "./js/ui/views/overview.js": "./js/ui/views/overview.js?v=94c9be63bf",
           "./js/ui/views/quests.js": "./js/ui/views/quests.js?v=7f9d288f66",
           "./js/ui/views/ranking.js": "./js/ui/views/ranking.js?v=32393b9b68",
-          "./js/ui/views/reports.js": "./js/ui/views/reports.js?v=177e904870",
+          "./js/ui/views/reports.js": "./js/ui/views/reports.js?v=6ce9479f67",
           "./js/ui/views/settings.js": "./js/ui/views/settings.js?v=9a1440684a",
           "./js/ui/views/smithy.js": "./js/ui/views/smithy.js?v=2bea12776b",
           "./js/ui/views/treasury.js": "./js/ui/views/treasury.js?v=d028da7ab0",
-          "./js/ui/views/village.js": "./js/ui/views/village.js?v=c0603a55f2"
+          "./js/ui/views/village.js": "./js/ui/views/village.js?v=78801491bb",
+          "./js/ui/whats-new.js": "./js/ui/whats-new.js?v=34a593f223"
         }
       }
     </script>
@@ -123,6 +136,8 @@
         </a>
         <select id="village-switch" class="village-switch" aria-label="Yönetilen köy" hidden></select>
         <a id="incoming-alert" class="incoming-alert" href="#/ordu" hidden></a>
+        <a id="invasion-alert" class="invasion-alert" href="#/harita" hidden></a>
+        <a id="title-chip" class="title-chip" href="#/kahraman" title="Kahraman, şan ve unvan" hidden></a>
         <a id="akce-chip" class="akce-chip" href="#/hazine" title="Akçe · Hazine"></a>
         <a id="online-chip" class="online-chip" href="#/ayarlar" title="Çok oyunculu dünya" hidden></a>
         <span id="season-chip" class="season-chip" hidden></span>
@@ -137,6 +152,9 @@
         <a href="#/harita" data-route="harita">Harita</a>
         <a href="#/kesif" data-route="kesif" class="tab-extra">Keşif</a>
         <a href="#/ordu" data-route="ordu">Ordu</a>
+        <a href="#/kahraman" data-route="kahraman" class="tab-extra">
+          Kahraman <span id="hero-badge" class="nav-badge" hidden aria-label="dağıtılmamış özellik puanı"></span>
+        </a>
         <a href="#/raporlar" data-route="raporlar">
           Raporlar <span id="reports-badge" class="nav-badge" hidden aria-label="okunmamış rapor"></span>
         </a>
@@ -146,6 +164,7 @@
         <a href="#/divan" data-route="divan" class="tab-extra">Divan</a>
         <a href="#/diplomasi" data-route="diplomasi" class="tab-extra">Diplomasi</a>
         <a href="#/siralama" data-route="siralama" class="tab-extra">Sıralama</a>
+        <a href="#/tarihce" data-route="tarihce" class="tab-extra">Tarihçe</a>
         <a href="#/sohbet" data-route="sohbet" class="tab-extra" hidden>Sohbet</a>
         <a href="#/ayarlar" data-route="ayarlar" class="tab-extra">Ayarlar</a>
         <!-- Telefonda ikincil sekmeler "Diğer" altında toplanır (bkz. app.js) -->
@@ -165,7 +184,7 @@
     <div id="toasts" class="toasts" aria-live="polite"></div>
 
     <footer class="footer">
-      Beylikler v1.5 · Tek ve çok oyunculu ·
+      Beylikler v2.0 · Tek ve çok oyunculu ·
       <a href="https://github.com/kaan2635/beylikler">Kaynak kod</a> ·
       <a href="#/ayarlar">Emeği geçenler</a>
     </footer>

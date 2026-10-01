@@ -249,12 +249,33 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] 7 yeni görev, 3 yeni başarım; rehberde yeni konular
 - [x] Kayıt şeması 11; 163 birim testi (mevsimler, araştırmalar, Topçu kuşatması, olaylar, diplomasi, kayıt taşıma)
 
+## ✅ Adım 18 — Beylikler 2.0
+
+- [x] **Kahraman:** beyliğin alpı (30 seviye); tecrübe zaferlerden, savaş puanından, görevlerden, harabelerden, keşiften ve olaylardan gelir. Her seviyede 3 özellik puanı: Kılıç (ordunun saldırısı), Kalkan (köyün savunması), Bereket (üretim), Akın (ganimet). Köyündeyken üretime ve savunmaya güç katar; saldırı ve keşif formunda "Kahraman katılsın" seçilirse orduya önderlik eder (kendi gücü atlı sayılır, atı orduyu hızlandırır). Yenilen ordudaki ya da düşen köydeki kahraman yaralanır, 20 oyun saati iyileşir. Destek olarak gönderilen kahraman o köye yerleşir
+- [x] **Eşyalar:** dört yuva (silah, zırh, at, nişan) ve üç nadirlik (sıradan, nadir, efsanevi); 16 yerlik heybe, kuşan/çıkar/sat; heybe doluysa bulunan eşya Akçeye satılır. Özgün çizilmiş kahraman portresi kuşanılan eşyaya ve seviyeye göre değişir
+- [x] **Şan ve unvan:** şan başarılardan hesaplanır (kayda yazılmaz; eski oyunlar hemen doğru unvanla açılır). Bey → Sancakbeyi (250) → Beylerbeyi (800) → Paşa (2000) → Hünkâr (4500); her unvan bütün köylere kalıcı ayrıcalık (üretim, kuyruk, saldırı/savunma, keşif hakkı). Tepe çubuğunda unvan çipi
+- [x] **Harabeler:** haritaya dağılmış kadim harabeler (3 kademe, merkezden uzaklaştıkça güçlü); eşkıya muhafızları dünya günüyle güçlenir. Yenen; hazine, Akçe ve kahramana eşya alır; harabe 5 gün boş kalır. Haritada el çizimi sütunlar, dolu harabede altın parıltı; "Yakındaki harabeler" listesi
+- [x] **Moğol akını:** saldırı olan zorluklarda 7. günden sonra 8–12 günde bir; Moğollar başkentin 9–14 alan yakınına ordugâh kurar, 16 saat sonra 3 dalga hâlinde en büyük köye saldırır. Ordugâhı dağıtan akını bitirir (+40 Akçe, nadir/efsanevi eşya, büyük şan); bütün dalgaları püskürtene de ödül. Haritada çadırlar, tuğ ve atan kırmızı halka; tepe çubuğunda geri sayım
+- [x] **Arazi:** tepedeki yerler +%20, ormandakiler +%10 savunma kazanır (köyler, hisarlar, harabeler); harita bilgisinde ve saldırı formunda görünür
+- [x] **Gelişmiş keşif:** 6 bölge (Sınır Boyları, Kara Ormanlar, Uçsuz Bozkır; Kervansaray 3'te Dumanlı Dağlar, 6'da Kadim Harabeler, 10'da Mavi Kıyılar), her birinin uzaklığı, bulgu ve tehlike olasılıkları, kaynak dağılımı ve eşya kalitesi farklı. 6 yeni bulgu: eşya, büyük hazine, tüccar kervanı (taşıma sınırı olmadan), göçebe oba, yılkı atları, kadim harita (şan ve tecrübe). Keşif ustalığı (her sefer +%1, en çok %30); kahramanla keşif (+%20 bulgu, −%20 tehlike, tecrübe)
+- [x] **Aşamalı bina görünüşleri:** her bina 5 görünüşten geçer (çoğunda 1., 5., 10., 15., 20. seviye; ör. Konak: Ev → Büyük Ev → Konak → Malikâne → Köşk). Büyüyen ana yapı, yan yapılar, çit, taş avlu ve duvar, sancaklar, fenerler, çiçek tarhları, en sonda altın sancak ve hare. Sur da palankadan hisara aşama aşama. Kartlarda ve bina penceresinde aşama adı ve bütün aşamaların küçük resmi
+- [x] **Canlı köy sahnesi:** oyun saatine göre gece ve gündüz (güneş ve ay yay çizer, yıldızlar, fenerler ve pencereler yanar), bulutlar, kuşlar, bacalarda duman, yollarda gidip gelen köylüler ve bir atlı, dalgalanan sancaklar; mevsime göre kar, yaprak, çiçek yaprağı ya da kelebek. "Hareketi azalt" ayarında canlandırmalar kapanır
+- [x] **Canlı harita:** beylerin renkli toprakları (gücüyle genişler) ve ad şeritleri; yolda yürüyen sancaklı ordular; durgun katman ayrı tuvalde, hareketliler her karede (akıcı ama ucuz)
+- [x] **Tarihçe:** her oyun günü bir sayfa; puan, üretim, ordu ve şan grafikleri (üzerinde gezinince o günün değeri) ve "Beyliğin defteri" sayaçları
+- [x] **Raporlar:** güç terazisi, savaşa katılan kahraman, harabe ödülü, bulunan eşya, keşif bölgesi ve şan
+- [x] Divan'da 6. kademe (Konak 15): Medrese (kahraman tecrübesi +%25), Mühendishane (kuşatma gücü +%50), Sancak-ı Şerif (saldırı ve savunma +%5)
+- [x] 8 yeni olay (usta demirci, gezgin ozan, bir beyin düğünü, zelzele, yabancı tüccar, kurultay, sığınmacı ustalar, sürek avı); 8 yeni görev, 3 yeni başarım
+- [x] Yeni oyunda giriş hikâyesi, eski oyunculara "Beylikler 2.0" yenilikler penceresi; rehberde yeni konular
+- [x] Kayıt şeması 12; 178 birim testi (kahraman, eşyalar, unvan, harabeler, Moğol akını, keşif bölgeleri, yeni olaylar, tarihçe, 11 → 12 taşıma)
+
 ## Bilinen sınırlamalar
 
 - Kayıt yalnızca o tarayıcıda durur. Başka cihaza geçmek için Ayarlar → Kayıt kodunu kullan.
 - Sistem saati ileri alınarak zaman atlatılabilir. Tek oyunculuda bu bilerek kabul edildi.
 - İnşaat ve eğitim kuyruklarında yalnızca son iş iptal edilebilir.
-- Barbar köyleri saldırmaz; yalnızca rakip beyler saldırır.
+- Barbar köyleri ve harabeler saldırmaz; yalnızca rakip beyler ve Moğol akınları saldırır.
+- Çok oyunculu dünyalarda Moğol akını yoktur; kahraman, eşyalar ve unvan her oyuncunun kendisinedir.
+- Gece ve gündüz oyun saatine göredir; hızlı dünyalarda gün de hızlı döner.
 - Oyuncu uzun süre uzak kaldıysa aradaki bey saldırıları açılışta sırayla işlenir (çevrimdışı ilerleme).
 - Kuşatma araçları yalnızca kazanılan savaştan sonra yıkım yapar ve sur savaştan önce değil sonra düşer.
 - Destek birlikleri savunulan köyün Demirci geliştirmeleriyle savaşır.

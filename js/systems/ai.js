@@ -3,7 +3,10 @@ import { COMBAT } from '../config/combat.js';
 import { UNITS } from '../config/units.js';
 import { RESOURCE_IDS } from '../config/resources.js';
 import { RESEARCH } from '../config/tech.js';
-import { hiddenCapacity, travelSeconds, towerDefense } from '../core/formulas.js';
+import { hiddenCapacity, travelSeconds, towerDefense, terrainDefense } from '../core/formulas.js';
+import { HERO } from '../config/hero.js';
+import { heroGuard, woundHero, addHeroXp } from './hero.js';
+import { terrainAt } from './world.js';
 import { hash3, mulberry32 } from '../core/random.js';
 import { lordsOf, lordPowerIn, lordVillage, distance, nearbyBarbarians, villagePoints } from './world.js';
 import { barbarianLive, recordBarbarian } from './barbarians.js';
@@ -339,6 +342,8 @@ export function resolveIncoming(state, village, attack) {
   // (Demirci geliştirmeleri savunulan köyünkidir).
   const defenders = defendersOf(state, village);
   const wall = village.buildings.sur;
+  // Köyündeki kahraman da savunur; arazi (tepe, orman) ve Gözetleme Kulesi savunmayı artırır.
+  const guard = heroGuard(state, village, attack.arriveAt);
   const battle = resolveBattle({
     attackers: attack.units,
     defenders,
@@ -346,7 +351,8 @@ export function resolveIncoming(state, village, attack) {
     luck: luckFor(state.world.seed, attack.id),
     attackerTech: attack.tech,
     defenderTech: village.tech,
-    defenderBonus: bonusOf(village).defense * (1 + towerDefense(village.buildings.kule)),
+    defenderBonus: bonusOf(village).defense * (1 + towerDefense(village.buildings.kule)) * (1 + terrainDefense(terrainAt(state.world.seed, village.x, village.y))),
+    heroDefense: guard,
   });
   applyDefenderLosses(state, village, defenders, battle.defenderLosses);
 
@@ -366,17 +372,30 @@ export function resolveIncoming(state, village, attack) {
   }
   village.incoming.splice(village.incoming.indexOf(attack), 1);
 
-  // Sıralama ve haberler: iki tarafın savaş puanı, beyin gücü.
+  // Sıralama ve haberler: iki tarafın savaş puanı, beyin gücü (Moğol akınında bey yok).
   state.stats.kills += battlePoints(battle.attackerLosses);
-  const entry = entryOf(state, attack.lordId);
-  entry.kills += battlePoints(battle.defenderLosses);
-  entry.loot += resourceTotal(loot);
-  adjustBonus(state, attack.lordId, battle.attackerWins ? LORD.bonus.raidWin : LORD.bonus.warLoss);
+  if (!attack.invasion) {
+    const entry = entryOf(state, attack.lordId);
+    entry.kills += battlePoints(battle.defenderLosses);
+    entry.loot += resourceTotal(loot);
+    adjustBonus(state, attack.lordId, battle.attackerWins ? LORD.bonus.raidWin : LORD.bonus.warLoss);
+  }
   addNews(state, attack.arriveAt, `${attack.from.owner} → ${village.name}: ${battle.attackerWins ? 'köy yağmalandı' : 'saldırı püskürtüldü'}.`);
   if (!battle.attackerWins) {
     grantAkce(state, PREMIUM.rewards.defense, `Savunma zaferi: ${village.name}`, attack.arriveAt);
     state.stats.defenses = (state.stats.defenses ?? 0) + 1;
+    if (attack.invasion) {
+      // Püskürtülen akın dalgası (bkz. sites.js)
+      if (state.invasion) state.invasion.wavesDefended = (state.invasion.wavesDefended ?? 0) + 1;
+      state.stats.invasionWaves = (state.stats.invasionWaves ?? 0) + 1;
+    }
   }
+  // Savunan kahraman: yenilgide yaralanır, zaferde tecrübe kazanır.
+  const heroEvents = !guard
+    ? []
+    : battle.attackerWins
+      ? [woundHero(state, attack.arriveAt)]
+      : addHeroXp(state, battlePoints(battle.attackerLosses) * HERO.xp.defensePerKillPoint + HERO.xp.winBase, attack.arriveAt, bonusOf(village).heroXp);
 
   const report = addReport(state, {
     type: 'savunma',
@@ -394,9 +413,11 @@ export function resolveIncoming(state, village, attack) {
     defenderLosses: battle.defenderLosses,
     loot,
     siege,
+    hero: guard ? { name: state.hero.name, guard } : null,
   });
 
   return {
+    also: heroEvents,
     type: 'defense-result',
     villageId: village.id,
     reportId: report.id,

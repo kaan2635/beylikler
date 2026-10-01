@@ -283,7 +283,7 @@ test('barış antlaşması ilişki ve Akçe ister; barışta bey saldırmaz', ()
     assert.ok(peace.ok, peace.reason);
   }
   const events = g.tick(T0 + (DIPLOMACY.peace.days - 0.5) * DAY / state.world.speed);
-  assert.equal(events.filter((e) => e.type === 'incoming-attack').length, 0, 'barışta saldırı yok');
+  assert.equal(events.filter((e) => e.type === 'incoming-attack' && !e.invasion).length, 0, 'barışta saldırı yok');
   assert.equal(state.stats.treaties, lords.length);
 });
 
@@ -293,7 +293,7 @@ test('müttefik bey hiç saldırmaz', () => {
   for (const lord of lordsOf(state.world.seed)) adjustRelation(state, lord.id, 100);
   // İlişki günde 2 düşer; 10 günde müttefiklikten (70) düşmez.
   const events = advance(state, T0 + 10 * DAY);
-  assert.equal(events.filter((e) => e.type === 'incoming-attack').length, 0);
+  assert.equal(events.filter((e) => e.type === 'incoming-attack' && !e.invasion).length, 0);
   assert.ok(DIFFICULTIES.zor.attacks);
 });
 

@@ -1,5 +1,6 @@
 import { UNITS, UNIT_IDS } from '../../config/units.js';
-import { EXPEDITION, EXPEDITION_OUTCOMES } from '../../config/expedition.js';
+import { EXPEDITION, EXPEDITION_OUTCOMES, REGIONS, REGION_IDS } from '../../config/expedition.js';
+import { RARITIES } from '../../config/hero.js';
 import { RESOURCE_IDS } from '../../config/resources.js';
 import {
   inspectExpedition,
@@ -7,7 +8,9 @@ import {
   expeditionScale,
   expeditionSlots,
   expeditionsUnderway,
+  expeditionMastery,
 } from '../../systems/expedition.js';
+import { heroAvailable } from '../../systems/hero.js';
 import { totalUnits } from '../../systems/army.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
@@ -15,6 +18,33 @@ import { fmtInt, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
 
 const SENDABLE = UNIT_IDS.filter((id) => !EXPEDITION.excluded.includes(id));
+const REGION_KEY = 'beylikler:kesif-bolgesi';
+
+// Bölge kartlarında olasılığı değişen sonuçların kısa adları
+const MOD_NAMES = {
+  kaynak: 'Kaynak',
+  asker: 'Paralı asker',
+  akce: 'Akçe',
+  esya: 'Eşya',
+  hazine: 'Hazine',
+  kervan: 'Kervan',
+  kabile: 'Oba',
+  at: 'Yılkı atı',
+  harita: 'Harita',
+  bos: 'Boş dönüş',
+  gecikme: 'Gecikme',
+  eskiya: 'Eşkıya',
+  kayip: 'Kayıp',
+};
+
+function readRegion() {
+  try {
+    const value = localStorage.getItem(REGION_KEY);
+    return REGIONS[value] ? value : 'sinir';
+  } catch {
+    return 'sinir';
+  }
+}
 
 /**
  * Keşif seferleri sayfası: birlik ve keşif süresi seçimi, olası sonuçların olasılıkları,
@@ -45,14 +75,57 @@ export function createExpeditionView({ game, refresh }) {
   const hold = h('select', { id: 'expedition-hold' }, EXPEDITION.holdHours.map((n) => h('option', { value: n, selected: n === 2 }, `${n} saat`)));
   hold.addEventListener('change', () => refresh());
   const empty = h('p', { class: 'muted' }, 'Köyde sefere çıkabilecek asker yok.');
+  let region = readRegion();
+  const regionCards = REGION_IDS.map((id) => {
+    const def = REGIONS[id];
+    const lock = h('span', { class: 'region-lock' });
+    const mods = Object.entries(def.mods).map(([key, mod]) => {
+      const good = EXPEDITION_OUTCOMES[key]?.good;
+      const tone = (mod > 1) === (good !== false) ? 'up' : 'down';
+      return h('span', { class: `region-mod mod-${tone}` }, `${mod > 1 ? '▲' : '▼'} ${MOD_NAMES[key] ?? key}`);
+    });
+    const card = h(
+      'button',
+      { type: 'button', class: `region-card region-${id}`, dataset: { region: id }, 'aria-pressed': 'false' },
+      h('span', { class: 'region-art', 'aria-hidden': 'true' }),
+      h('strong', null, def.name),
+      h('span', { class: 'region-desc' }, def.description),
+      h('span', { class: 'region-mods' }, mods.length ? mods : h('span', { class: 'region-mod' }, 'Dengeli')),
+      h('span', { class: 'region-meta' }, `${def.distance} alan uzaklık${def.itemQuality > 1 ? ` · eşya kalitesi ×${String(def.itemQuality).replace('.', ',')}` : ''}`),
+      lock,
+    );
+    card.addEventListener('click', () => {
+      region = id;
+      try {
+        localStorage.setItem(REGION_KEY, id);
+      } catch {
+        // seçim yalnız bu oturumda kalır
+      }
+      refresh();
+    });
+    return { id, card, lock };
+  });
+  const heroBox = h('input', { type: 'checkbox', id: 'expedition-hero' });
+  heroBox.addEventListener('change', () => refresh());
+  const heroNote = h('span', { class: 'muted' });
+  const heroRow = h(
+    'label',
+    { class: 'hero-toggle', for: 'expedition-hero' },
+    heroBox,
+    h('span', { class: 'hero-toggle-icon' }, icon('nav-kahraman')),
+    h('span', null, h('strong', null, 'Kahraman katılsın'), heroNote),
+  );
+  const mastery = h('span', { class: 'badge badge-gold' });
   const preview = h('div', { class: 'stats' });
   const status = h('p', { class: 'card-status' });
   const submit = h('button', { type: 'submit', class: 'btn' }, icon('kasif'), 'Sefere çıkar');
   const form = h(
     'form',
     { class: 'stack-sm', onsubmit: onSend },
+    h('div', { class: 'region-grid', role: 'group', 'aria-label': 'Keşif bölgesi' }, regionCards.map((r) => r.card)),
     empty,
     h('div', { class: 'send-grid' }, SENDABLE.map((id) => rows[id].row)),
+    heroRow,
     h('div', { class: 'form-row' }, h('label', { for: 'expedition-hold' }, 'Keşif süresi'), hold, h('span', { class: 'muted' }, 'uzun keşif daha çok bulur, boş dönme olasılığı azalır')),
     preview,
     h(
@@ -67,7 +140,8 @@ export function createExpeditionView({ game, refresh }) {
   const formPanel = h(
     'section',
     { class: 'panel stack-sm' },
-    h('div', { class: 'panel-head' }, h('h2', null, 'Sefer düzenle'), h('span', { class: 'muted' }, 'Birlik haritanın ötesindeki yabani topraklara gider, dolaşır ve bulduklarıyla döner')),
+    h('div', { class: 'panel-head' }, h('h2', null, 'Sefer düzenle'), mastery),
+    h('p', { class: 'muted hint' }, 'Birlik haritanın ötesindeki yabani topraklara gider, dolaşır ve bulduklarıyla döner. Bölge seç: her bölgenin bulguları ve tehlikeleri farklıdır.'),
     form,
   );
 
@@ -110,9 +184,10 @@ export function createExpeditionView({ game, refresh }) {
   function onSend(event) {
     event.preventDefault();
     const now = Date.now();
-    const result = game.sendExpedition(read(), Number(hold.value), now);
+    const result = game.sendExpedition(read(), Number(hold.value), now, { region, hero: heroBox.checked });
     if (result.ok) {
-      toast(`${fmtInt(totalUnits(result.units))} asker keşfe çıktı. Keşif ${fmtClock(result.arriveAt, now)} tamamlanır.`, 'success');
+      toast(`${fmtInt(totalUnits(result.units))} asker${result.hero ? ' ve kahraman' : ''} ${REGIONS[region].name} yönüne keşfe çıktı. Keşif ${fmtClock(result.arriveAt, now)} tamamlanır.`, 'success');
+      heroBox.checked = false;
       clear();
     } else {
       toast(result.reason, 'error');
@@ -125,8 +200,8 @@ export function createExpeditionView({ game, refresh }) {
   let underwayRows = [];
   let recentSignature = null;
 
-  function renderOdds(village, hours) {
-    const odds = expeditionOdds(village, hours);
+  function renderOdds(village, hours, withHero) {
+    const odds = expeditionOdds(village, hours, region, withHero);
     const signature = JSON.stringify(odds);
     if (signature === oddsSignature) return;
     oddsSignature = signature;
@@ -139,6 +214,14 @@ export function createExpeditionView({ game, refresh }) {
       erken: 'Dönüş yarı sürede tamamlanır',
       eskiya: 'Eşkıyayla savaş; kazanırsa ganimet, kaybederse birlik yok olur',
       kayip: 'Birlik tümüyle kaybolur',
+      esya: `Kahramana bir eşya${REGIONS[region].itemQuality > 1 ? ' (nadir olma olasılığı yüksek)' : ''}`,
+      hazine: `${EXPEDITION.treasureAkce[0]}–${EXPEDITION.treasureAkce[1]} Akçe ve taşıma sınırı olmadan kaynak`,
+      kervan: 'Tüccar kervanı malını taşıma sınırı olmadan köye getirir',
+      kabile: 'Göçebe oba atlı askerlerini sancağa katar; şan',
+      at: 'Yılkı atları yakalanır: akıncılar katılır',
+      harita: `Kadim harita: +${EXPEDITION.mapRenown} şan, kahramana tecrübe`,
+      eskiyaZafer: 'Eşkıya yenildi, ganimet alındı',
+      eskiyaYenilgi: 'Eşkıyaya yenildi',
     };
     oddsBody.replaceChildren(
       ...Object.entries(odds).map(([key, p]) =>
@@ -146,7 +229,7 @@ export function createExpeditionView({ game, refresh }) {
           'tr',
           null,
           h('td', null, h('span', { class: `outcome outcome-${outcomeTone(key)}` }, EXPEDITION_OUTCOMES[key].name)),
-          h('td', { class: 'wrap' }, what[key]),
+          h('td', { class: 'wrap' }, what[key] ?? ''),
           h('td', { class: 'num' }, `%${(p * 100).toLocaleString('tr-TR', { maximumFractionDigits: 1 })}`),
         ),
       ),
@@ -164,10 +247,11 @@ export function createExpeditionView({ game, refresh }) {
         const remaining = h('span', { class: 'queue-remaining' });
         const when = h('span', { class: 'muted' });
         const bar = h('span');
+        const where = m.region ? REGIONS[m.region]?.name : null;
         const row = h(
           'div',
           { class: 'queue-row movement is-expedition' },
-          h('div', { class: 'queue-unit' }, h('span', { class: 'unit-icon small' }, icon(m.type === 'donus' ? 'donus' : 'kasif')), label, h('span', { class: 'muted movement-units' }, `${village.name} · ${fmtInt(totalUnits(m.units))} asker${m.loot ? ` · ${fmtInt(Object.values(m.loot).reduce((a, b) => a + b, 0))} kaynak` : ''}`)),
+          h('div', { class: 'queue-unit' }, h('span', { class: 'unit-icon small' }, icon(m.type === 'donus' ? 'donus' : 'kasif')), label, h('span', { class: 'muted movement-units' }, `${village.name}${where ? ` → ${where}` : ''}${m.hero ? ` · ${m.hero.name}` : ''} · ${fmtInt(totalUnits(m.units))} asker${m.loot ? ` · ${fmtInt(Object.values(m.loot).reduce((a, b) => a + b, 0))} kaynak` : ''}`)),
           h('div', { class: 'queue-time' }, remaining, when),
           h('span'),
           h('div', { class: 'progress' }, bar),
@@ -230,8 +314,33 @@ export function createExpeditionView({ game, refresh }) {
       empty.hidden = available > 0;
 
       const hours = Number(hold.value);
-      const check = inspectExpedition(state, village, read(), hours, now);
-      const scale = expeditionScale(state, village, hours);
+      const level = village.buildings.kervansaray ?? 0;
+      if (level < REGIONS[region].kervansaray) region = 'sinir';
+      for (const r of regionCards) {
+        const need = REGIONS[r.id].kervansaray;
+        const locked = level < need;
+        r.card.disabled = locked;
+        r.card.classList.toggle('locked', locked);
+        r.card.classList.toggle('active', r.id === region);
+        r.card.setAttribute('aria-pressed', String(r.id === region));
+        setText(r.lock, locked ? `Kervansaray ${need}. seviye` : '');
+      }
+      const heroCheck = heroAvailable(state, village, now);
+      heroBox.disabled = !heroCheck.ok;
+      if (!heroCheck.ok) heroBox.checked = false;
+      const withHero = heroBox.checked;
+      heroRow.classList.toggle('disabled', !heroCheck.ok);
+      setText(
+        heroNote,
+        heroCheck.ok
+          ? `${state.hero.name}: bulgular +%${Math.round((EXPEDITION.heroReward - 1) * 100)}, tehlikeler −%${Math.round((1 - EXPEDITION.heroRisk) * 100)}, saat başına ${EXPEDITION.heroXpPerHour} tecrübe. Birlik yok olursa yaralanır.`
+          : heroCheck.reason,
+      );
+      const skill = expeditionMastery(state);
+      setText(mastery, `Keşif ustalığı +%${Math.round(skill * 100)}`);
+      mastery.title = `Her tamamlanan sefer bulguları %${Math.round(EXPEDITION.masteryPer * 100)} artırır (en çok %${Math.round(EXPEDITION.masteryMax * 100)}). Tamamlanan sefer: ${fmtInt(state.stats.expeditions ?? 0)}`;
+      const check = inspectExpedition(state, village, read(), hours, now, { region, hero: withHero });
+      const scale = expeditionScale(state, village, hours, withHero);
       preview.replaceChildren(
         stat('saat', 'Yolculuk (tek yön)', fmtDuration(check.seconds)),
         stat('kasif', 'Keşif süresi', `${hours} oyun saati`),
@@ -241,7 +350,7 @@ export function createExpeditionView({ game, refresh }) {
       preview.hidden = !totalUnits(check.units);
       submit.disabled = !check.ok;
       setText(status, check.ok || check.code === 'empty' ? '' : check.reason);
-      renderOdds(village, hours);
+      renderOdds(village, hours, withHero);
       setText(
         oddsNote,
         `Keşif hakkı: Kervansaray 1. seviyede 1, her ${EXPEDITION.slotsEvery} seviyede +1. Kâşif sınıfı +1 hak, bulgular +%50 ve tehlikeler −%50 kazanır.`,
@@ -266,6 +375,9 @@ export function expeditionSummary(report) {
   const found = Object.entries(report.found ?? {}).map(([id, n]) => `${fmtInt(n)} ${UNITS[id].name}`);
   if (found.length) parts.push(`${found.join(', ')} katıldı`);
   if (report.akce) parts.push(`${fmtInt(report.akce)} Akçe`);
+  if (report.item) parts.push(`${RARITIES[report.item.rarity].name.toLowerCase()} eşya: ${report.item.name}`);
+  if (report.renown) parts.push(`+${report.renown} şan`);
+  if (report.region && REGIONS[report.region] && report.region !== 'sinir') parts.unshift(REGIONS[report.region].name);
   const lost = totalUnits(report.attackerLosses ?? {});
   if (lost) parts.push(`${fmtInt(lost)} kayıp`);
   if (report.outcome === 'gecikme') parts.push(`dönüş %${Math.round((report.returnFactor - 1) * 100)} gecikti`);

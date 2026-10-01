@@ -35,7 +35,19 @@ function ids(value) {
 function options(value) {
   if (value == null) return {};
   if (typeof value !== 'object') fail('Geçersiz seçenek');
-  return value.catapultTarget ? { catapultTarget: str(value.catapultTarget, 20) } : {};
+  return {
+    ...(value.catapultTarget && { catapultTarget: str(value.catapultTarget, 20) }),
+    ...(value.hero === true && { hero: true }),
+  };
+}
+
+function expeditionOptions(value) {
+  if (value == null) return {};
+  if (typeof value !== 'object') fail('Geçersiz seçenek');
+  return {
+    ...(value.region && { region: str(value.region, 20) }),
+    ...(value.hero === true && { hero: true }),
+  };
 }
 
 function names(value) {
@@ -64,7 +76,7 @@ export const ACTIONS = {
   repeatAttack: (g, [report], now) => g.repeatAttack(int(report), now),
   repeatAttacks: (g, [reports], now) => g.repeatAttacks(ids(reports), now),
   recallAttack: (g, [movement], now) => g.recallAttack(int(movement), now),
-  sendExpedition: (g, [units, hold], now) => g.sendExpedition(counts(units), int(hold), now),
+  sendExpedition: (g, [units, hold, opts], now) => g.sendExpedition(counts(units), int(hold), now, expeditionOptions(opts)),
   repeatExpedition: (g, [report], now) => g.repeatExpedition(int(report), now),
   deleteReports: (g, [list]) => done((g.deleteReports(ids(list)), true)),
   markReportsRead: (g, [list]) => done((g.markReportsRead(ids(list)), true)),
@@ -84,4 +96,9 @@ export const ACTIONS = {
   chooseEvent: (g, [choice], now) => g.chooseEvent(str(choice, 30), now),
   sendGift: (g, [lord, tier], now) => g.sendGift(str(lord, 20), str(tier, 20), now),
   makePeace: (g, [lord], now) => g.makePeace(str(lord, 20), now),
+  heroSpend: (g, [attr], now) => g.heroSpend(str(attr, 20), now),
+  heroEquip: (g, [item], now) => g.heroEquip(int(item), now),
+  heroUnequip: (g, [slot], now) => g.heroUnequip(str(slot, 20), now),
+  heroSell: (g, [item], now) => g.heroSell(int(item), now),
+  renameHero: (g, [name]) => done(g.renameHero(str(name, 64)), 'Kahramanın adı boş olamaz'),
 };

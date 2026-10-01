@@ -1,3 +1,6 @@
+import { HERO } from '../config/hero.js';
+import { addHeroXp } from './hero.js';
+import { bonusOf } from './bonus.js';
 import { QUESTS, QUEST_WINDOW, ACHIEVEMENTS, DAILY, VICTORY } from '../config/quests.js';
 import { RESOURCE_IDS } from '../config/resources.js';
 import { villagePoints, lordsOf } from './world.js';
@@ -44,6 +47,12 @@ export function measure(state, goal) {
       return Object.values(state.ai?.lords ?? {}).filter((entry) => entry.defeated).length;
     case 'ilim':
       return state.player?.ilim?.done?.length ?? 0;
+    case 'heroLevel':
+      return state.hero?.level ?? 0;
+    case 'equipped':
+      return Object.values(state.hero?.equipment ?? {}).filter(Boolean).length;
+    case 'title':
+      return state.player?.title ?? 0;
     case 'diplomacy':
       return (state.stats?.gifts ?? 0) + (state.stats?.treaties ?? 0);
     default:
@@ -77,7 +86,9 @@ export function claimQuest(state, village, questId, now) {
   const stored = deposit(village, entry.quest.reward);
   if (entry.quest.akce) grantAkce(state, entry.quest.akce, `Görev: ${entry.quest.title}`, now);
   state.quests.claimed.push(questId);
-  return { ok: true, quest: entry.quest, stored, akce: entry.quest.akce ?? 0 };
+  // Her görev kahramana da tecrübe kazandırır.
+  const heroEvents = state.hero ? addHeroXp(state, HERO.xp.quest, now, bonusOf(village).heroXp) : [];
+  return { ok: true, quest: entry.quest, stored, akce: entry.quest.akce ?? 0, heroEvents };
 }
 
 // ---------- Başarımlar ----------

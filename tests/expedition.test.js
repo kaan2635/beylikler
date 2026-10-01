@@ -72,7 +72,8 @@ test('olasılıklar: toplam 1; Kâşif tehlikeyi yarıya indirir; uzun keşif bo
 
 test('her sonuç türü tutarlı çözülür; sağ kalanlar bulduklarıyla döner', () => {
   const seen = new Set();
-  for (let seed = 1; seed <= 400 && seen.size < 8; seed++) {
+  const required = ['bos', 'kaynak', 'asker', 'akce', 'gecikme', 'erken'];
+  for (let seed = 1; seed <= 800 && !required.every((o) => seen.has(o)); seed++) {
     const { state, village } = game(seed);
     const before = { ...village.units };
     const akceBefore = state.player.akce;

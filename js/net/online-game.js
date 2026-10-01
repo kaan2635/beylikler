@@ -29,7 +29,7 @@ const REMOTE = {
   repeatAttack: 1,
   repeatAttacks: 1,
   recallAttack: 1,
-  sendExpedition: 2,
+  sendExpedition: 'expedition',
   repeatExpedition: 1,
   deleteReports: 1,
   markReportsRead: 1,
@@ -49,6 +49,11 @@ const REMOTE = {
   chooseEvent: 1,
   sendGift: 2,
   makePeace: 1,
+  heroSpend: 1,
+  heroEquip: 1,
+  heroUnequip: 1,
+  heroSell: 1,
+  renameHero: 1,
 };
 
 export class OnlineGame extends Game {
@@ -203,7 +208,12 @@ for (const [name, spec] of Object.entries(REMOTE)) {
     const ok = result === true || result?.ok === true || (result && typeof result === 'object' && !('ok' in result));
     const always = name === 'deleteReports' || name === 'markReportsRead';
     if (this.depth === 0 && (ok || always)) {
-      const sent = spec === 'attack' ? [args[0], args[1], args[2], args[4] ?? {}] : args.slice(0, spec);
+      const sent =
+        spec === 'attack'
+          ? [args[0], args[1], args[2], args[4] ?? {}]
+          : spec === 'expedition'
+            ? [args[0], args[1], args[3] ?? {}]
+            : args.slice(0, spec);
       this.remote(name, sent);
     }
     return result;

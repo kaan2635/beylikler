@@ -1,9 +1,12 @@
 import { P, poly, tile } from './iso.js';
 import { buildingImage, tierOf } from './sprites.js';
+import { composeBuilding, stageOf } from './stages.js';
 
 /**
  * Köy sahnesi: binalar kendi arsalarında, gerçekçi (önceden işlenmiş) görsellerle ve seviyelerine
- * göre büyüyerek görünür. Zemin dokulu çimen, yollar toprak; sur köyü taş bir halka olarak
+ * göre aşama aşama büyüyerek görünür (bkz. stages.js). Sahne canlıdır: gökte güneş ya da ay,
+ * bulutlar ve kuşlar; yollarda köylüler; bacalarda duman; mevsime göre kar, yaprak ya da çiçek
+ * yağar. Gece ve gündüz oyun saatine göre --night değişkeniyle (CSS) değişir. Zemin dokulu çimen, yollar toprak; sur köyü taş bir halka olarak
  * çevirir, köşelerinde kuleler durur. Yapımı süren binanın önünde iskele vardır.
  * Sahne tek bir SVG metnidir; tıklanabilir binalar `data-building` taşır.
  */
@@ -41,10 +44,6 @@ const DECOR = [
   { at: [3, 3], kind: 'grove3' },
   { at: [4, 3], kind: 'orchard' },
 ];
-
-// Binaların görsel boyu (arsa genişliğine oranla) ve kademe çarpanı.
-const SIZE = { kule: 0.78, saray: 1.18, kisla: 1.06, ahir: 1.04, kervansaray: 1.04, konak: 1.02, demirmadeni: 0.9, oduncu: 0.92, kilocagi: 0.84, gizlidepo: 0.8 };
-const TIER_SCALE = [0.72, 0.74, 0.87, 1];
 
 const f = (n) => Math.round(n * 10) / 10;
 
@@ -161,15 +160,6 @@ function plot() {
   return tile(4, 4, 32, 32, 'url(#scene-dirt)', { opacity: 0.85 }) + poly([[4, 4, 0], [36, 4, 0], [36, 36, 0], [4, 36, 0]], 'none', { stroke: '#7a5a36', width: 0.7, extra: ' stroke-dasharray="3 2"' });
 }
 
-/** Bina görseli: arsanın ortasına, tabanı arsaya oturacak biçimde. */
-function buildingSprite(id, level) {
-  const size = 74 * (SIZE[id] ?? 1) * TIER_SCALE[tierOf(level)];
-  const height = size * 1.3;
-  const [cx, cy] = P(20, 20, 0);
-  const bottom = cy + 15;
-  return `<image href="${buildingImage(id, level)}" x="${f(cx - size / 2)}" y="${f(bottom - height)}" width="${f(size)}" height="${f(height)}" preserveAspectRatio="xMidYMax meet"/>`;
-}
-
 /** Yapımı süren binanın önündeki iskele. */
 function scaffold(level) {
   const h = tierOf(Math.max(1, level)) * 6 + 16;
@@ -211,12 +201,130 @@ function crenels(x, y, z, w, d, size, c) {
   return s;
 }
 
+/** Palanka (surun ilk aşaması): sivri ahşap kazıklardan çit, köşelerde ahşap kuleler. */
+function palisade(part) {
+  const m = 12;
+  const x0 = -m;
+  const y0 = -m;
+  const x1 = W + m;
+  const y1 = D + m;
+  const stakes = (ax, ay, bx, by) => {
+    let out = '';
+    const n = Math.round(Math.hypot(bx - ax, by - ay) / 3.2);
+    for (let i = 0; i <= n; i++) {
+      const x = ax + ((bx - ax) * i) / n;
+      const y = ay + ((by - ay) * i) / n;
+      const [sx, sy] = P(x, y, 0);
+      const hgt = 7 + ((i * 7) % 3);
+      out += `<path d="M${f(sx - 1.3)},${f(sy)} L${f(sx - 1.3)},${f(sy - hgt)} L${f(sx)},${f(sy - hgt - 2.2)} L${f(sx + 1.3)},${f(sy - hgt)} L${f(sx + 1.3)},${f(sy)}Z" fill="${i % 2 ? '#8a5e34' : '#7a5230'}" stroke="#4a3320" stroke-width="0.4"/>`;
+    }
+    return out;
+  };
+  const tower = (x, y) => {
+    const [sx, sy] = P(x, y, 0);
+    const size = 26;
+    return `<image href="${buildingImage('sur', 1)}" x="${f(sx - size / 2)}" y="${f(sy + 6 - size * 1.45)}" width="${f(size)}" height="${f(size * 1.45)}" preserveAspectRatio="xMidYMax meet"/>`;
+  };
+  if (part === 'back') return stakes(x0, y0, x1, y0) + stakes(x0, y0, x0, y1) + tower(x0 + 2, y0 + 2);
+  const gateX = (x0 + x1) / 2;
+  return stakes(x1, y0, x1, y1) + stakes(x0, y1, gateX - 8, y1) + stakes(gateX + 8, y1, x1, y1) + tower(x1 - 2, y0 + 2) + tower(x0 + 2, y1 - 2) + tower(x1 - 2, y1 - 2);
+}
+
+// ---------- Canlı sahne ----------
+
+// Basit, tekrarlanabilir rastgele sayı (sahne her çizimde aynı görünsün).
+function rnd(i) {
+  const x = Math.sin(i * 91.17 + 7.3) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/** Gök: güneş ve ay (konumları CSS değişkenleriyle), yıldızlar, süzülen bulutlar, kuşlar. */
+function sky(minX, minY, width, season) {
+  let stars = '';
+  for (let i = 0; i < 26; i++) stars += `<circle cx="${f(minX + rnd(i) * width)}" cy="${f(minY + 4 + rnd(i + 40) * 60)}" r="${f(0.5 + rnd(i + 80) * 0.8)}"/>`;
+  let clouds = '';
+  for (let i = 0; i < 4; i++) {
+    const cx = minX + rnd(i + 120) * width;
+    const cy = minY + 12 + rnd(i + 130) * 34;
+    const k = 0.7 + rnd(i + 140) * 0.7;
+    clouds +=
+      `<g class="cloud" style="animation-duration:${f(90 + rnd(i + 150) * 80)}s;animation-delay:-${f(rnd(i + 160) * 120)}s">` +
+      `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(18 * k)}" ry="${f(5 * k)}"/><ellipse cx="${f(cx - 8 * k)}" cy="${f(cy - 3 * k)}" rx="${f(9 * k)}" ry="${f(5 * k)}"/><ellipse cx="${f(cx + 6 * k)}" cy="${f(cy - 4 * k)}" rx="${f(10 * k)}" ry="${f(6 * k)}"/></g>`;
+  }
+  let birds = '';
+  if (season !== 'kis') {
+    for (let i = 0; i < 3; i++) {
+      const by = minY + 16 + rnd(i + 200) * 30;
+      birds += `<path class="bird" style="animation-duration:${f(24 + rnd(i + 210) * 14)}s;animation-delay:-${f(rnd(i + 220) * 30)}s" d="M${f(minX - 10)},${f(by)} q2.5,-2.5 5,0 q2.5,-2.5 5,0"/>`;
+    }
+  }
+  return (
+    `<g class="scene-stars">${stars}</g>` +
+    `<g class="scene-sun"><circle r="9" fill="#fff3c4" opacity="0.5"/><circle r="6" fill="#fde7a0"/></g>` +
+    `<g class="scene-moon"><circle r="11" fill="#fff6d8" opacity="0.18"/><path d="M1.5,-6.8 A7,7 0 1,0 6.4,3.8 A5.6,5.6 0 1,1 1.5,-6.8Z" fill="#fff8e4"/></g>` +
+    `<g class="scene-clouds">${clouds}</g>` +
+    `<g class="scene-birds">${birds}</g>`
+  );
+}
+
+/** Yollarda gidip gelen köylüler ve bir atlı (SMIL hareketi). */
+function villagers() {
+  const colors = [['#8f2f1d', '#e2b688'], ['#2f5f9e', '#d9a878'], ['#5d7a2e', '#e6bc90'], ['#7a5a2e', '#c99064'], ['#a3375f', '#e2b688'], ['#3d3d3d', '#d9a878']];
+  const routes = [];
+  for (let c = 1; c < COLS; c++) routes.push([[c * PITCH, -4], [c * PITCH, D + 4]]);
+  for (let r = 1; r < ROWS; r++) routes.push([[-4, r * PITCH], [W + 4, r * PITCH]]);
+  let out = '';
+  for (let i = 0; i < 6; i++) {
+    const [[ax, ay], [bx, by]] = routes[(i * 3) % routes.length];
+    const [sx0, sy0] = P(ax, ay, 0);
+    const [sx1, sy1] = P(bx, by, 0);
+    const [body, skin] = colors[i];
+    const dur = f(38 + rnd(i + 300) * 30);
+    const delay = f(rnd(i + 310) * 30);
+    const rider = i === 5;
+    const figure = rider
+      ? `<ellipse cx="0" cy="-3" rx="4.2" ry="2.2" fill="#6b4423"/><path d="M-3.2,-1.5v2.6M3.2,-1.5v2.6" stroke="#4a2e17" stroke-width="0.9"/><path d="M3.6,-4l2.2,-2.2" stroke="#6b4423" stroke-width="1.6" stroke-linecap="round"/><rect x="-1.2" y="-8.4" width="2.4" height="4" rx="1" fill="${body}"/><circle cx="0" cy="-9.4" r="1.3" fill="${skin}"/>`
+      : `<ellipse cx="0" cy="0.4" rx="2" ry="0.8" fill="#000" opacity="0.2"/><path d="M-1.6,0 L-1.2,-4.6 L1.2,-4.6 L1.6,0Z" fill="${body}"/><circle cx="0" cy="-5.8" r="1.3" fill="${skin}"/>`;
+    out +=
+      `<g class="villager">${figure}<animateMotion dur="${dur}s" begin="-${delay}s" repeatCount="indefinite" keyPoints="0;1;0" keyTimes="0;0.5;1" calcMode="linear" path="M${f(sx0)},${f(sy0)} L${f(sx1)},${f(sy1)}"/></g>`;
+  }
+  return `<g class="scene-life">${out}</g>`;
+}
+
+/** Mevsimlik yağış: kışın kar, sonbaharda yaprak, ilkbaharda çiçek yaprağı, yazın kelebek. */
+function weather(minX, minY, width, height, season) {
+  const kinds = { kis: 'snow', sonbahar: 'leaf', ilkbahar: 'petal', yaz: 'butterfly' };
+  const kind = kinds[season] ?? 'petal';
+  const count = { snow: 46, leaf: 16, petal: 14, butterfly: 6 }[kind];
+  const fills = { snow: ['#ffffff'], leaf: ['#c9702a', '#a8581e', '#d9a03a'], petal: ['#f6d6e0', '#ffffff', '#f2c3d1'], butterfly: ['#f2c94c', '#ffffff', '#e8923a'] }[kind];
+  let out = '';
+  for (let i = 0; i < count; i++) {
+    const x = f(minX + rnd(i + 400) * width);
+    const y = kind === 'butterfly' ? f(minY + height * (0.45 + rnd(i + 410) * 0.4)) : f(minY - 10);
+    const dur = f((kind === 'snow' ? 9 : kind === 'butterfly' ? 7 : 12) + rnd(i + 420) * 8);
+    const delay = f(rnd(i + 430) * 20);
+    const fill = fills[i % fills.length];
+    const shape =
+      kind === 'snow'
+        ? `<circle r="${f(0.7 + rnd(i + 440) * 1.1)}" fill="${fill}"/>`
+        : kind === 'leaf'
+          ? `<path d="M0,-2.2 C1.6,-1 1.6,1 0,2.2 C-1.6,1 -1.6,-1 0,-2.2Z" fill="${fill}"/>`
+          : kind === 'petal'
+            ? `<ellipse rx="1.3" ry="0.8" fill="${fill}"/>`
+            : `<path class="wings" d="M0,0 C-2.4,-2.6 -3.4,0.4 0,0.4 C3.4,0.4 2.4,-2.6 0,0Z" fill="${fill}"/>`;
+    out += `<g class="flake ${kind}" style="animation-duration:${dur}s;animation-delay:-${delay}s"><g transform="translate(${x} ${y})">${shape}</g></g>`;
+  }
+  return `<g class="weather weather-${kind}">${out}</g>`;
+}
+
 /** Sur: taş örgülü halka; köşelerde kule görselleri. Arka duvarlar binalardan önce, ön duvarlar sonra. */
 function walls(level, part) {
   const t = tierOf(level);
   if (!t) return '';
+  const stage = stageOf('sur', level);
+  if (stage === 0) return palisade(part);
   const m = 12;
-  const h = 7 + t * 2.5;
+  const h = 6 + stage * 2.6;
   const thick = 4;
   const stone = ['url(#scene-stone-top)', 'url(#scene-stone)', 'url(#scene-stone-dark)'];
   const tooth = 3; // mazgal dişi
@@ -226,8 +334,17 @@ function walls(level, part) {
   const y1 = D + m;
   const tower = (x, y) => {
     const [sx, sy] = P(x, y, 0);
-    const size = 30 + t * 4;
-    return `<image href="${buildingImage('sur', level)}" x="${f(sx - size / 2)}" y="${f(sy + 6 - size * 1.45)}" width="${f(size)}" height="${f(size * 1.45)}" preserveAspectRatio="xMidYMax meet"/>`;
+    const size = 28 + stage * 3.5;
+    const img = `<image href="${buildingImage('sur', level)}" x="${f(sx - size / 2)}" y="${f(sy + 6 - size * 1.45)}" width="${f(size)}" height="${f(size * 1.45)}" preserveAspectRatio="xMidYMax meet"/>`;
+    if (stage < 3) return img;
+    // Kale suru ve hisar: kule tepelerinde sancak (hisarda altın)
+    const top = sy + 6 - size * 1.45 + 2;
+    const color = stage === 4 ? '#c99a2e' : '#a3321f';
+    return (
+      img +
+      `<line x1="${f(sx)}" y1="${f(top)}" x2="${f(sx)}" y2="${f(top - 12)}" stroke="#3a2a1a" stroke-width="1"/>` +
+      `<path class="banner-cloth" d="M${f(sx)},${f(top - 12)} l8,1.5 -1.5,2.5 1.5,2.5 -8,1z" fill="${color}" stroke="#3a2a1a" stroke-width="0.4"/>`
+    );
   };
   if (part === 'back') {
     return (
@@ -269,6 +386,7 @@ function defs() {
     <pattern id="scene-stone" width="8" height="6" patternUnits="userSpaceOnUse"><rect width="8" height="6" fill="#8d8779"/><path d="M0 3h8M4 0v3M0 3v3M8 3v3" stroke="#6e695d" stroke-width="0.6"/></pattern>
     <pattern id="scene-stone-dark" width="8" height="6" patternUnits="userSpaceOnUse"><rect width="8" height="6" fill="#6f6a5e"/><path d="M0 3h8M4 0v3M0 3v3M8 3v3" stroke="#57534a" stroke-width="0.6"/></pattern>
     <pattern id="scene-stone-top" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#a7a092"/></pattern>
+    <radialGradient id="scene-lamp"><stop offset="0" stop-color="#ffd27a" stop-opacity="0.95"/><stop offset="0.45" stop-color="#ffb347" stop-opacity="0.35"/><stop offset="1" stop-color="#ff9a2e" stop-opacity="0"/></radialGradient>
   </defs>`;
 }
 
@@ -312,6 +430,19 @@ function roads() {
 }
 
 /**
+ * Oyun saatine göre ışık: { hour, night (0..1), sun: [x, y], moon: [x, y] } (sahne koordinatı).
+ * Dünya sabah 08.00'de başlar; saat dünya hızıyla işler.
+ */
+export function skyState(world) {
+  const hour = ((world.clock.time / 3_600_000) + 8) % 24;
+  const night = hour >= 20 || hour < 5 ? 1 : hour >= 18 ? (hour - 18) / 2 : hour < 7 ? (7 - hour) / 2 : 0;
+  const arc = (t) => [-190 + 430 * t, -24 - 56 * Math.sin(Math.PI * Math.min(1, Math.max(0, t)))];
+  const sun = arc((hour - 6) / 14);
+  const moon = arc(((hour - 19 + 24) % 24) / 12);
+  return { hour, night, sun, moon };
+}
+
+/**
  * Sahnenin SVG'si. `levels`: bina → seviye; `upgrading`: yapımı süren binalar;
  * `locked`: gereksinimi karşılanmamış binalar (boş arsa soluk görünür).
  */
@@ -345,7 +476,7 @@ export function sceneSvg(levels, { upgrading = new Set(), locked = new Set(), na
       `<g class="${classes}" data-building="${item.id}" transform="${translate(item.col, item.row)}" tabindex="0" role="button" aria-label="${label}">` +
       `<title>${label}</title>` +
       `<polygon class="scene-hit" points="${[[0, 0], [40, 0], [40, 40], [0, 40]].map(([x, y]) => P(x, y, 0).join(',')).join(' ')}"/>` +
-      (level ? `<ellipse cx="0" cy="${P(20, 20, 0)[1] + 6}" rx="30" ry="12" fill="#1e2a10" opacity="0.18"/>` + buildingSprite(item.id, level) : plot()) +
+      (level ? `<ellipse cx="0" cy="${P(20, 20, 0)[1] + 6}" rx="30" ry="12" fill="#1e2a10" opacity="0.18"/>` + composeBuilding(item.id, level) : plot()) +
       (building ? scaffold(level) : '') +
       '</g>';
     plates += `<g transform="${translate(item.col, item.row)}" data-building="${item.id}" aria-hidden="true">${plate(level, isLocked)}</g>`;
@@ -356,10 +487,14 @@ export function sceneSvg(levels, { upgrading = new Set(), locked = new Set(), na
     `<svg class="scene-svg" viewBox="${minX} ${minY} ${width} ${height}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Köy">` +
     defs() +
     backdrop(minX, minY, width, height) +
+    sky(minX, minY, width, season) +
     roads() +
+    villagers() +
     walls(sur, 'back') +
     body +
     walls(sur, 'front') +
+    weather(minX, minY, width, height, season) +
+    `<rect class="scene-night" x="${minX}" y="${minY}" width="${width}" height="${height}"/>` +
     `<g class="scene-plates">${plates}</g>` +
     '</svg>'
   );

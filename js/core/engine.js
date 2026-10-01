@@ -10,6 +10,10 @@ import { checkAchievements, checkVictory } from '../systems/quests.js';
 import { ensureSeason, nextSeasonAt, advanceSeason } from '../systems/seasons.js';
 import { completeIlim } from '../systems/ilim.js';
 import { ensureEvents, spawnEvent, expireEvent, expireModifier } from '../systems/events.js';
+import { ensureHero, healHero } from '../systems/hero.js';
+import { ensureInvasion, startInvasion, launchWave, endInvasion } from '../systems/sites.js';
+import { checkTitle } from '../systems/renown.js';
+import { recordHistory } from '../systems/history.js';
 
 /**
  * Oyun dünyasını `now` anına kadar ilerletir ve bu sırada gerçekleşen olayları döndürür.
@@ -37,14 +41,16 @@ export function advance(state, now) {
     else produce(next.village, state.world, next.at);
     const event = next.run();
     if (event) {
-      const { others, ...own } = event; // tek oyunculuda başka oyuncu yok
-      events.push(own);
+      const { others, also, ...own } = event; // tek oyunculuda başka oyuncu yok
+      events.push(own, ...(also ?? []));
     }
     syncBonuses(state); // fetihle yeni köy gelmiş ya da bir görevli ayrılmış olabilir
   }
   for (const village of Object.values(state.villages)) produce(village, state.world, now);
   advanceClock(state.world, now);
   events.push(...checkAchievements(state, now));
+  events.push(...checkTitle(state, now));
+  recordHistory(state);
   // Sultanlık tek oyunculu bir hedeftir; çok oyunculu dünyada beyler herkesin ortak rakibidir.
   if (!state.peers) events.push(...checkVictory(state, now));
   return events;
@@ -77,8 +83,8 @@ export function advanceMany(states, now) {
     if (!affected.length) produce(next.village, owner.world, next.at);
     const event = next.run();
     if (event) {
-      const { others, ...own } = event;
-      results.get(owner).push(own);
+      const { others, also, ...own } = event;
+      results.get(owner).push(own, ...(also ?? []));
       for (const other of others ?? []) results.get(other.state)?.push(other.event);
     }
     for (const state of states) syncBonuses(state); // köy el değiştirmiş olabilir
@@ -87,6 +93,8 @@ export function advanceMany(states, now) {
     for (const village of Object.values(state.villages)) produce(village, state.world, now);
     advanceClock(state.world, now);
     results.get(state).push(...checkAchievements(state, now));
+    results.get(state).push(...checkTitle(state, now));
+    recordHistory(state);
   }
   return results;
 }
@@ -94,7 +102,9 @@ export function advanceMany(states, now) {
 /** Takvimleri eksik olanları kurar (yeni oyun, eski kayıt) ve etkileri yeniler. */
 function prepare(state, now) {
   ensureSeason(state.world);
+  ensureHero(state);
   ensureEvents(state, now);
+  ensureInvasion(state, now);
   ensureLordSchedules(state, now);
   syncBonuses(state);
 }
@@ -142,6 +152,16 @@ function nextEvent(state, now) {
   else if (events?.nextAt != null) consider(events.nextAt, villages[0], () => spawnEvent(state, events.nextAt));
   for (const modifier of state.player?.modifiers ?? []) {
     consider(modifier.until, villages[0], () => expireModifier(state, modifier, modifier.until), 'player');
+  }
+  // Yaralı kahramanın iyileşmesi (köyünün üretimi ve savunması geri gelir)
+  const hero = state.hero;
+  if (hero?.woundedUntil > 0) consider(hero.woundedUntil, state.villages[hero.home] ?? villages[0], () => healHero(state, hero.woundedUntil), 'player');
+  // Moğol akını: ordugâh kurulur, dalgalar yola çıkar, ordugâh çekilir
+  const invasion = state.invasion;
+  if (invasion?.phase === 'idle' && invasion.nextAt != null) consider(invasion.nextAt, villages[0], () => startInvasion(state, invasion.nextAt));
+  if (invasion?.phase === 'active') {
+    if (invasion.nextWaveAt != null) consider(invasion.nextWaveAt, villages[0], () => launchWave(state, invasion.nextWaveAt));
+    if (invasion.leaveAt != null) consider(invasion.leaveAt, villages[0], () => endInvasion(state, 'left', invasion.leaveAt));
   }
   return next;
 }
