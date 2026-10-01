@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <!-- Aşağıdaki blok tools/stamp.js ile üretilir; elle düzenleme, npm run stamp çalıştır. -->
     <!-- sürüm-damgası:başla -->
-    <link rel="stylesheet" href="css/style.css?v=b9017395c2" />
+    <link rel="stylesheet" href="css/style.css?v=ec3680418b" />
     <script type="importmap">
       {
         "imports": {
@@ -23,8 +23,8 @@
           "./js/config/classes.js": "./js/config/classes.js?v=86fc5acfb3",
           "./js/config/combat.js": "./js/config/combat.js?v=8a60c6ae55",
           "./js/config/expedition.js": "./js/config/expedition.js?v=0f36b6f170",
-          "./js/config/game.js": "./js/config/game.js?v=8114c2c5e0",
-          "./js/config/lords.js": "./js/config/lords.js?v=d21c8f223f",
+          "./js/config/game.js": "./js/config/game.js?v=e5619b90db",
+          "./js/config/lords.js": "./js/config/lords.js?v=47f3e66e62",
           "./js/config/quests.js": "./js/config/quests.js?v=b964edf057",
           "./js/config/resources.js": "./js/config/resources.js?v=cb79e93d26",
           "./js/config/tech.js": "./js/config/tech.js?v=15752493b4",
@@ -34,7 +34,7 @@
           "./js/core/formulas.js": "./js/core/formulas.js?v=b39d4aa8b3",
           "./js/core/random.js": "./js/core/random.js?v=8b15337135",
           "./js/core/save-codec.js": "./js/core/save-codec.js?v=bfba8eba96",
-          "./js/core/state.js": "./js/core/state.js?v=0a4b54890e",
+          "./js/core/state.js": "./js/core/state.js?v=fee3e3a6d8",
           "./js/core/village.js": "./js/core/village.js?v=43b0118869",
           "./js/game.js": "./js/game.js?v=ff295feed0",
           "./js/main.js": "./js/main.js?v=73da66fbd4",
@@ -44,7 +44,7 @@
           "./js/net/online-game.js": "./js/net/online-game.js?v=40d3dffe92",
           "./js/net/p2p.js": "./js/net/p2p.js?v=56c136e155",
           "./js/storage/local-store.js": "./js/storage/local-store.js?v=32dd81302d",
-          "./js/systems/ai.js": "./js/systems/ai.js?v=3cd110fdd2",
+          "./js/systems/ai.js": "./js/systems/ai.js?v=90fbe66540",
           "./js/systems/army.js": "./js/systems/army.js?v=ccb21c05b8",
           "./js/systems/barbarians.js": "./js/systems/barbarians.js?v=3625757644",
           "./js/systems/bonus.js": "./js/systems/bonus.js?v=e30406b689",
@@ -64,34 +64,37 @@
           "./js/systems/support.js": "./js/systems/support.js?v=3b4c02a925",
           "./js/systems/training.js": "./js/systems/training.js?v=26efcdb8e8",
           "./js/systems/world.js": "./js/systems/world.js?v=4ee2259491",
-          "./js/ui/app.js": "./js/ui/app.js?v=23b9b87b85",
+          "./js/ui/app.js": "./js/ui/app.js?v=e5496bacb5",
           "./js/ui/art/credits.js": "./js/ui/art/credits.js?v=27d92578ec",
           "./js/ui/art/game-icons.js": "./js/ui/art/game-icons.js?v=e5f3340ee1",
           "./js/ui/art/iso.js": "./js/ui/art/iso.js?v=a613796ed2",
           "./js/ui/art/scene.js": "./js/ui/art/scene.js?v=9188c74ce9",
           "./js/ui/art/sprites.js": "./js/ui/art/sprites.js?v=6d1944782d",
-          "./js/ui/class-picker.js": "./js/ui/class-picker.js?v=4249e70dfd",
+          "./js/ui/building-card.js": "./js/ui/building-card.js?v=70d5ec9aec",
+          "./js/ui/building-dialog.js": "./js/ui/building-dialog.js?v=0229853727",
+          "./js/ui/class-picker.js": "./js/ui/class-picker.js?v=415da1eaf2",
           "./js/ui/dom.js": "./js/ui/dom.js?v=99613f402c",
           "./js/ui/format.js": "./js/ui/format.js?v=423ebdf8a0",
-          "./js/ui/icons.js": "./js/ui/icons.js?v=9755978747",
+          "./js/ui/help.js": "./js/ui/help.js?v=6db6940651",
+          "./js/ui/icons.js": "./js/ui/icons.js?v=465cce51e8",
           "./js/ui/online-login.js": "./js/ui/online-login.js?v=61ce3c8146",
           "./js/ui/resource-bar.js": "./js/ui/resource-bar.js?v=ff89b2f72e",
           "./js/ui/toast.js": "./js/ui/toast.js?v=1cd41d825e",
           "./js/ui/victory.js": "./js/ui/victory.js?v=bf17d58e35",
-          "./js/ui/views/army.js": "./js/ui/views/army.js?v=bfa2ab30d3",
+          "./js/ui/views/army.js": "./js/ui/views/army.js?v=05b2c739a2",
           "./js/ui/views/attack-form.js": "./js/ui/views/attack-form.js?v=16afc22d3a",
           "./js/ui/views/chat.js": "./js/ui/views/chat.js?v=073e7790fe",
           "./js/ui/views/expedition.js": "./js/ui/views/expedition.js?v=3a4d07255b",
           "./js/ui/views/map.js": "./js/ui/views/map.js?v=bfa7fe2edd",
           "./js/ui/views/market.js": "./js/ui/views/market.js?v=a3e6a723cf",
           "./js/ui/views/overview.js": "./js/ui/views/overview.js?v=94c9be63bf",
-          "./js/ui/views/quests.js": "./js/ui/views/quests.js?v=6b3cd57469",
+          "./js/ui/views/quests.js": "./js/ui/views/quests.js?v=c7d84832e0",
           "./js/ui/views/ranking.js": "./js/ui/views/ranking.js?v=32393b9b68",
           "./js/ui/views/reports.js": "./js/ui/views/reports.js?v=5d5040ba95",
           "./js/ui/views/settings.js": "./js/ui/views/settings.js?v=9a1440684a",
           "./js/ui/views/smithy.js": "./js/ui/views/smithy.js?v=2bea12776b",
           "./js/ui/views/treasury.js": "./js/ui/views/treasury.js?v=d028da7ab0",
-          "./js/ui/views/village.js": "./js/ui/views/village.js?v=a0ca3697c9"
+          "./js/ui/views/village.js": "./js/ui/views/village.js?v=61a1f42a38"
         }
       }
     </script>
@@ -110,14 +113,15 @@
         <a id="incoming-alert" class="incoming-alert" href="#/ordu" hidden></a>
         <a id="akce-chip" class="akce-chip" href="#/hazine" title="Akçe · Hazine"></a>
         <a id="online-chip" class="online-chip" href="#/ayarlar" title="Çok oyunculu dünya" hidden></a>
+        <button type="button" id="help-button" class="help-button" title="Nasıl oynanır?" aria-label="Nasıl oynanır?">?</button>
         <div id="resource-bar" class="resource-bar" aria-label="Kaynaklar"></div>
       </header>
 
       <nav class="tabs" aria-label="Bölümler">
         <a href="#/koy" data-route="koy">Köy</a>
-        <a href="#/koyler" data-route="koyler" hidden>Köyler</a>
+        <a href="#/koyler" data-route="koyler" class="tab-extra" hidden>Köyler</a>
         <a href="#/harita" data-route="harita">Harita</a>
-        <a href="#/kesif" data-route="kesif">Keşif</a>
+        <a href="#/kesif" data-route="kesif" class="tab-extra">Keşif</a>
         <a href="#/ordu" data-route="ordu">Ordu</a>
         <a href="#/raporlar" data-route="raporlar">
           Raporlar <span id="reports-badge" class="nav-badge" hidden aria-label="okunmamış rapor"></span>
@@ -125,10 +129,13 @@
         <a href="#/gorevler" data-route="gorevler">
           Görevler <span id="quests-badge" class="nav-badge" hidden aria-label="ödülü bekleyen görev"></span>
         </a>
-        <a href="#/siralama" data-route="siralama">Sıralama</a>
-        <a href="#/sohbet" data-route="sohbet" hidden>Sohbet</a>
-        <a href="#/ayarlar" data-route="ayarlar">Ayarlar</a>
+        <a href="#/siralama" data-route="siralama" class="tab-extra">Sıralama</a>
+        <a href="#/sohbet" data-route="sohbet" class="tab-extra" hidden>Sohbet</a>
+        <a href="#/ayarlar" data-route="ayarlar" class="tab-extra">Ayarlar</a>
+        <!-- Telefonda ikincil sekmeler "Diğer" altında toplanır (bkz. app.js) -->
+        <button type="button" id="tab-more" class="tab-more" aria-expanded="false" aria-controls="more-sheet">Diğer</button>
       </nav>
+      <div id="more-sheet" class="more-sheet" hidden></div>
     </div>
 
     <main id="view" class="view">
@@ -142,7 +149,7 @@
     <div id="toasts" class="toasts" aria-live="polite"></div>
 
     <footer class="footer">
-      Beylikler v1.3 · Tek ve çok oyunculu ·
+      Beylikler v1.4 · Tek ve çok oyunculu ·
       <a href="https://github.com/kaan2635/beylikler">Kaynak kod</a> ·
       <a href="#/ayarlar">Emeği geçenler</a>
     </footer>

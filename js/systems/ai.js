@@ -5,7 +5,7 @@ import { RESOURCE_IDS } from '../config/resources.js';
 import { RESEARCH } from '../config/tech.js';
 import { hiddenCapacity, travelSeconds } from '../core/formulas.js';
 import { hash3, mulberry32 } from '../core/random.js';
-import { lordsOf, lordPowerIn, lordVillage, distance, nearbyBarbarians } from './world.js';
+import { lordsOf, lordPowerIn, lordVillage, distance, nearbyBarbarians, villagePoints } from './world.js';
 import { barbarianLive, recordBarbarian } from './barbarians.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
 import { defendersOf, applyDefenderLosses } from './support.js';
@@ -136,13 +136,20 @@ export function rescaleLordSchedules(state, now, oldSpeed, newSpeed) {
   }
 }
 
-/** Saldırıya uğrayan bey (kişiliği intikamcıysa) en geç `revengeHours` içinde karşılık verir. */
+/**
+ * Saldırıya uğrayan bey (kişiliği intikamcıysa) en geç `revengeHours` içinde karşılık verir.
+ * İntikam saldırısı saldırılar arasındaki en az aralığı (minGapHours) beklemez.
+ */
 export function provokeLord(state, lordId, at) {
   const lord = lordsOf(state.world.seed).find((l) => l.id === lordId);
   const entry = state.ai.lords[lordId];
   if (!lord || !entry?.nextAttackAt || !PERSONALITIES[lord.personality].revenge) return;
   const delay = LORD.revengeHours * HOUR * (0.5 + 0.5 * roll(state, lord, 20_000 + entry.attacks));
-  entry.nextAttackAt = Math.min(entry.nextAttackAt, at + toReal(state.world, delay));
+  const revengeAt = at + toReal(state.world, delay);
+  if (revengeAt < entry.nextAttackAt) {
+    entry.nextAttackAt = revengeAt;
+    entry.revenge = true;
+  }
 }
 
 /** Oyuncu bir beyin hisarına saldırdı: sonuç beyin gücünü, savaş puanını ve haberleri etkiler. */
@@ -154,16 +161,29 @@ export function recordPlayerAttackOnLord(state, report) {
   addNews(state, report.at, `${report.origin.name} → ${report.target.owner}: ${report.attackerWins ? 'hisar yenildi' : 'saldırı püskürtüldü'}.`);
 }
 
-/** Beyin bu güçte ve zorlukta kuracağı saldırı ordusu. */
-export function lordArmy(lord, power, difficulty) {
+/** Hedef köyün büyüklüğüne göre saldırı gücünün üst sınırı (zorluk çarpanından önce). */
+export function attackCap(targetPoints) {
+  return LORD.capBase + LORD.capPerPoint * targetPoints;
+}
+
+/**
+ * Beyin bu güçte ve zorlukta kuracağı saldırı ordusu. `cap` verilirse saldırı gücü (zorluk
+ * çarpanından önce) bununla sınırlanır; koçbaşılar da aynı oranda azalır.
+ */
+export function lordArmy(lord, power, difficulty, cap = Infinity) {
   const personality = PERSONALITIES[lord.personality];
-  const strength = LORD.attackBase * power ** LORD.attackExponent * difficulty.attackFactor;
+  const raw = LORD.attackBase * power ** LORD.attackExponent;
+  const ratio = Math.min(1, cap / raw);
+  const strength = raw * ratio * difficulty.attackFactor;
   const units = {};
   for (const [id, share] of Object.entries(personality.army)) {
     const n = Math.round((strength * share) / UNITS[id].attack);
     if (n > 0) units[id] = n;
   }
-  if (personality.rams && power >= LORD.ramsFromPower) units.kocbasi = Math.floor(power / 2);
+  if (personality.rams && power >= LORD.ramsFromPower && difficulty.attackFactor > 0) {
+    const rams = Math.floor((power / 2) * ratio);
+    if (rams > 0) units.kocbasi = rams;
+  }
   return units;
 }
 
@@ -173,20 +193,36 @@ export function lordTech(power, units) {
   return Object.fromEntries(Object.keys(units).map((id) => [id, level]));
 }
 
-/** Zamanı gelen beyin saldırısını yola çıkarır ve bir sonrakini takvime yazar. */
+/**
+ * Zamanı gelen beyin saldırısını yola çıkarır ve bir sonrakini takvime yazar.
+ * Son saldırının üstünden `minGapHours` geçmediyse bey sırasını bekler: saldırısı o süre
+ * dolduktan biraz sonraya ertelenir (intikam saldırısı beklemez).
+ */
 export function launchLordAttack(state, lord, at) {
   const entry = entryOf(state, lord.id);
   const difficulty = difficultyOf(state);
+  if (!difficulty.attacks) {
+    entry.nextAttackAt = null;
+    return null;
+  }
+  const gap = toReal(state.world, (difficulty.minGapHours ?? 0) * HOUR);
+  const last = state.ai.lastAttackAt ?? -Infinity;
+  if (!entry.revenge && at < last + gap) {
+    const wait = roll(state, lord, 80_000 + (Math.floor(at / 60_000) % 100_000)) * 0.5 * gap;
+    entry.nextAttackAt = last + gap + wait;
+    return null;
+  }
+  entry.revenge = false;
   entry.attacks += 1;
-  entry.nextAttackAt = difficulty.attacks ? at + toReal(state.world, attackInterval(state, lord, entry.attacks)) : null;
-  if (!difficulty.attacks) return null;
+  entry.nextAttackAt = at + toReal(state.world, attackInterval(state, lord, entry.attacks));
+  state.ai.lastAttackAt = at;
 
   const villages = Object.values(state.villages);
   const target = villages.reduce((best, v) =>
     distance(lord.x, lord.y, v.x, v.y) < distance(lord.x, lord.y, best.x, best.y) ? v : best,
   );
   const power = lordPowerIn(state, lord);
-  const units = lordArmy(lord, power, difficulty);
+  const units = lordArmy(lord, power, difficulty, attackCap(villagePoints(target.buildings)));
   if (!totalUnits(units)) return null;
 
   const from = lordVillage(state, lord);

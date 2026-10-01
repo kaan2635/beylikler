@@ -37,8 +37,8 @@
 
   /* Yazı */
   --ink: #2a1f13;
-  --ink-soft: #6b5840;
-  --ink-faint: #9a8766;
+  --ink-soft: #5d4a33;
+  --ink-faint: #8f7c5c;
   --emboss: 0 1px 0 rgb(255 255 255 / 0.65);
 
   /* Vurgu renkleri */
@@ -490,6 +490,77 @@ code {
   outline-offset: 2px;
 }
 
+/* Rehber düğmesi */
+.help-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--hud-line);
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--hud-well-top), var(--hud-well-bottom));
+  color: #f3dca0;
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.6);
+}
+
+.help-button:hover {
+  border-color: var(--trim);
+  color: #fff1c8;
+}
+
+.help-button:focus-visible {
+  outline: 2px solid var(--trim);
+  outline-offset: 2px;
+}
+
+/* Rehber penceresi */
+.help-dialog {
+  width: min(760px, 100%);
+}
+
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 14px 18px;
+}
+
+.help-topic {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 12px;
+}
+
+.help-topic h3 {
+  margin-bottom: 3px;
+  font-size: 1.05rem;
+}
+
+.help-topic p {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.help-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #f3dca0;
+  background: radial-gradient(circle at 50% 30%, #4d3822, #1c130b 75%);
+  box-shadow: 0 0 0 1.5px var(--trim), 0 2px 5px rgb(40 25 10 / 0.3);
+}
+
+.help-icon .icon {
+  width: 22px;
+  height: 22px;
+}
+
 /* Çok oyunculu göstergesi */
 .online-chip {
   display: inline-flex;
@@ -686,6 +757,11 @@ code {
   outline: 2px solid var(--trim);
   outline-offset: -3px;
   border-radius: 6px;
+}
+
+.tab-more,
+.more-sheet {
+  display: none !important;
 }
 
 .nav-badge {
@@ -1553,7 +1629,7 @@ label {
 }
 
 .card-desc {
-  font-size: 0.87rem;
+  font-size: 0.9rem;
   color: var(--ink-soft);
 }
 
@@ -1611,6 +1687,209 @@ label {
 
 .card.locked {
   opacity: 0.82;
+}
+
+.building-card.ready {
+  border-color: color-mix(in srgb, var(--gold) 60%, var(--border));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55), inset 3px 0 0 color-mix(in srgb, var(--gold) 70%, transparent), 0 1px 2px rgb(60 40 20 / 0.08);
+}
+
+/* Kartta görsel ve ad bina penceresini açar */
+.art-button,
+.title-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.art-button {
+  flex: none;
+  border-radius: 12px;
+}
+
+.title-button:hover h3,
+.title-button:hover strong {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+.art-button:focus-visible,
+.title-button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Bina listesi süzgeci */
+.building-filter {
+  margin-left: auto;
+}
+
+.building-filter .segment {
+  padding: 6px 11px;
+  font-size: 0.86rem;
+}
+
+.segment-count:empty {
+  display: none;
+}
+
+.filter-empty {
+  padding: 12px 4px;
+}
+
+/* Bina penceresi */
+.building-dialog {
+  width: min(580px, 100%);
+  padding: 26px 26px 22px;
+}
+
+.dialog-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--btn2-top), var(--btn2-bottom));
+  color: var(--ink-soft);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dialog-close:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+}
+
+.building-card.detailed,
+.building-card.detailed:hover {
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.building-card.detailed .card-head {
+  gap: 18px;
+  padding-right: 34px;
+}
+
+.building-card.detailed .building-art {
+  width: 150px;
+  height: 132px;
+  margin: -6px 0 0 -8px;
+}
+
+.building-card.detailed h3 {
+  font-size: 1.6rem;
+}
+
+.building-card.detailed .card-desc {
+  font-size: 0.95rem;
+}
+
+.building-card.detailed .card-effect {
+  font-size: 0.95rem;
+}
+
+.building-card.detailed .card-actions {
+  padding-top: 8px;
+  background: linear-gradient(90deg, var(--hair), transparent 85%) left top / 100% 1px no-repeat;
+}
+
+.requires {
+  display: grid;
+  gap: 4px;
+}
+
+.require-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.88rem;
+}
+
+.require-list li {
+  padding: 2px 10px 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--bad) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+  color: var(--bad);
+}
+
+.require-list li::before {
+  content: "✗ ";
+}
+
+.req-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.req-link:hover {
+  text-decoration: underline;
+}
+
+.require-list li.met {
+  border-color: color-mix(in srgb, var(--ok) 35%, transparent);
+  background: color-mix(in srgb, var(--ok) 8%, transparent);
+  color: var(--ok);
+}
+
+.require-list li.met::before {
+  content: "✓ ";
+}
+
+.queue-note {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--turq);
+}
+
+/* Kilitli birim kartı kısa: yalnız ad ve gereksinim */
+.unit-card.locked .card-desc,
+.unit-card.locked .stats,
+.unit-card.locked .cost,
+.unit-card.locked form {
+  display: none;
+}
+
+.unit-card.locked .unit-portrait {
+  width: 44px;
+  height: 44px;
+  filter: grayscale(0.7);
+}
+
+/* Başlangıç penceresinde zorluk seçimi */
+.difficulty-pick {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.difficulty-info {
+  font-size: 0.88rem;
 }
 
 .card.maxed .cost {
@@ -1827,8 +2106,17 @@ label {
   font-variant-numeric: tabular-nums;
 }
 
+/* Köydeki birlikler: yalnız sahip olunanlar görünür */
 .troop.empty {
-  opacity: 0.5;
+  display: none;
+}
+
+.absent-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
 }
 
 .train-queue {
@@ -2720,7 +3008,7 @@ details.mp-choice summary {
   display: block;
   width: 100%;
   height: auto;
-  max-height: min(58vh, 540px);
+  max-height: min(48vh, 480px);
   margin: 0 auto;
 }
 
@@ -3071,20 +3359,91 @@ details.mp-choice summary {
     box-shadow: 0 -6px 16px rgb(0 0 0 / 0.3);
   }
 
-  .tabs a {
-    flex: 1 0 auto;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 52px;
-    padding: 6px 4px 5px;
-    border-radius: 10px;
-    color: var(--bar-soft);
-    font-size: 0.68rem;
+  .tabs {
+    justify-content: space-around;
+    overflow: visible;
   }
 
-  .tabs a .icon {
+  .tabs .tab-extra {
+    display: none;
+  }
+
+  .tabs a,
+  .tabs .tab-more {
+    position: relative;
+    display: inline-flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    padding: 6px 2px 5px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--bar-soft);
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .tabs .tab-more {
+    display: inline-flex !important;
+  }
+
+  .tabs .tab-more.active,
+  .tabs .tab-more[aria-expanded="true"] {
+    color: #f6dea0;
+    background: linear-gradient(180deg, rgb(201 162 74 / 0.22), rgb(201 162 74 / 0.04));
+  }
+
+  .tabs a .icon,
+  .tabs .tab-more .icon {
     width: 22px;
     height: 22px;
+  }
+
+  .more-sheet:not([hidden]) {
+    position: fixed;
+    right: 8px;
+    bottom: calc(70px + env(safe-area-inset-bottom));
+    z-index: 16;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: min(320px, calc(100% - 16px));
+    padding: 10px;
+    border: 1px solid var(--trim);
+    border-radius: 12px;
+    background: var(--grain-light), linear-gradient(180deg, #3a2a1c, #1d140c);
+    box-shadow: 0 12px 30px rgb(0 0 0 / 0.45);
+  }
+
+  .more-sheet a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 4px;
+    border-radius: 8px;
+    color: #e6cf9c;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .more-sheet a .icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .more-sheet a.active {
+    color: #fdebb8;
+    background: rgb(201 162 74 / 0.18);
+  }
+
+  .building-filter {
+    margin-left: 0;
   }
 
   .tabs a:hover {

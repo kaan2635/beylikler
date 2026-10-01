@@ -11,6 +11,32 @@ import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration } from '../format.js';
 import { toast } from '../toast.js';
+import { openBuildingDialog } from '../building-dialog.js';
+
+// Görevin hedefine götüren yer: bina görevlerinde bina penceresi, diğerlerinde ilgili sayfa.
+const STAT_PAGES = { attacksWon: '#/harita', loot: '#/harita', spies: '#/harita', expeditions: '#/kesif', defenses: '#/ordu' };
+
+function questDestination(state, goal) {
+  const level = (id) => Math.max(0, ...Object.values(state.villages).map((v) => v.buildings[id] ?? 0));
+  switch (goal.kind) {
+    case 'building':
+      return { building: goal.id };
+    case 'buildings':
+      return { building: goal.ids.find((id) => level(id) < goal.target) ?? goal.ids[0] };
+    case 'units':
+      return { href: '#/ordu' };
+    case 'tech':
+      return level('demirci') > 0 ? { href: '#/demirci' } : { building: 'demirci' };
+    case 'stat':
+      if (goal.id === 'expeditions' && level('kervansaray') === 0) return { building: 'kervansaray' };
+      return { href: STAT_PAGES[goal.id] ?? '#/koy' };
+    case 'villages':
+    case 'lords':
+      return level('saray') > 0 ? { href: '#/harita' } : { building: 'saray' };
+    default:
+      return { href: '#/koy' };
+  }
+}
 
 /** Görev kartı listesi: hem Köy ekranındaki özet hem Görevler sayfası kullanır. */
 export function createQuestList({ game, refresh, compact = false }) {
@@ -18,6 +44,14 @@ export function createQuestList({ game, refresh, compact = false }) {
   let signature = null;
 
   list.addEventListener('click', (event) => {
+    const go = event.target.closest('button[data-goto]');
+    if (go) {
+      const quest = activeQuests(game.state).find((q) => q.quest.id === go.dataset.goto)?.quest;
+      const where = quest && questDestination(game.state, quest.goal);
+      if (where?.building) openBuildingDialog({ game, refresh }, where.building);
+      else if (where?.href) location.hash = where.href;
+      return;
+    }
     const button = event.target.closest('button[data-quest]');
     if (!button) return;
     const now = Date.now();
@@ -58,7 +92,9 @@ export function createQuestList({ game, refresh, compact = false }) {
               h('div', { class: 'quest-progress' }, h('span', { style: `width:${Math.round((value / quest.goal.target) * 100)}%` })),
               h('div', { class: 'cost quest-reward' }, h('span', { class: 'muted' }, `${fmtInt(value)}/${fmtInt(quest.goal.target)} · Ödül:`), reward),
             ),
-            h('button', { type: 'button', class: `btn btn-small${done ? ' btn-gold' : ''}`, dataset: { quest: quest.id }, disabled: !done }, done ? 'Ödülü al' : 'Sürüyor'),
+            done
+              ? h('button', { type: 'button', class: 'btn btn-small btn-gold', dataset: { quest: quest.id } }, 'Ödülü al')
+              : h('button', { type: 'button', class: 'btn btn-small btn-ghost', dataset: { goto: quest.id }, title: 'Görevin yapılacağı yere git' }, 'Git →'),
           );
         }),
       );

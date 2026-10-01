@@ -1,40 +1,36 @@
 import { BUILDINGS, BUILDING_IDS } from '../../config/buildings.js';
-import { RESOURCES } from '../../config/resources.js';
-import { TRAINING_BUILDINGS } from '../../config/units.js';
-import { inspectUpgrade, maxBuildQueue } from '../../systems/construction.js';
+import { maxBuildQueue } from '../../systems/construction.js';
 import { finishCost } from '../../systems/premium.js';
-import { buildingImage, tierOf } from '../art/sprites.js';
 import { sceneSvg } from '../art/scene.js';
 import { createQuestList } from './quests.js';
-
-// Kendi sayfası olan binalar: kart üzerinde, bina inşa edilince görünen bağlantı.
-const BUILDING_PAGES = {
-  ...Object.fromEntries(TRAINING_BUILDINGS.map((id) => [id, { href: '#/ordu', label: 'Asker eğit →' }])),
-  demirci: { href: '#/demirci', label: 'Geliştirmeler →' },
-  pazar: { href: '#/pazar', label: 'Takas yap →' },
-  kervansaray: { href: '#/kesif', label: 'Keşif seferi →' },
-};
-import { plannedLevel } from '../../core/village.js';
+import { createBuildingCard, upgradeFromButton, BUILDING_GROUPS } from '../building-card.js';
+import { openBuildingDialog } from '../building-dialog.js';
 import { villagePoints, continentOf } from '../../systems/world.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
-import { fmtInt, fmtDuration, fmtClock, fmtEffect } from '../format.js';
+import { fmtInt, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
+
+const FILTER_KEY = 'beylikler:bina-suzgeci';
+
+function readFilter() {
+  try {
+    const value = localStorage.getItem(FILTER_KEY);
+    return value === 'hazir' || BUILDING_GROUPS[value] ? value : 'tumu';
+  } catch {
+    return 'tumu';
+  }
+}
 
 /** Köy ekranı: inşaat kuyruğu ve bina kartları. */
 export function createVillageView({ game, refresh }) {
   const name = h('h1', { class: 'village-name' });
   const coords = h('span', { class: 'muted' });
   const queue = createQueuePanel();
-  const cards = BUILDING_IDS.map(createBuildingCard);
-  const scene = createScene((id) => {
-    const card = cards.find((c) => c.el.dataset.building === id)?.el;
-    if (!card) return;
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    card.classList.remove('flash');
-    void card.offsetWidth; // animasyonu yeniden başlat
-    card.classList.add('flash');
-  });
+  const cards = BUILDING_IDS.map((id) => createBuildingCard(id));
+  const open = (id) => openBuildingDialog({ game, refresh }, id);
+  const scene = createScene(open);
+  const filter = createBuildingFilter(cards);
 
   const quests = createQuestList({ game, refresh, compact: true });
   const questPanel = h(
@@ -60,8 +56,9 @@ export function createVillageView({ game, refresh }) {
         h(
           'section',
           { class: 'panel buildings-panel' },
-          h('div', { class: 'panel-head' }, h('h2', null, 'Binalar')),
+          h('div', { class: 'panel-head' }, h('h2', null, 'Binalar'), filter.el),
           h('div', { class: 'building-grid' }, cards.map((card) => card.el)),
+          filter.empty,
         ),
       ),
       h('aside', { class: 'village-side' }, queue.el, questPanel),
@@ -70,12 +67,16 @@ export function createVillageView({ game, refresh }) {
 
   // Düğmeler her saniye yeniden oluşturulmadığı için tek bir dinleyici yeterli.
   el.addEventListener('click', (event) => {
+    const opener = event.target.closest('[data-open]');
+    if (opener) {
+      open(opener.dataset.open);
+      return;
+    }
     const button = event.target.closest('button[data-action]');
     if (!button) return;
     const now = Date.now();
     if (button.dataset.action === 'upgrade') {
-      const result = game.upgrade(button.dataset.building, now);
-      if (!result.ok) toast(result.reason, 'error');
+      upgradeFromButton(game, button, now);
     } else if (button.dataset.action === 'cancel') {
       const job = game.cancelLastUpgrade(now);
       if (job) toast(`${BUILDINGS[job.building].name} yükseltmesi iptal edildi, kaynaklar iade edildi.`);
@@ -97,8 +98,55 @@ export function createVillageView({ game, refresh }) {
       quests.update();
       queue.update(village, now, game.state);
       for (const card of cards) card.update(village, game.state.world, now);
+      filter.update();
     },
   };
+}
+
+/**
+ * Bina listesinin süzgeci: Tümü, şimdi yükseltilebilenler ya da gruplar (kaynak, askerî, yönetim).
+ * Seçim tarayıcıda hatırlanır.
+ */
+function createBuildingFilter(cards) {
+  let active = readFilter();
+  const options = [['tumu', 'Tümü'], ['hazir', 'Yükseltilebilir'], ...Object.entries(BUILDING_GROUPS).map(([id, g]) => [id, g.label])];
+  const counts = {};
+  const buttons = options.map(([id, label]) => {
+    counts[id] = h('span', { class: 'segment-count' });
+    return h('button', { type: 'button', class: 'segment', dataset: { filter: id }, 'aria-pressed': 'false' }, label, counts[id]);
+  });
+  const el = h('div', { class: 'segmented building-filter', role: 'group', 'aria-label': 'Binaları süz' }, buttons);
+  const empty = h('p', { class: 'muted filter-empty' }, 'Şu anda yükseltilebilecek bina yok; kaynaklar birikince burada görünür.');
+
+  const matches = (card, id) => {
+    if (id === 'tumu') return true;
+    if (id === 'hazir') return card.el.classList.contains('ready');
+    return BUILDING_GROUPS[id].ids.includes(card.el.dataset.building);
+  };
+  const update = () => {
+    let shown = 0;
+    for (const card of cards) {
+      const visible = matches(card, active);
+      card.el.hidden = !visible;
+      if (visible) shown += 1;
+    }
+    for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.filter === active));
+    for (const button of buttons) button.classList.toggle('active', button.dataset.filter === active);
+    setText(counts.hazir, String(cards.filter((card) => matches(card, 'hazir')).length));
+    empty.hidden = shown > 0;
+  };
+  el.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-filter]');
+    if (!button) return;
+    active = button.dataset.filter;
+    try {
+      localStorage.setItem(FILTER_KEY, active);
+    } catch {
+      // gizli pencere: seçim hatırlanmaz
+    }
+    update();
+  });
+  return { el, empty, update };
 }
 
 /** Köy sahnesi: binalar seviyelerine göre çizilir; tıklanan binanın kartına gidilir. */
@@ -157,7 +205,7 @@ function createQueuePanel() {
       const row = h(
         'div',
         { class: 'queue-row' },
-        h('div', null, h('strong', null, BUILDINGS[job.building].name), ` → ${job.level}. seviye`),
+        h('div', null, h('button', { type: 'button', class: 'title-button', dataset: { open: job.building } }, h('strong', null, BUILDINGS[job.building].name)), ` → ${job.level}. seviye`),
         h('div', { class: 'queue-time' }, remaining, h('span', { class: 'muted' }, `bitiş ${fmtClock(job.endAt, now)}`)),
         h(
           'div',
@@ -199,88 +247,6 @@ function createQueuePanel() {
           setText(remaining, `sırada · ${fmtDuration((job.endAt - job.startAt) / 1000)}`);
         }
       });
-    },
-  };
-}
-
-function createBuildingCard(buildingId) {
-  const def = BUILDINGS[buildingId];
-  const badge = h('span', { class: 'badge' });
-  const effect = h('div', { class: 'card-effect' });
-  const status = h('div', { class: 'card-status' });
-  const button = h('button', { class: 'btn', dataset: { action: 'upgrade', building: buildingId } });
-  const page = BUILDING_PAGES[buildingId];
-  const pageLink = page ? h('a', { class: 'card-link', href: page.href }, page.label) : null;
-
-  const costItems = {};
-  const costRow = h('div', { class: 'cost' });
-  for (const resource of Object.keys(def.cost)) {
-    const value = h('span');
-    const item = h('span', { class: 'cost-item', title: RESOURCES[resource].name }, icon(resource), value);
-    costItems[resource] = { item, value };
-    costRow.append(item);
-  }
-  const pop = h('span');
-  const time = h('span');
-  costRow.append(
-    h('span', { class: 'cost-item', title: 'Nüfus' }, icon('nufus'), pop),
-    h('span', { class: 'cost-item', title: 'Süre' }, icon('saat'), time),
-  );
-
-  const art = h('div', { class: 'building-art' });
-  let artTier = null;
-  const el = h(
-    'article',
-    { class: 'card building-card', dataset: { building: buildingId }, id: `bina-${buildingId}` },
-    h('div', { class: 'card-head' }, art, h('div', { class: 'card-title' }, h('h3', null, def.name), badge)),
-    h('p', { class: 'card-desc' }, def.description),
-    effect,
-    costRow,
-    h('div', { class: 'card-actions' }, button, status, pageLink),
-  );
-
-  return {
-    el,
-    update(village, world, now) {
-      const current = village.buildings[buildingId];
-      const planned = plannedLevel(village, buildingId);
-      const check = inspectUpgrade(village, world, buildingId, now);
-
-      // Görsel yalnızca kademe değişince yenilenir (1–4, 5–14, 15+); inşa edilmemişse soluk.
-      const tier = `${tierOf(current)}`;
-      if (tier !== artTier) {
-        artTier = tier;
-        art.replaceChildren(h('img', { src: buildingImage(buildingId, current), alt: '', loading: 'lazy', decoding: 'async', class: current > 0 ? null : 'ghost' }));
-      }
-      setText(badge, current > 0 ? `${current}. seviye` : 'Yok');
-      if (pageLink) pageLink.hidden = current === 0;
-      badge.classList.toggle('badge-muted', current === 0);
-      el.classList.toggle('locked', check.code === 'requires' && current === 0);
-      el.classList.toggle('maxed', check.code === 'max');
-
-      // Ok, satın alınacak tek adımı gösterir: kuyruktaki seviye → bir sonraki seviye.
-      const currentEffect = planned > 0 ? fmtEffect(def.effect, def.effect.value(planned, world)) : '—';
-      const nextEffect = check.code === 'max' ? '' : ` → ${fmtEffect(def.effect, def.effect.value(check.level, world))}`;
-      setText(effect, `${def.effect.label}: ${currentEffect}${nextEffect}`);
-
-      if (check.cost) {
-        for (const [resource, { item, value }] of Object.entries(costItems)) {
-          setText(value, fmtInt(check.cost[resource]));
-          item.classList.toggle('short', village.resources[resource] < check.cost[resource]);
-        }
-        setText(pop, `+${check.popDelta}`);
-        setText(time, fmtDuration(check.duration));
-      }
-
-      if (check.code === 'max') setText(button, 'Tamamlandı');
-      else if (planned === 0) setText(button, 'İnşa et');
-      else setText(button, `${check.level}. seviyeye yükselt`);
-      button.disabled = !check.ok;
-
-      if (check.ok) setText(status, planned > current ? 'Kuyruğa eklenecek' : '');
-      else if (check.code === 'resources') setText(status, `Kaynaklar ${fmtClock(check.readyAt, now)} hazır`);
-      else if (check.code === 'max') setText(status, '');
-      else setText(status, check.reason);
     },
   };
 }

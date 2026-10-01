@@ -4,7 +4,7 @@ import { createNewGame, migrate } from '../js/core/state.js';
 import { advance } from '../js/core/engine.js';
 import { Game } from '../js/game.js';
 import { lordsOf, lordAt, barbarianAt, villageAt, terrainAt, distance, lordPower } from '../js/systems/world.js';
-import { lordArmy, incomingEstimate, setDifficulty, ensureLordSchedules } from '../js/systems/ai.js';
+import { lordArmy, attackCap, incomingEstimate, setDifficulty, ensureLordSchedules } from '../js/systems/ai.js';
 import { sendAttack } from '../js/systems/movements.js';
 import { barbarianLive, barbarianGarrison } from '../js/systems/barbarians.js';
 import { hiddenCapacity } from '../js/core/formulas.js';
@@ -125,6 +125,8 @@ test('güçlü savunma saldırıyı püskürtür; askerler kayıp verir ama kayn
 test('koçbaşılı güçlü saldırı kazanırsa oyuncunun surunu yıkar', () => {
   const { state, village } = game('zor');
   state.world.clock.time = 60 * DAY; // beyler güçlensin
+  // Saldırı köyün büyüklüğüyle sınırlı: gelişmiş bir köy olsun ki tam ordu gelsin.
+  Object.assign(village.buildings, { konak: 15, oduncu: 20, kilocagi: 20, demirmadeni: 20, ambar: 20, ciftlik: 15 });
   village.buildings.sur = 3;
   advance(state, T0);
   // Yalnızca saldırgan bir beyi hemen saldırtan bir takvim kur.
@@ -193,4 +195,72 @@ test('5. sürüm kayda yapay zekâ eklenir; eski oyuncuya hemen saldırılmaz', 
   assert.deepEqual(migrated.villages.v1.incoming, []);
   ensureLordSchedules(migrated, T0);
   for (const entry of Object.values(migrated.ai.lords)) assert.ok(entry.nextAttackAt >= T0 + LORD.graceHours * HOUR);
+});
+
+test('saldırılar arasında en az minGapHours geçer; beyler sırayla gelir', () => {
+  for (const difficulty of ['kolay', 'normal', 'zor']) {
+    const { state } = game(difficulty, 7);
+    advance(state, T0); // takvimi kur
+    const launched = advance(state, T0 + 40 * DAY)
+      .filter((e) => e.type === 'incoming-attack')
+      .map((e) => e.at);
+    assert.ok(launched.length > 0, `${difficulty}: hiç saldırı yok`);
+    const gap = DIFFICULTIES[difficulty].minGapHours * HOUR;
+    for (let i = 1; i < launched.length; i++) assert.ok(launched[i] - launched[i - 1] >= gap - 1, `${difficulty}: aralık kısa`);
+  }
+  // Zorluk sırası: kolay < normal < zor
+  const count = (d) => {
+    const { state } = game(d, 7);
+    advance(state, T0);
+    return advance(state, T0 + 40 * DAY).filter((e) => e.type === 'incoming-attack').length;
+  };
+  assert.ok(count('kolay') < count('normal') && count('normal') < count('zor'));
+});
+
+test('saldırı gücü hedef köyün büyüklüğüyle sınırlıdır; zayıf beyin ordusu sınırın altında kalır', () => {
+  const lord = lordsOf(11).find((l) => l.personality === 'saldirgan');
+  const strength = (units) => Object.entries(units).reduce((s, [id, n]) => s + (id === 'kocbasi' ? 0 : n * ({ baltaci: 40, akinci: 30 }[id] ?? 0)), 0);
+  const small = lordArmy(lord, 20, DIFFICULTIES.normal, attackCap(39));
+  const big = lordArmy(lord, 20, DIFFICULTIES.normal, attackCap(2000));
+  assert.ok(strength(small) <= attackCap(39) * 1.15, 'küçük köye küçük ordu');
+  assert.ok(strength(big) > strength(small) * 5);
+  assert.ok((small.kocbasi ?? 0) < (big.kocbasi ?? 0), 'koçbaşı da sınırla azalır');
+  const weak = lordArmy(lord, 3, DIFFICULTIES.normal, attackCap(2000));
+  assert.deepEqual(weak, lordArmy(lord, 3, DIFFICULTIES.normal), 'sınırın altındaki ordu değişmez');
+
+  // Yeni oyunda ilk saldırı küçük köye göre gelir.
+  const { state, village } = game('normal');
+  state.world.clock.time = 30 * DAY;
+  const { attack } = untilFirstAttack(state, village);
+  assert.ok(incomingEstimate(attack) <= attackCap(39) * 1.5);
+});
+
+test('intikam saldırısı sırayı beklemez', () => {
+  const { state, village } = game('normal');
+  advance(state, T0);
+  const defender = lordsOf(state.world.seed).find((l) => l.personality === 'savunmaci');
+  state.ai.lastAttackAt = T0; // az önce bir saldırı yola çıkmış olsun
+  village.units.baltaci = 500;
+  const sent = sendAttack(state, village, defender.x, defender.y, { baltaci: 500 }, T0);
+  assert.ok(sent.ok, sent.reason);
+  const events = advance(state, sent.arriveAt + LORD.revengeHours * HOUR);
+  const revenge = events.find((e) => e.type === 'incoming-attack' && e.attacker === `${defender.name} Bey`);
+  assert.ok(revenge, 'intikamcı bey aralığı beklemeden saldırdı');
+});
+
+test('9. sürüm kayıtta bey saldırı takvimleri yeniden kurulur; fethedilen bey dokunulmaz', () => {
+  const { state } = game('normal');
+  advance(state, T0);
+  const ids = Object.keys(state.ai.lords);
+  state.ai.lords[ids[0]].defeated = true;
+  state.ai.lords[ids[0]].nextAttackAt = null;
+  state.ai.lords[ids[1]].nextAttackAt = T0 + 1;
+  const v9 = structuredClone(state);
+  v9.version = 9;
+  const migrated = migrate(v9);
+  assert.equal(migrated.version, GAME.saveVersion);
+  assert.equal(migrated.ai.lords[ids[0]].defeated, true);
+  assert.equal(migrated.ai.lords[ids[1]].nextAttackAt, undefined);
+  ensureLordSchedules(migrated, T0);
+  assert.ok(migrated.ai.lords[ids[1]].nextAttackAt >= T0 + LORD.graceHours * HOUR);
 });

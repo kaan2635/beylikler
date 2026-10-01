@@ -14,6 +14,10 @@ export const LORD = Object.freeze({
   maxPower: 25,
   attackBase: 50, // saldırı gücü = attackBase × güç ^ attackExponent × zorluk çarpanı
   attackExponent: 1.5,
+  // Saldırı köyün büyüklüğüyle sınırlıdır: en fazla capBase + capPerPoint × hedef köyün puanı
+  // (zorluk çarpanıyla). Yeni kurulan küçük bir köye küçük, gelişmiş köye ciddi ordular gelir.
+  capBase: 60,
+  capPerPoint: 2,
   techEveryPower: 8, // her 8 güç puanında bir Demirci seviyesi (en fazla 3)
   ramsFromPower: 6, // koçbaşı getiren beyler bu güçten sonra getirir
   graceHours: 12, // mevcut kayıtlar ve zorluk değişiminde ilk saldırıdan önceki en az süre (oyun saati)
@@ -37,9 +41,9 @@ export const PERSONALITIES = Object.freeze({
   saldirgan: {
     name: 'Saldırgan',
     description: 'Sık ve sert saldırır; güçlenince koçbaşıyla surunu yıkmaya çalışır.',
-    growthPerDay: 0.5,
+    growthPerDay: 0.3,
     garrisonFactor: 1,
-    attackEveryHours: [36, 60],
+    attackEveryHours: [48, 84],
     raidEveryHours: [16, 30], // barbar yağması ya da başka beye savaş
     warChance: 0.25, // bir hareketin başka beye savaş olma olasılığı
     army: { baltaci: 0.6, akinci: 0.4 }, // saldırı gücünün birimlere dağılımı
@@ -49,9 +53,9 @@ export const PERSONALITIES = Object.freeze({
   tuccar: {
     name: 'Tüccar',
     description: 'Hızlı büyür; akıncılarıyla ganimet peşinde koşar.',
-    growthPerDay: 0.7,
+    growthPerDay: 0.4,
     garrisonFactor: 0.7,
-    attackEveryHours: [60, 96],
+    attackEveryHours: [84, 132],
     raidEveryHours: [10, 20],
     warChance: 0.05,
     army: { akinci: 0.8, baltaci: 0.2 },
@@ -61,9 +65,9 @@ export const PERSONALITIES = Object.freeze({
   savunmaci: {
     name: 'Savunmacı',
     description: 'Güçlü bir garnizon besler; nadiren ama kalabalık saldırır.',
-    growthPerDay: 0.4,
+    growthPerDay: 0.25,
     garrisonFactor: 2,
-    attackEveryHours: [120, 192],
+    attackEveryHours: [144, 240],
     raidEveryHours: [24, 40],
     warChance: 0.1,
     army: { kilicci: 0.5, baltaci: 0.5 },
@@ -82,31 +86,36 @@ export const DIFFICULTIES = Object.freeze({
     intervalFactor: 1,
     protectionDays: 0,
   },
+  // minGapHours: bir saldırı yola çıktıktan sonra bir sonrakine kadar en az bu kadar oyun saati
+  // geçer; altı bey sırayla gelir, köye üst üste yüklenmez. (İntikam saldırısı bu sırayı beklemez.)
   kolay: {
     name: 'Kolay',
-    description: 'Saldırılar seyrek ve zayıf; ilk 5 oyun günü koruma.',
+    description: 'Saldırılar seyrek (en az 3 oyun günü arayla) ve hafif; ilk 5 oyun günü koruma.',
     attacks: true,
     raids: true,
     attackFactor: 0.6,
     intervalFactor: 2,
+    minGapHours: 72,
     protectionDays: 5,
   },
   normal: {
     name: 'Normal',
-    description: 'Dengeli; ilk 3 oyun günü koruma.',
+    description: 'Dengeli: saldırılar en az 40 oyun saati arayla gelir, köyünün büyüklüğüyle ölçülür; ilk 3 oyun günü koruma.',
     attacks: true,
     raids: true,
     attackFactor: 1,
     intervalFactor: 1,
+    minGapHours: 40,
     protectionDays: 3,
   },
   zor: {
     name: 'Zor',
-    description: 'Sık ve güçlü saldırılar; ilk 1,5 oyun günü koruma.',
+    description: 'Sık (en az 20 oyun saati arayla) ve güçlü saldırılar; ilk 1,5 oyun günü koruma.',
     attacks: true,
     raids: true,
     attackFactor: 1.5,
     intervalFactor: 0.6,
+    minGapHours: 20,
     protectionDays: 1.5,
   },
   // Çok oyunculu dünya: rakipler gerçek oyunculardır. Beyler oyunculara saldırmaz ama dünyada

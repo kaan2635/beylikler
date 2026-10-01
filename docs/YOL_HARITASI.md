@@ -222,6 +222,21 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Sıralamada ilk üçe altın, gümüş, bronz madalya
 - [x] Karanlık tema: deri dokulu koyu zemin, koyu ahşap paneller; telefonda alt sekme çubuğu ve tek satırlık üst çubuk
 
+## ✅ Adım 16 — Bey dengesi ve kolay kullanım (1.4.0)
+
+- [x] Benzetimle ölçüldü (bot oyuncu, 20 oyun günü, 5 tohum): Normal'de 32–33 bey saldırısı geliyordu; savunmaya harcamayan oyuncu hepsini kaybedip ~20.000 kaynak yitiriyordu
+- [x] Saldırılar arasında en az süre: Kolay 72, Normal 40, Zor 20 oyun saati (intikam saldırısı beklemez); 20 günde Kolay 5, Normal 9–10, Zor 20 saldırı
+- [x] Saldırı gücü hedef köyün büyüklüğüyle sınırlı (60 + 2 × köy puanı, zorlukla çarpılır): yeni köye küçük, gelişmiş köye ciddi ordular; koçbaşı da oranla azalır
+- [x] Beyler daha yavaş büyür (günlük güç artışı ~%40 az) ve kişiliklerine göre daha seyrek saldırır
+- [x] Kayıt şeması 10: mevcut oyunlarda beylerin saldırı takvimi yeni dengeyle yeniden kurulur (yoldaki saldırılar kalır)
+- [x] Bina penceresi: sahnede ya da listede binaya tıklayınca açıklama, etki, maliyet, gereksinimler (tıklanabilir), kuyruk ve yükselt düğmesi tek pencerede; sahneden ayrılmadan yükseltilir
+- [x] Bina listesi kısaldı; süzgeç: Tümü · Yükseltilebilir · Kaynak · Askerî · Yönetim; yükseltilebilir binalar altın kenarlı
+- [x] Görevlerde "Git →": görevin binasını ya da sayfasını açar
+- [x] Başlangıç penceresinde zorluk seçimi (Barış, Kolay, Normal, Zor)
+- [x] Ordu: inşa edilmemiş eğitim binası tek satır; kilitli birim kartları kısa; köyde olmayan birlikler gizli
+- [x] Telefonda alt çubuk 5 sekme + "Diğer"; tepe çubuğunda "?" ile "Nasıl oynanır?" rehberi
+- [x] 145 birim testi (saldırı aralığı, köy büyüklüğüne göre sınır, intikam, 9 → 10 kayıt taşıma)
+
 ## Bilinen sınırlamalar
 
 - Kayıt yalnızca o tarayıcıda durur. Başka cihaza geçmek için Ayarlar → Kayıt kodunu kullan.

@@ -18,6 +18,7 @@ import { createQuestsView, claimableQuests } from './views/quests.js';
 import { openVictory } from './victory.js';
 import { createChatView } from './views/chat.js';
 import { openClassPicker } from './class-picker.js';
+import { openHelp } from './help.js';
 import { CLASSES, OFFICERS } from '../config/classes.js';
 import { initToasts, toast } from './toast.js';
 import { h } from './dom.js';
@@ -55,6 +56,49 @@ function withEmblem(view, name) {
   return view;
 }
 
+/**
+ * Telefonda alt çubukta yer kalmadığı için ikincil sekmeler (Keşif, Sıralama, Ayarlar…)
+ * "Diğer" düğmesinin açtığı küçük bir pencerede toplanır. Geniş ekranda düğme görünmez.
+ */
+function createMoreMenu() {
+  const button = document.getElementById('tab-more');
+  const sheet = document.getElementById('more-sheet');
+  if (!button || !sheet) return { markActive() {} };
+  button.prepend(icon('nav-diger'));
+  const close = () => {
+    sheet.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  };
+  button.addEventListener('click', () => {
+    if (!sheet.hidden) {
+      close();
+      return;
+    }
+    // Her açılışta güncel sekmelerden kurulur (Köyler ve Sohbet duruma göre görünür).
+    const links = [...document.querySelectorAll('.tabs .tab-extra')].filter((link) => !link.hidden);
+    sheet.replaceChildren(...links.map((link) => {
+      const copy = link.cloneNode(true);
+      copy.classList.remove('tab-extra');
+      return copy;
+    }));
+    sheet.hidden = false;
+    button.setAttribute('aria-expanded', 'true');
+  });
+  sheet.addEventListener('click', (event) => {
+    if (event.target.closest('a')) close();
+  });
+  document.addEventListener('click', (event) => {
+    if (!sheet.hidden && !event.target.closest('#more-sheet, #tab-more')) close();
+  });
+  window.addEventListener('hashchange', close);
+  return {
+    markActive(route) {
+      const extra = document.querySelector(`.tabs .tab-extra[data-route="${route}"]`);
+      button.classList.toggle('active', !!extra);
+    },
+  };
+}
+
 /** Arayüzü kurar, yönlendirmeyi ve saniyelik yenilemeyi başlatır. */
 export function mountApp(game, { isNew, events }) {
   initToasts(document.getElementById('toasts'));
@@ -77,6 +121,8 @@ export function mountApp(game, { isNew, events }) {
   if (chatTab) chatTab.hidden = !game.online;
   const onlineChip = document.getElementById('online-chip');
   if (onlineChip) onlineChip.hidden = !game.online;
+  const more = createMoreMenu();
+  document.getElementById('help-button')?.addEventListener('click', openHelp);
   let switchSignature = null;
   villageSwitch.addEventListener('change', () => {
     if (game.setActiveVillage(villageSwitch.value)) toast(`${game.village.name} köyünü yönetiyorsun.`);
@@ -136,6 +182,7 @@ export function mountApp(game, { isNew, events }) {
     viewRoot.replaceChildren(current.el);
     current.onShow?.(params.map(Number));
     const tab = PARENT_TAB[name] ?? name;
+    more.markActive(tab);
     for (const link of document.querySelectorAll('[data-route]')) {
       const active = link.dataset.route === tab;
       link.classList.toggle('active', active);
@@ -185,7 +232,7 @@ export function mountApp(game, { isNew, events }) {
   setInterval(refresh, GAME.tickMs);
   route();
 
-  const welcome = () => toast('Beyliğine hoş geldin! İşe kaynak binalarını yükselterek başla.', 'success', 7000);
+  const welcome = () => toast('Beyliğine hoş geldin! Sahnede bir binaya tıklayıp yükselt; ne yapacağını Görevler gösterir. Rehber için tepedeki ? düğmesi.', 'success', 9000);
   if (!game.state.player.class) {
     openClassPicker(game, (classId) => {
       refresh();

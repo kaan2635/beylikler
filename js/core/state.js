@@ -109,6 +109,16 @@ const MIGRATIONS = {
   // Adım 12: görevler, başarımlar ve Sultanlık. Sayaçlar sıfırdan başlar; ödülü alınmamış
   // görevler, şartları zaten sağlanıyorsa hemen tamamlanmış görünür.
   8: (data) => ({ ...data, stats: { ...newStats(), ...data.stats }, quests: { claimed: [] }, achievements: {}, victory: null, version: 9 }),
+  // 1.4 denge: beyler daha seyrek saldırır. Eski takvimler silinir; motor yenisini kurar
+  // (ilk saldırı en az 12 oyun saati sonra). Yoldaki saldırılar olduğu gibi kalır.
+  9: (data) => {
+    const lords = {};
+    for (const [id, entry] of Object.entries(data.ai?.lords ?? {})) {
+      const { nextAttackAt, ...rest } = entry;
+      lords[id] = entry.defeated ? entry : rest;
+    }
+    return { ...data, ai: { ...data.ai, lords }, version: 10 };
+  },
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */

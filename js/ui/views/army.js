@@ -9,6 +9,7 @@ import { techMultiplier } from '../../systems/research.js';
 import { incomingEstimate } from '../../systems/ai.js';
 import { defendersOf, supportAt, stationedAway } from '../../systems/support.js';
 import { gameIconSvg } from '../art/sprites.js';
+import { openBuildingDialog } from '../building-dialog.js';
 import { COMBAT } from '../../config/combat.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
@@ -58,11 +59,13 @@ function createSummaryPanel() {
   const attack = h('span');
   const defense = h('span');
   const carry = h('span');
+  const none = h('p', { class: 'muted' }, 'Köyde asker yok. Kışla inşa edip Yaya eğiterek başla; köyünü bey saldırılarına karşı korurlar.');
   const el = h(
     'section',
     { class: 'panel' },
     h('div', { class: 'panel-head' }, h('h2', null, 'Köydeki birlikler')),
     grid,
+    none,
     h(
       'div',
       { class: 'totals' },
@@ -96,6 +99,7 @@ function createSummaryPanel() {
         totalCarry += n * unit.carry;
         for (const type of Object.keys(totalDefense)) totalDefense[type] += n * unit.defense[type] * forged;
       }
+      none.hidden = UNIT_IDS.some((id) => village.units[id] > 0);
       setText(attack, fmtInt(totalAttack));
       setText(defense, `${fmtInt(totalDefense.piyade)} / ${fmtInt(totalDefense.suvari)} / ${fmtInt(totalDefense.okcu)}`);
       setText(carry, fmtInt(totalCarry));
@@ -326,18 +330,31 @@ function createBuildingPanel(buildingId, { game, refresh }) {
   const badge = h('span', { class: 'badge' });
   const info = h('span', { class: 'muted' });
   const queue = createTrainQueue(buildingId);
-  const cards = UNIT_IDS.filter((id) => UNITS[id].building === buildingId).map((id) =>
-    createUnitCard(id, { game, refresh }),
+  const unitIds = UNIT_IDS.filter((id) => UNITS[id].building === buildingId);
+  const cards = unitIds.map((id) => createUnitCard(id, { game, refresh }));
+  const grid = h('div', { class: 'building-grid' }, cards.map((card) => card.el));
+  // Bina yokken kartlar yerine tek satır: ne eğitileceği ve binaya giden düğme.
+  const absent = h(
+    'div',
+    { class: 'absent-note' },
+    h('p', { class: 'muted' }, `${BUILDINGS[buildingId].name} inşa edilince eğitilir: ${unitIds.map((id) => UNITS[id].name).join(', ')}.`),
+    h('button', { type: 'button', class: 'btn btn-small btn-ghost', dataset: { open: buildingId } }, `${BUILDINGS[buildingId].name} binasını incele`),
   );
   const el = h(
     'section',
     { class: 'panel' },
     h('div', { class: 'panel-head' }, h('h2', null, BUILDINGS[buildingId].name), badge, info),
+    absent,
     queue.el,
-    h('div', { class: 'building-grid' }, cards.map((card) => card.el)),
+    grid,
   );
 
   el.addEventListener('click', (event) => {
+    const opener = event.target.closest('[data-open]');
+    if (opener) {
+      openBuildingDialog({ game, refresh }, opener.dataset.open);
+      return;
+    }
     if (!event.target.closest('button[data-action="cancel-train"]')) return;
     const now = Date.now();
     const batch = game.cancelLastTraining(buildingId, now);
@@ -351,7 +368,10 @@ function createBuildingPanel(buildingId, { game, refresh }) {
       const level = village.buildings[buildingId];
       setText(badge, level > 0 ? `${level}. seviye` : 'Yok');
       badge.classList.toggle('badge-muted', level === 0);
-      setText(info, level > 0 ? `Eğitim süresi %${Math.round(trainingTimeFactor(level) * 100)}` : 'Köy ekranından inşa edebilirsin');
+      setText(info, level > 0 ? `Eğitim süresi %${Math.round(trainingTimeFactor(level) * 100)}` : '');
+      absent.hidden = level > 0;
+      queue.el.hidden = level === 0;
+      grid.hidden = level === 0;
       queue.update(village, now);
       for (const card of cards) card.update(village, world, now);
     },
@@ -438,9 +458,10 @@ function createUnitCard(unitId, { game, refresh }) {
   costRow.append(h('span', { class: 'cost-item', title: 'Nüfus' }, icon('nufus'), pop), timeItem);
 
   const d = unit.defense;
+  // Kilitli birim kartı kısalır (yalnız ad ve gereksinim); bkz. .unit-card.locked
   const el = h(
     'article',
-    { class: 'card' },
+    { class: 'card unit-card' },
     h(
       'div',
       { class: 'card-head' },

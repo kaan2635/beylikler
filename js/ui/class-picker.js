@@ -1,4 +1,5 @@
 import { CLASSES, CLASS_IDS } from '../config/classes.js';
+import { DIFFICULTIES } from '../config/lords.js';
 import { h } from './dom.js';
 import { icon } from './icons.js';
 import { toast } from './toast.js';
@@ -13,6 +14,31 @@ export function openClassPicker(game, onDone) {
   const playerName = h('input', { type: 'text', id: 'picker-player', maxlength: 24, value: game.state.player.name ?? 'Bey', autocomplete: 'off' });
   const villageName = h('input', { type: 'text', id: 'picker-village', maxlength: 32, value: game.village.name, autocomplete: 'off' });
   const start = h('button', { type: 'submit', class: 'btn btn-large', disabled: true }, 'Sınıf seç');
+
+  // Zorluk: rakip beylerin ne sıklıkta ve ne güçte saldırdığı (sonra Ayarlar'dan da değişir).
+  let difficulty = game.state.ai?.difficulty ?? 'normal';
+  const difficultyInfo = h('p', { class: 'muted difficulty-info' });
+  const difficultyButtons = Object.entries(DIFFICULTIES)
+    .filter(([, d]) => !d.hidden)
+    .map(([key, d]) => h('button', { type: 'button', class: 'segment', dataset: { difficulty: key } }, d.name));
+  const showDifficulty = () => {
+    for (const button of difficultyButtons) {
+      const active = button.dataset.difficulty === difficulty;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    }
+    difficultyInfo.textContent = DIFFICULTIES[difficulty].description;
+  };
+  showDifficulty();
+  const difficultyBlock = game.online
+    ? null
+    : h(
+        'div',
+        { class: 'difficulty-pick' },
+        h('span', { class: 'eyebrow' }, 'Rakip beyler'),
+        h('div', { class: 'segmented', role: 'group', 'aria-label': 'Zorluk' }, difficultyButtons),
+        difficultyInfo,
+      );
 
   const cards = CLASS_IDS.map((id) => {
     const def = CLASSES[id];
@@ -39,6 +65,7 @@ export function openClassPicker(game, onDone) {
       h('label', { for: 'picker-village' }, 'Köyünün adı', villageName),
     ),
     h('div', { class: 'class-grid', role: 'group', 'aria-label': 'Sınıf' }, cards),
+    difficultyBlock,
     h(
       'div',
       { class: 'picker-foot' },
@@ -49,6 +76,12 @@ export function openClassPicker(game, onDone) {
   const overlay = h('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'picker-title' }, form);
 
   form.addEventListener('click', (event) => {
+    const level = event.target.closest('button[data-difficulty]');
+    if (level) {
+      difficulty = level.dataset.difficulty;
+      showDifficulty();
+      return;
+    }
     const card = event.target.closest('button[data-class]');
     if (!card) return;
     chosen = card.dataset.class;
@@ -65,6 +98,7 @@ export function openClassPicker(game, onDone) {
       toast(result.reason, 'error');
       return;
     }
+    if (!game.online && difficulty !== game.state.ai?.difficulty) game.setDifficulty(difficulty, Date.now());
     overlay.remove();
     document.body.classList.remove('has-overlay');
     onDone?.(chosen);
