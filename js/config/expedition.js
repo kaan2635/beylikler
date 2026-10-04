@@ -79,7 +79,7 @@ export const REGIONS = Object.freeze({
     kervansaray: 1,
     distance: 14,
     mods: { at: 3, asker: 1.4, kabile: 2.5, bos: 1.3, kaynak: 0.7 },
-    pool: ['akinci', 'atliokcu', 'deli'],
+    pool: ['akinci', 'atliokcu', 'tatarlisi', 'deli'],
     itemQuality: 1,
   },
   dag: {
@@ -111,6 +111,46 @@ export const REGIONS = Object.freeze({
 });
 
 export const REGION_IDS = Object.keys(REGIONS);
+
+// Sefer yaklaşımı sonuçların ağırlığını değiştirir; seçilen bölgeyle birlikte gerçek bir risk/ödül tercihi sunar.
+export const EXPEDITION_FOCUSES = Object.freeze({
+  dengeli: {
+    name: 'Dengeli',
+    icon: 'kasif',
+    description: 'Her tür bulgu için temel olasılıklar korunur.',
+    mods: {},
+    risk: 1,
+    empty: 1,
+    reward: 1,
+  },
+  kaynak: {
+    name: 'Kaynak arayışı',
+    icon: 'tasima',
+    description: 'Kaynak, kervan ve hazine ihtimali artar; asker ve eşya bulguları azalır.',
+    mods: { kaynak: 1.7, kervan: 1.5, hazine: 1.25, asker: 0.7, esya: 0.75, kabile: 0.75, at: 0.75, harita: 0.8 },
+    risk: 1,
+    empty: 1,
+    reward: 1,
+  },
+  asker: {
+    name: 'Levent arayışı',
+    icon: 'serdar',
+    description: 'Paralı asker, göçebe oba ve yılkı ihtimali artar; pusu riski hafif yükselir.',
+    mods: { asker: 1.7, kabile: 1.6, at: 1.5, kaynak: 0.85, kervan: 0.85, hazine: 0.9 },
+    risk: 1.1,
+    empty: 1,
+    reward: 1,
+  },
+  temkinli: {
+    name: 'Tedbirli',
+    icon: 'savunma',
+    description: 'Pusu, kayıp ve gecikme ağırlığı %45 azalır; boş dönüş artar, bulgular %15 küçülür.',
+    mods: {},
+    risk: 0.55,
+    empty: 1.2,
+    reward: 0.85,
+  },
+});
 
 // Sonuçların arayüzdeki adları; `good` rapor rozetinin rengini belirler.
 export const EXPEDITION_OUTCOMES = Object.freeze({

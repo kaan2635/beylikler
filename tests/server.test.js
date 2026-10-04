@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hashPassword, verifyPassword, validUsername, validPassword, newToken } from '../server/auth.js';
+import { hashPassword, verifyPassword, validUsername, validPassword, newToken, safeEqualText } from '../server/auth.js';
 import { ACTIONS } from '../js/net/actions.js';
 import { createWorld, addPlayer, advanceWorld } from '../js/systems/multiplayer.js';
 import { Game } from '../js/game.js';
@@ -14,6 +14,9 @@ test('şifreler tuzlanıp özetlenir; doğru şifre doğrulanır', async () => {
   assert.ok(await verifyPassword('gizli-şifre-1', account));
   assert.equal(await verifyPassword('yanlış', account), false);
   assert.notEqual(newToken(), newToken());
+  assert.ok(safeEqualText('gizli', 'gizli'));
+  assert.equal(safeEqualText('gizli', 'başka'), false);
+  assert.equal(safeEqualText('', ''), false);
   assert.ok(validUsername('Osman_Gazi'));
   assert.ok(validUsername('Ertuğrul'));
   assert.equal(validUsername('ab'), false);

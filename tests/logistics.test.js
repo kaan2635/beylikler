@@ -5,7 +5,7 @@ import { advance } from '../js/core/engine.js';
 import { sendAttack, recallAttack, inspectAttack } from '../js/systems/movements.js';
 import { inspectTransport, sendTransport, merchantsAvailable } from '../js/systems/market.js';
 import { withdrawSupport, defendersOf, supportAt, stationedAway, applyDefenderLosses } from '../js/systems/support.js';
-import { populationUsed } from '../js/systems/economy.js';
+import { populationUsed, storageCap } from '../js/systems/economy.js';
 import { unitsOwned } from '../js/systems/training.js';
 import { resolveIncoming } from '../js/systems/ai.js';
 import { MARKET } from '../js/config/tech.js';
@@ -48,6 +48,20 @@ test('nakliye: tüccarlar yükü götürür, varınca ambara girer; tüccarlar g
   assert.equal(home.movements.length, 0);
   assert.equal(merchantsAvailable(home, sent.arriveAt), 3, 'tüccarlar henüz dönmedi');
   assert.equal(merchantsAvailable(home, T0 + 2 * sent.seconds * 1000), 5);
+});
+
+test('nakliye uyarısı varıştaki üretim ve hedefe yoldaki yükü hesaba katar', () => {
+  const { state, home, other } = twoVillages();
+  for (const id of ['oduncu', 'kilocagi', 'demirmadeni']) other.buildings[id] = 0;
+  other.resources.odun = storageCap(other) - 400;
+  home.movements.push({
+    type: 'nakliye',
+    target: { id: other.id },
+    resources: { odun: 250 },
+    arriveAt: T0 + HOUR,
+  });
+  const check = inspectTransport(state, home, other.id, { odun: 200 }, T0);
+  assert.ok(check.lost > 50 && check.lost < 200, 'yoldaki 250 yük ile varışa kadar üretim, tahmini kaybı belirler');
 });
 
 test('nakliye denetimleri: pazar, hedef, miktar, tüccar', () => {

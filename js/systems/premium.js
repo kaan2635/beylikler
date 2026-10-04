@@ -5,6 +5,7 @@ import { seasonOf } from './seasons.js';
 import { ilimBonuses, unlockedUnits } from './ilim.js';
 import { heroHomeBonus } from './hero.js';
 import { TITLES } from '../config/titles.js';
+import { EDICTS } from '../config/edicts.js';
 
 /**
  * Sınıf, Akçe ve görevliler.
@@ -47,9 +48,15 @@ export function playerBonus(player) {
  * geçici etkiler (state.player.modifiers).
  */
 export function stateBonus(state) {
+  const selectedEdict = state.player?.edict;
+  const edictBonus =
+    state.world && seasonOf(state.world) && selectedEdict && selectedEdict.season === (state.world.season ?? 0)
+      ? EDICTS[selectedEdict.id]?.bonus
+      : null;
   return merge([
     ...playerSources(state.player),
     TITLES[state.player?.title ?? 0]?.bonus ?? {},
+    ...(edictBonus ? [edictBonus] : []),
     ...(state.world && seasonOf(state.world) ? [seasonOf(state.world).bonus] : []),
     ...ilimBonuses(state),
     ...(state.player?.modifiers ?? []).map((modifier) => modifier.bonus),

@@ -21,6 +21,7 @@ import { relationOf, adjustRelation, relationLevel } from '../js/systems/diploma
 import { lordsOf } from '../js/systems/world.js';
 import { sendAttack } from '../js/systems/movements.js';
 import { SLOTS } from '../js/ui/art/scene.js';
+import { gameIconSvg } from '../js/ui/art/sprites.js';
 
 const T0 = Date.UTC(2026, 0, 1);
 const HOUR = 3_600_000;
@@ -140,7 +141,9 @@ test('Yeniçeri araştırmasız eğitilemez; araştırınca Kışla 12 ile eğit
   assert.ok(inspectTraining(village, state.world, 'yeniceri', 1, T0).ok);
 });
 
-test('Topçu suru ve binayı dört koçbaşı / mancınık gibi döver', () => {
+test('Lağımcı kuşatma gücü sağlar; Topçu suru ve binayı dört koçbaşı / mancınık gibi döver', () => {
+  assert.deepEqual(siegeEngines({ lagimci: 2 }), { rams: 1, catapults: 0 });
+  assert.deepEqual(siegeEngines({ lagimci: 3, kocbasi: 1 }), { rams: 2, catapults: 0 });
   assert.deepEqual(siegeEngines({ topcu: 2, kocbasi: 1 }), { rams: 9, catapults: 8 });
   const { state, village } = game({ seed: 11 });
   state.world.clock.time = 30 * DAY;
@@ -158,6 +161,12 @@ test('Topçu suru ve binayı dört koçbaşı / mancınık gibi döver', () => {
 });
 
 // ---------- Gözetleme Kulesi ----------
+
+test('yeni birlikler için madalyon simgeleri bulunur', () => {
+  for (const id of ['arbaletci', 'tatarlisi', 'lagimci']) {
+    assert.match(gameIconSvg(id), /<svg[\s\S]*<path/);
+  }
+});
 
 test('Gözetleme Kulesi seviyesi savunmaya katılır; sahnede yeri vardır', () => {
   assert.ok(BUILDINGS.kule);

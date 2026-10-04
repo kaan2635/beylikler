@@ -40,6 +40,16 @@ test('her birimin eğitim binası var; sıradan birimler 1. seviye ambara, Elçi
   }
 });
 
+test('yeni uzman birlikler bina ve Demirci seviyesiyle açılır', () => {
+  const { state, village } = armyGame({ kisla: 6, resources: 30_000 });
+  Object.assign(village.buildings, { konak: 15, ahir: 7, atolye: 3, demirci: 2, ciftlik: 20 });
+  assert.ok(inspectTraining(village, state.world, 'arbaletci', 1, T0).ok);
+  assert.ok(inspectTraining(village, state.world, 'lagimci', 1, T0).ok);
+  assert.equal(inspectTraining(village, state.world, 'tatarlisi', 1, T0).code, 'requires');
+  village.buildings.demirci = 3;
+  assert.ok(inspectTraining(village, state.world, 'tatarlisi', 1, T0).ok);
+});
+
 test('Kışla yokken Yaya eğitilemez', () => {
   const { state, village } = armyGame({ kisla: 0 });
   assert.equal(inspectTraining(village, state.world, 'yaya', 1, T0).code, 'requires');
@@ -158,5 +168,8 @@ test('1. sürüm kayıt, asker alanlarıyla 2. sürüme taşınır', () => {
   assert.equal(village.buildings.konak, 4);
   assert.equal(village.buildings.ahir, 0);
   assert.equal(village.units.yaya, 0);
+  assert.equal(village.units.arbaletci, 0);
+  assert.equal(village.units.tatarlisi, 0);
+  assert.equal(village.units.lagimci, 0);
   assert.deepEqual(village.trainQueues, Object.fromEntries(TRAINING_BUILDINGS.map((b) => [b, []])));
 });

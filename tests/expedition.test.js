@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createNewGame } from '../js/core/state.js';
+import { Game } from '../js/game.js';
 import { advance } from '../js/core/engine.js';
 import {
   inspectExpedition,
@@ -12,7 +13,7 @@ import {
 } from '../js/systems/expedition.js';
 import { chooseClass } from '../js/systems/premium.js';
 import { armyCarry, totalUnits } from '../js/systems/army.js';
-import { EXPEDITION } from '../js/config/expedition.js';
+import { EXPEDITION, EXPEDITION_FOCUSES } from '../js/config/expedition.js';
 import { travelSeconds } from '../js/core/formulas.js';
 import { UNITS } from '../js/config/units.js';
 
@@ -68,6 +69,39 @@ test('olasılıklar: toplam 1; Kâşif tehlikeyi yarıya indirir; uzun keşif bo
   assert.ok(kasif.kayip < base.kayip);
   assert.ok(Math.abs(kasif.kayip / kasif.kaynak - (base.kayip / base.kaynak) * 0.5) < 1e-9);
   assert.ok(Math.abs(expeditionScale(state, village, 1) - scale * 1.5) < 1e-9);
+});
+
+test('sefer yaklaşımları olasılık ve ödülleri değiştirir, raporda saklanır', () => {
+  const { state, village } = game();
+  const base = expeditionOdds(village, 2, 'sinir', false, 'dengeli');
+  const supplies = expeditionOdds(village, 2, 'sinir', false, 'kaynak');
+  const recruits = expeditionOdds(village, 2, 'sinir', false, 'asker');
+  const cautious = expeditionOdds(village, 2, 'sinir', false, 'temkinli');
+  for (const focus of Object.keys(EXPEDITION_FOCUSES)) {
+    assert.ok(Math.abs(Object.values(expeditionOdds(village, 2, 'sinir', false, focus)).reduce((a, b) => a + b, 0) - 1) < 1e-9);
+  }
+  assert.ok(supplies.kaynak > base.kaynak);
+  assert.ok(recruits.asker > base.asker);
+  assert.ok(cautious.eskiya < base.eskiya);
+  assert.ok(cautious.kayip < base.kayip);
+  assert.ok(cautious.bos > base.bos);
+  assert.ok(Math.abs(expeditionScale(state, village, 2, false, 'temkinli') - expeditionScale(state, village, 2) * 0.85) < 1e-9);
+  assert.deepEqual(expeditionOdds(village, 2, 'sinir', false, 'unknown'), base, 'bilinmeyen yaklaşım dengeliye düşer');
+
+  const sent = sendExpedition(state, village, { yaya: 10 }, 2, T0, { region: 'sinir', focus: 'kaynak' });
+  assert.ok(sent.ok, sent.reason);
+  assert.equal(sent.movement.focus, 'kaynak');
+  advance(state, sent.arriveAt);
+  const report = state.reports[0];
+  assert.equal(report.focus, 'kaynak');
+  const returnTrip = village.movements.find((movement) => movement.type === 'donus');
+  assert.ok(returnTrip);
+  advance(state, returnTrip.arriveAt);
+  const session = new Game({ save() {} });
+  session.state = state;
+  const replay = session.repeatExpedition(report.id, returnTrip.arriveAt + 1);
+  assert.ok(replay.ok, replay.reason);
+  assert.equal(replay.movement.focus, 'kaynak', 'raporu tekrarlamak sefer yaklaşımını da korur');
 });
 
 test('her sonuç türü tutarlı çözülür; sağ kalanlar bulduklarıyla döner', () => {

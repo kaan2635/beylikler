@@ -6,6 +6,7 @@ import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
 import { toast } from '../toast.js';
+import { createEdictPanel } from './edict-panel.js';
 
 /**
  * Divan: Konak üzerinden yürütülen araştırmalar (İlim). Kademeler Konak seviyesine göre açılır;
@@ -13,6 +14,7 @@ import { toast } from '../toast.js';
  */
 export function createDivanView({ game, refresh }) {
   const current = createCurrentPanel();
+  const edictPanel = createEdictPanel({ game, refresh });
   const tiers = [...new Set(ILIM_IDS.map((id) => ILIM[id].konak))].sort((a, b) => a - b);
   const cards = ILIM_IDS.map((id) => createIlimCard(id));
   const doneCount = h('span', { class: 'muted' });
@@ -22,6 +24,7 @@ export function createDivanView({ game, refresh }) {
     { class: 'stack' },
     h('header', { class: 'view-header' }, h('h1', null, 'Divan'), doneCount),
     h('p', { class: 'muted page-intro' }, 'Âlimler ve kâtipler beyliğin işlerini düzene sokar. Araştırmalar bütün köylerine işler ve kalıcıdır; aynı anda bir araştırma yürür, bedeli yönettiğin köyden ödenir.'),
+    edictPanel.el,
     current.el,
     tiers.map((level, index) =>
       h(
@@ -55,6 +58,7 @@ export function createDivanView({ game, refresh }) {
     update(now) {
       const { state } = game;
       setText(doneCount, `${state.player.ilim?.done?.length ?? 0}/${ILIM_IDS.length} araştırma`);
+      edictPanel.update(state, now);
       current.update(state, now);
       for (const card of cards) card.update(state, game.village, now);
     },

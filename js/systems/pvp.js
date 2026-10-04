@@ -6,6 +6,7 @@ import { HERO } from '../config/hero.js';
 import { heroGuard, woundHero, heroAfterBattle, returnHero } from './hero.js';
 import { terrainAt } from './world.js';
 import { resolveBattle, distributeLoot, siegeLevels } from './combat.js';
+import { FORMATIONS, DEFAULT_FORMATION } from '../config/formations.js';
 import { defendersOf, applyDefenderLosses, stationSupport } from './support.js';
 import { bonusOf } from './bonus.js';
 import { produce } from './economy.js';
@@ -86,6 +87,7 @@ export function pvpAttack(state, village, movement) {
     defenderBonus: bonusOf(target).defense * (1 + towerDefense(target.buildings.kule ?? 0)) * (1 + terrainDefense(terrainAt(state.world.seed, target.x, target.y))),
     heroAttack: hero?.power ?? 0,
     heroDefense: guard,
+    formation: movement.formation ?? DEFAULT_FORMATION,
   });
   if (guard && battle.attackerWins) woundHero(defender, at);
   applyDefenderLosses(defender, target, defenders, battle.defenderLosses);
@@ -97,7 +99,13 @@ export function pvpAttack(state, village, movement) {
   if (battle.attackerWins) {
     const hidden = hiddenCapacity(target.buildings.gizlidepo);
     const available = Object.fromEntries(RESOURCE_IDS.map((id) => [id, Math.max(0, target.resources[id] - hidden)]));
-    Object.assign(loot, distributeLoot(available, armyCarry(survivors) * bonusOf(village).carry * (1 + (hero?.carry ?? 0))));
+    Object.assign(
+      loot,
+      distributeLoot(
+        available,
+        armyCarry(survivors) * bonusOf(village).carry * (1 + (hero?.carry ?? 0)) * (FORMATIONS[movement.formation] ?? FORMATIONS[DEFAULT_FORMATION]).carry,
+      ),
+    );
     for (const id of RESOURCE_IDS) target.resources[id] -= loot[id];
     const { rams, catapults } = siegeEngines(survivors, bonusOf(village).siege);
     if (rams) {
@@ -156,6 +164,7 @@ export function pvpAttack(state, village, movement) {
     defenderLosses: battle.defenderLosses,
     loot,
     siege,
+    formation: movement.formation ?? DEFAULT_FORMATION,
     ...(conquest && { conquest }),
     ...(movement.catapultTarget && { catapultTarget: movement.catapultTarget }),
     ...(hero && { hero: { name: hero.name } }),
@@ -176,6 +185,7 @@ export function pvpAttack(state, village, movement) {
     defenderLosses: battle.defenderLosses,
     loot,
     siege,
+    formation: movement.formation ?? DEFAULT_FORMATION,
     ...(conquest && { conquest: { ...conquest, lostVillage: conquest.conquered } }),
   });
 

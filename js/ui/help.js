@@ -15,8 +15,8 @@ const TOPICS = [
   },
   {
     icon: 'nav-ordu',
-    title: 'Ordu',
-    text: 'Kışla kurunca Yaya ve Kılıççı eğit; köyünü savunurlar. Baltacı ve atlılar saldırı içindir. Bina listesindeki "Yükseltilebilir" süzgeci şu an parası yeten binaları gösterir.',
+    title: 'Ordu ve savaş düzenleri',
+    text: 'Kışla kurunca Yaya ve Kılıççı eğit; köyünü savunurlar. Ordu ekranındaki rol süzgeciyle birlik kartlarını ayıkla. Arbaletçi menzilli hücum, Tatar Atlısı hız, Lağımcı ise sur kuşatması için uzmanlaşır. Harita saldırısında Kama hücumu, Kalkan duvarı zaferde hayatta kalmayı, Akın kolu ganimeti artırır.',
   },
   {
     icon: 'nav-harita',
@@ -34,9 +34,19 @@ const TOPICS = [
     text: 'Dünya her 4 oyun gününde bir mevsim değiştirir. İlkbahar üretimi, yaz yolları ve odunu, sonbahar kili ve keşfi artırır; kış üretimi düşürür, orduları yavaşlatır ama savunmaya güç katar. Tepe çubuğundaki mevsim simgesi kalan süreyi gösterir.',
   },
   {
+    icon: 'mevsim-ilkbahar',
+    title: 'Mevsim fermanları',
+    text: "Divan'da her mevsim bir ferman seçebilirsin. Bereket üretimi, Seferberlik saldırı ve asker eğitimini, İmar inşaat ve ambarı güçlendirir. Etki tüm köylerine işler; seçimi mevsim bitene kadar değiştiremezsin.",
+  },
+  {
     icon: 'nav-divan',
     title: 'Divan ve araştırmalar',
     text: "Konak üzerinden Divan'da kalıcı araştırmalar yaparsın: üretim, ambar, eğitim, savunma… Kademeler Konak seviyesiyle açılır; Yeniçeri Ocağı ve Tophane yeni birlikler getirir.",
+  },
+  {
+    icon: 'tasima',
+    title: 'Otomatik kervan hatları',
+    text: "İki köyün arasında Pazar sayfasından düzenli sevkiyat kur. Yükü ve ambarında kalacak yedeği belirle; hedef ambardaki boş yer ve yoldaki kervanlar hesaba katılarak yük otomatik azaltılır. Kaynak ya da tüccar yetmezse çevrim atlanır. Her üç Pazar seviyesi bir hat yeri sağlar.",
   },
   {
     icon: 'olay',
@@ -71,7 +81,7 @@ const TOPICS = [
   {
     icon: 'nav-kesif',
     title: 'Keşif bölgeleri',
-    text: 'Kervansaray seviyesi arttıkça yeni bölgeler açılır: ormanda kaynak, bozkırda at ve göçebeler, dağda hazine, harabelerde eşya ve harita, sahilde kervanlar. Her sefer keşif ustalığını artırır; kahraman katılırsa bulgular artar, tehlike azalır.',
+    text: 'Kervansaray seviyesi arttıkça yeni bölgeler açılır: ormanda kaynak, bozkırda at ve göçebeler, dağda hazine, harabelerde eşya ve harita, sahilde kervanlar. Sefer yaklaşımını Dengeli, Kaynak arayışı, Levent arayışı ya da Tedbirli seç; sonuç olasılıkları anında güncellenir ve raporda saklanır. Her sefer keşif ustalığını artırır; kahraman katılırsa bulgular artar, tehlike azalır.',
   },
   {
     icon: 'akce',

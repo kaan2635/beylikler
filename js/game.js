@@ -7,6 +7,7 @@ import { startTraining, cancelLastTraining } from './systems/training.js';
 import { sendAttack, recallAttack } from './systems/movements.js';
 import { startResearch, cancelResearch } from './systems/research.js';
 import { trade, sendTransport } from './systems/market.js';
+import { createTradeRoute as addTradeRoute, toggleTradeRoute as setTradeRouteEnabled, deleteTradeRoute as removeTradeRoute, rescaleTradeRoutes } from './systems/trade-routes.js';
 import { withdrawSupport } from './systems/support.js';
 import {
   chooseClass,
@@ -25,6 +26,7 @@ import { chooseEvent, rescaleEvents } from './systems/events.js';
 import { sendGift, makePeace } from './systems/diplomacy.js';
 import { syncBonuses, grantAkce } from './systems/premium.js';
 import { spendPoint, equipItem, unequipItem, sellItem, renameHero, ensureHero } from './systems/hero.js';
+import { chooseEdict as setEdict } from './systems/edicts.js';
 
 /**
  * Oyun durumu ile arayüz arasındaki tek kapı. Arayüz durumu doğrudan değiştirmez:
@@ -131,6 +133,22 @@ export class Game {
     return result;
   }
 
+  /** Seçilen iki kendi köyü arasında düzenli kaynak sevkiyatı kurar. */
+  createTradeRoute(sourceId, targetId, cargo, reserve, intervalHours, now) {
+    return this.#act(now, () => addTradeRoute(this.state, sourceId, targetId, cargo, reserve, intervalHours, now));
+  }
+
+  toggleTradeRoute(routeId, enabled, now) {
+    return this.#act(now, () => setTradeRouteEnabled(this.state, routeId, enabled, now));
+  }
+
+  deleteTradeRoute(routeId, now) {
+    return this.#act(now, () => {
+      const route = removeTradeRoute(this.state, routeId);
+      return route ? { ok: true, route } : { ok: false, reason: 'Kervan hattı bulunamadı' };
+    });
+  }
+
   /** `homeId` köyünün `hostId` köyünde destek olarak duran askerlerini eve çağırır. */
   withdrawSupport(homeId, hostId, now) {
     this.tick(now);
@@ -152,16 +170,19 @@ export class Game {
     return result;
   }
 
-  /** Raporun birliğini (mancınık hedefiyle birlikte) aynı köye yeniden gönderir. */
+  /** Raporun birliğini, kuşatma hedefi ve seçilmiş düzeniyle aynı köye yeniden gönderir. */
   repeatAttack(reportId, now) {
     const report = this.state.reports.find((r) => r.id === reportId);
     if (!report) return { ok: false, reason: 'Rapor bulunamadı' };
-    return this.sendAttack(report.target.x, report.target.y, report.attackers, now, { catapultTarget: report.catapultTarget });
+    return this.sendAttack(report.target.x, report.target.y, report.attackers, now, {
+      catapultTarget: report.catapultTarget,
+      formation: report.formation,
+    });
   }
 
   /**
    * Yönetilen köyden keşif seferi düzenler; `holdHours` keşifte geçecek oyun saati.
-   * `options`: { region, hero } (bölge ve kahramanın katılması).
+   * `options`: { region, focus, hero } (bölge, sefer yaklaşımı ve kahramanın katılması).
    */
   sendExpedition(units, holdHours, now, options = {}) {
     return this.#act(now, () => sendExpedition(this.state, this.village, units, holdHours, now, options));
@@ -171,7 +192,7 @@ export class Game {
   repeatExpedition(reportId, now) {
     const report = this.state.reports.find((r) => r.id === reportId && r.type === 'kesif');
     if (!report) return { ok: false, reason: 'Rapor bulunamadı' };
-    return this.sendExpedition(report.attackers, report.holdHours, now, { region: report.region ?? 'sinir' });
+    return this.sendExpedition(report.attackers, report.holdHours, now, { region: report.region ?? 'sinir', focus: report.focus ?? 'dengeli' });
   }
 
   /** Yağma asistanı (Serasker): raporlardaki orduları kendi köylerine toplu olarak yeniden gönderir. */
@@ -255,6 +276,11 @@ export class Game {
     const current = cancelIlim(this.state);
     if (current) this.save();
     return current;
+  }
+
+  /** Mevsim bitene kadar tüm köylerine işleyecek fermanı seçer. */
+  chooseEdict(edictId, now) {
+    return this.#act(now, () => setEdict(this.state, edictId, now));
   }
 
   /** Bekleyen olayda bir seçenek seçer. */
@@ -365,6 +391,7 @@ export class Game {
     this.tick(now); // geçen süre eski hızla hesaplansın
     rescaleLordSchedules(this.state, now, this.state.world.speed, speed);
     rescaleEvents(this.state, now, this.state.world.speed, speed);
+    rescaleTradeRoutes(this.state, now, this.state.world.speed, speed);
     this.state.world.speed = speed;
     this.save();
   }

@@ -268,6 +268,26 @@ Her adım sonunda oyun **oynanabilir** ve **testleri geçer** durumda olur. Arka
 - [x] Yeni oyunda giriş hikâyesi, eski oyunculara "Beylikler 2.0" yenilikler penceresi; rehberde yeni konular
 - [x] Kayıt şeması 12; 178 birim testi (kahraman, eşyalar, unvan, harabeler, Moğol akını, keşif bölgeleri, yeni olaylar, tarihçe, 11 → 12 taşıma)
 
+## ✅ Beylikler 2.1 — Üç yeni strateji sistemi
+
+- [x] **Otomatik kervan hatları:** Pazar’dan kendi köylerin arasında tekrar eden sevkiyat kur; kaynak başına ambar yedeği belirle, sefer aralığını seç, hattı durdur/sürdür/sil. Pazar seviyesi hat yuvası ve tüccar kapasitesini belirler; hız değişince takvim uyarlanır, çevrimdışı en fazla son üç sefer yakalanır
+- [x] **Savaş düzenleri:** saldırı öncesi Dengeli, Kama, Kalkan ya da Akın seç. Saldırı, zafer kayıpları veya ganimet taşıma kapasitesine etkisi; NPC, harabe ve oyuncu savaşlarında uygulanır, raporda saklanır ve tekrar saldırıya taşınır
+- [x] **Mevsim fermanları:** her mevsim Divan’dan Bereket, Seferberlik ya da İmar seç; üretim, saldırı/eğitim veya inşaat/ambar bonusu tüm köylere mevsim sonuna dek işler. Kayıt şeması 13; eski kayıtlar otomatik taşınır; üç sisteme 5 yeni test (toplam 183)
+
+## ✅ Beylikler 2.2 — Keşif, ticaret ve ordu
+
+- [x] **Sefer yaklaşımları:** Dengeli, Kaynak arayışı, Levent arayışı ve Tedbirli seçenekleri bölgeyle birlikte olasılıkları ve ödülleri değiştirir; olasılık önizlemesi canlı güncellenir, yaklaşım hareket ve rapora yazılır, tekrar seferde korunur
+- [x] **Akıllı ticaret:** el ile nakliye uyarısı varış anındaki üretim ve hedefe yoldaki yükü öngörür; otomatik kervan hatları hedef ambardaki tahmini boş alana göre yükü azaltır
+- [x] **Üç uzman birlik:** Arbaletçi (menzilli hücum), Tatar Atlısı (hızlı ve dirençli okçu süvari), Lağımcı (iki Lağımcı bir Koçbaşı kadar sur kuşatması). Bozkır keşif havuzuna Tatar Atlısı eklendi
+- [x] **Ordu ekranı:** birlik kartlarına rol süzgeci; aktif eğitim kuyruğu filtrede de görünür kalır; yeni birliklerin özgün madalyonları
+
+## ✅ Beylikler 2.3 — Güvenli yönetici paneli
+
+- [x] **Yönetici kimlik doğrulaması:** yalnız sunucuda tanımlı ADMIN_USERNAME / ADMIN_PASSWORD; en az 16 karakterli parola, zamanlama farkına dayanıklı karşılaştırma, IP hız sınırı ve 8 saatlik ayrı yönetici oturumu
+- [x] **Dünya ve oyuncu özeti:** oyuncular, hesaplar, etkin oturumlar, puan, köy sayısı, sohbet ve sunucu çalışma bilgileri; parola özetleri yönetim yanıtlarına girmez
+- [x] **Moderasyon:** oyuncu oturumlarını iptal ederek erişimi askıya alma/yeniden açma, dünyaya sistem duyurusu gönderme ve sohbet geçmişini temizleme
+- [x] **Güvenli arayüz:** yönetici parolası ve oturum belirteci tarayıcı kalıcı deposuna yazılmaz; askıya alma köyleri silmez; işlemler sunucu tarafında yetki kontrolünden geçer
+
 ## Bilinen sınırlamalar
 
 - Kayıt yalnızca o tarayıcıda durur. Başka cihaza geçmek için Ayarlar → Kayıt kodunu kullan.

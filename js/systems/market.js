@@ -1,7 +1,7 @@
 import { MARKET } from '../config/tech.js';
 import { RESOURCES, RESOURCE_IDS } from '../config/resources.js';
 import { travelSeconds } from '../core/formulas.js';
-import { deposit, storageCap, produce } from './economy.js';
+import { deposit, storageCap, produce, productionRates } from './economy.js';
 import { distance } from './world.js';
 import { bonusOf } from './bonus.js';
 
@@ -10,6 +10,8 @@ import { bonusOf } from './bonus.js';
  * Tüccar sayısı Pazar seviyesine eşittir; her biri 1.000 kaynak taşır ve takastan sonra bir
  * süre yolda kalır. Yoldaki tüccarlar `village.merchants` listesinde durur: { count, returnAt }
  */
+
+const HOUR = 3_600_000;
 
 /** Pazar seviyesine göre komisyon oranı (0,2875 = %28,75). */
 export function marketFee(level) {
@@ -72,6 +74,26 @@ export function trade(village, world, give, take, amount, now) {
 
 // ---------- Nakliye: kendi köyleri arasında kaynak gönderme ----------
 
+/** Varış anındaki tahmini boş ambarı; üretim ve hedefe yoldaki sevkiyatlar hesaba katılır. */
+export function transportRoom(state, target, now, arriveAt) {
+  const cap = storageCap(target);
+  const rates = productionRates(target, state.world);
+  const hours = Math.max(0, (arriveAt - (target.lastUpdate ?? now)) / HOUR);
+  const incoming = Object.fromEntries(RESOURCE_IDS.map((id) => [id, 0]));
+  for (const village of Object.values(state.villages ?? {})) {
+    for (const movement of village.movements ?? []) {
+      if (movement.type !== 'nakliye' || movement.target?.id !== target.id || movement.arriveAt <= now) continue;
+      for (const id of RESOURCE_IDS) incoming[id] += Math.max(0, movement.resources?.[id] ?? 0);
+    }
+  }
+  return Object.fromEntries(
+    RESOURCE_IDS.map((id) => {
+      const projected = Math.min(cap, Math.max(0, (target.resources[id] ?? 0) + rates[id] * hours));
+      return [id, Math.max(0, Math.floor(cap - projected - incoming[id]))];
+    }),
+  );
+}
+
 /**
  * Kaynakların başka bir köye gönderilip gönderilemeyeceğini inceler. Tüccarlar yükü götürür,
  * boş döner; gidiş-dönüş boyunca köyde yoktur. Komisyon alınmaz.
@@ -93,7 +115,8 @@ export function inspectTransport(state, village, targetId, requested, now) {
   const merchants = Math.ceil(total / merchantCapacity(village));
   const travel = target ? travelSeconds(distance(village.x, village.y, target.x, target.y), MARKET.merchantSpeed, state.world.speed) : 0;
   const seconds = target ? Math.max(1, Math.round(travel * bonusOf(village).merchantTime)) : 0;
-  const room = target ? storageCap(target) : 0;
+  const arriveAt = now + seconds * 1000;
+  const room = target ? transportRoom(state, target, now, arriveAt) : Object.fromEntries(RESOURCE_IDS.map((id) => [id, 0]));
   const info = {
     ok: false,
     amounts,
@@ -101,8 +124,8 @@ export function inspectTransport(state, village, targetId, requested, now) {
     merchants,
     available: merchantsAvailable(village, now),
     seconds,
-    arriveAt: now + seconds * 1000,
-    lost: target ? RESOURCE_IDS.reduce((sum, id) => sum + Math.max(0, (target.resources[id] ?? 0) + (amounts[id] ?? 0) - room), 0) : 0,
+    arriveAt,
+    lost: target ? RESOURCE_IDS.reduce((sum, id) => sum + Math.max(0, (amounts[id] ?? 0) - room[id]), 0) : 0,
   };
 
   if (village.buildings.pazar < 1) return { ...info, code: 'market', reason: 'Kaynak göndermek için Pazar inşa et' };
