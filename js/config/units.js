@@ -9,7 +9,7 @@
  * defense       piyadeye, süvariye ve okçuya karşı savunma gücü.
  * ilim          eğitim için gereken Divan araştırması (bkz. config/ilim.js), yoksa yok.
  * speed         bir alanı geçme süresi (dakika); ordu en yavaş biriminin hızıyla ilerler.
- * carry         yağmada taşıyabildiği kaynak.
+ * carry         yağmada taşıyabildiği kaynak; siegePower varsa kuşatmada koçbaşı eşdeğeri sur gücü.
  */
 export const UNITS = {
   yaya: {
@@ -70,6 +70,21 @@ export const UNITS = {
     type: 'okcu',
     defense: { piyade: 45, suvari: 40, okcu: 10 },
     speed: 18,
+    carry: 10,
+  },
+  arbaletci: {
+    name: 'Arbaletçi',
+    role: 'Saldırı',
+    description: 'Zırh delen tatar yayı. Okçu saldırısıyla vurur; güçlü hücumuna karşılık yavaş ve kırılgandır.',
+    building: 'kisla',
+    requires: { kisla: 6, demirci: 2 },
+    cost: { odun: 160, kil: 90, demir: 170 },
+    pop: 2,
+    trainTime: 2500,
+    attack: 78,
+    type: 'okcu',
+    defense: { piyade: 25, suvari: 18, okcu: 48 },
+    speed: 22,
     carry: 10,
   },
   muhafiz: {
@@ -178,6 +193,21 @@ export const UNITS = {
     speed: 10,
     carry: 50,
   },
+  tatarlisi: {
+    name: 'Tatar Atlısı',
+    role: 'Hareketli',
+    description: 'Uzak menzilli bozkır süvarisi. Atlı Okçu kadar vurmaz; daha hızlıdır ve savunmada daha dirençlidir.',
+    building: 'ahir',
+    requires: { ahir: 7, demirci: 3 },
+    cost: { odun: 220, kil: 120, demir: 260 },
+    pop: 4,
+    trainTime: 2900,
+    attack: 88,
+    type: 'okcu',
+    defense: { piyade: 52, suvari: 42, okcu: 58 },
+    speed: 8,
+    carry: 35,
+  },
   sipahi: {
     name: 'Sipahi',
     role: 'Çok yönlü',
@@ -207,6 +237,22 @@ export const UNITS = {
     defense: { piyade: 20, suvari: 50, okcu: 20 },
     speed: 30,
     carry: 0,
+  },
+  lagimci: {
+    name: 'Lağımcı',
+    role: 'Kuşatma',
+    description: 'Sur temelinin altını kazar. Her iki sağ kalan Lağımcı bir Koçbaşı kadar sur kuşatma gücü sağlar.',
+    building: 'atolye',
+    requires: { atolye: 3, demirci: 2 },
+    cost: { odun: 240, kil: 160, demir: 120 },
+    pop: 4,
+    trainTime: 3600,
+    attack: 32,
+    type: 'piyade',
+    defense: { piyade: 28, suvari: 35, okcu: 24 },
+    speed: 26,
+    carry: 0,
+    siegePower: 0.5,
   },
   mancinik: {
     name: 'Mancınık',

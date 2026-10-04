@@ -14,6 +14,7 @@ import { ensureHero, healHero } from '../systems/hero.js';
 import { ensureInvasion, startInvasion, launchWave, endInvasion } from '../systems/sites.js';
 import { checkTitle } from '../systems/renown.js';
 import { recordHistory } from '../systems/history.js';
+import { dispatchTradeRoute, routeDueAt } from '../systems/trade-routes.js';
 
 /**
  * Oyun dünyasını `now` anına kadar ilerletir ve bu sırada gerçekleşen olayları döndürür.
@@ -129,6 +130,14 @@ function nextEvent(state, now) {
     for (const attack of village.incoming) {
       // Oyuncu saldırıları saldıranın hareketiyle çözülür; burada yalnızca bey saldırıları.
       if (!attack.pvp) consider(attack.arriveAt, village, () => resolveIncoming(state, village, attack));
+    }
+  }
+  // Otomatik kervanlar aynı olay çizelgesinde işler; çevrimdışı en fazla üç çevrim yakalanır.
+  for (const route of state.tradeRoutes ?? []) {
+    const at = routeDueAt(route, state.world, now);
+    if (at <= now) {
+      const source = state.villages[route.sourceId] ?? villages[0];
+      consider(at, source, () => dispatchTradeRoute(state, route, at));
     }
   }
   for (const lord of lordsOf(state.world.seed)) {

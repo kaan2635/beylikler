@@ -3,6 +3,8 @@
 // saatiyle çağırır. Listede olmayan hiçbir şey (dünya hızı, zorluk, sıfırlama, kayıt içe
 // aktarma) oyuncudan değiştirilemez.
 
+import { EXPEDITION_FOCUSES } from '../config/expedition.js';
+
 const fail = (message) => {
   throw new Error(message);
 };
@@ -37,6 +39,7 @@ function options(value) {
   if (typeof value !== 'object') fail('Geçersiz seçenek');
   return {
     ...(value.catapultTarget && { catapultTarget: str(value.catapultTarget, 20) }),
+    ...(value.formation && { formation: str(value.formation, 20) }),
     ...(value.hero === true && { hero: true }),
   };
 }
@@ -46,6 +49,7 @@ function expeditionOptions(value) {
   if (typeof value !== 'object') fail('Geçersiz seçenek');
   return {
     ...(value.region && { region: str(value.region, 20) }),
+    ...(typeof value.focus === 'string' && Object.hasOwn(EXPEDITION_FOCUSES, value.focus) && { focus: value.focus }),
     ...(value.hero === true && { hero: true }),
   };
 }
@@ -71,6 +75,10 @@ export const ACTIONS = {
   cancelResearch: (g, [], now) => done(g.cancelResearch(now), 'Süren geliştirme yok'),
   trade: (g, [give, take, amount], now) => g.trade(str(give, 10), str(take, 10), int(amount), now),
   sendTransport: (g, [target, resources], now) => g.sendTransport(str(target, 40), counts(resources), now),
+  createTradeRoute: (g, [source, target, cargo, reserve, interval], now) =>
+    g.createTradeRoute(str(source, 40), str(target, 40), counts(cargo), counts(reserve), int(interval), now),
+  toggleTradeRoute: (g, [route, enabled], now) => g.toggleTradeRoute(int(route), enabled, now),
+  deleteTradeRoute: (g, [route], now) => g.deleteTradeRoute(int(route), now),
   withdrawSupport: (g, [home, host], now) => g.withdrawSupport(str(home, 40), str(host, 40), now),
   sendAttack: (g, [x, y, units, opts], now) => g.sendAttack(int(x), int(y), counts(units), now, options(opts)),
   repeatAttack: (g, [report], now) => g.repeatAttack(int(report), now),
@@ -93,6 +101,7 @@ export const ACTIONS = {
   claimDaily: (g, [], now) => g.claimDaily(now),
   startIlim: (g, [ilim], now) => g.startIlim(str(ilim, 30), now),
   cancelIlim: (g, [], now) => done(g.cancelIlim(now), 'Süren araştırma yok'),
+  chooseEdict: (g, [edict], now) => g.chooseEdict(str(edict, 30), now),
   chooseEvent: (g, [choice], now) => g.chooseEvent(str(choice, 30), now),
   sendGift: (g, [lord, tier], now) => g.sendGift(str(lord, 20), str(tier, 20), now),
   makePeace: (g, [lord], now) => g.makePeace(str(lord, 20), now),

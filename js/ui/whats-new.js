@@ -1,12 +1,19 @@
 import { h } from './dom.js';
 import { icon } from './icons.js';
 
-// Yeni oyunda kısa bir giriş hikâyesi; eski oyunculara 2.0 sürümünün yenilikleri (bir kez).
+// Yeni oyunda kısa bir giriş hikâyesi; eski oyunculara son sürümün yenilikleri (bir kez).
 
 const SEEN_KEY = 'beylikler:surum-notu';
-const VERSION = '2.0';
+const VERSION = '2.3';
 
 const NEWS = [
+  ['kasif', 'Sefer yaklaşımları', 'Dengeli, Kaynak arayışı, Levent arayışı ya da Tedbirli seç; değişen olasılıkları sefere çıkmadan gör ve yaklaşımı rapordan tekrar kullan.'],
+  ['tasima', 'Akıllı kervan hedeflemesi', 'Otomatik hatlar, varışa kadarki üretimi ve yoldaki yükleri hesaba katar; hedef ambara sığmayan kısmı yola çıkarmaz.'],
+  ['nav-ordu', 'Üç uzman birlik', 'Arbaletçi menzilli saldırı, Tatar Atlısı hız ve direnç, Lağımcı sur kuşatması için yeni taktikler sunar.'],
+  ['nav-ordu', 'Ordu rol süzgeci', 'Ordu ekranında birlik kartlarını role göre filtrele; eğitim kuyruğu görünür kalır.'],
+  ['tasima', 'Otomatik kervan hatları', 'Pazar sayfasından köylerin arasında düzenli sevkiyat kur; ambar yedeğini koru, sefer aralığını seç, hatları durdurup sürdür.'],
+  ['nav-ordu', 'Savaş düzenleri', 'Kama hücumu, Kalkan duvarı ya da ganimet odaklı Akın koluyla orduna taktik ver; düzen saldırı raporunda saklanır ve tekrar saldırıda kullanılır.'],
+  ['mevsim-ilkbahar', 'Mevsim fermanları', 'Divan’da her mevsim Bereket, Seferberlik ya da İmar fermanını seç. Etkisi bütün köylerine mevsim sonuna kadar yayılır.'],
   ['nav-kahraman', 'Kahraman', 'Beyliğinin alpı seviye atlar, özellik puanı dağıtır, kılıç, zırh, at ve nişan kuşanır. Orduya önderlik eder, köyünü korur.'],
   ['san', 'Şan ve unvan', 'Zaferler ve başarılar şan getirir: Sancakbeyi, Beylerbeyi, Paşa, Hünkâr. Her unvan bütün köylere ayrıcalık sağlar.'],
   ['harabe', 'Harabeler', 'Haritaya dağılmış kadim harabelerin muhafızlarını yen; hazine, Akçe ve eşya kazan.'],
@@ -16,6 +23,7 @@ const NEWS = [
   ['nav-harita', 'Canlı harita', 'Beylerin toprakları, yürüyen ordular, harabeler, ordugâh ve arazinin savunmaya etkisi (tepe +%20, orman +%10).'],
   ['nav-tarihce', 'Tarihçe', 'Beyliğinin günden güne büyümesi grafiklerle: puan, üretim, ordu, şan.'],
   ['nav-divan', 'Daha çok içerik', 'Divan’da 6. kademe araştırmalar, 8 yeni olay, yeni görev ve başarımlar.'],
+  ['tac', 'Yalnız sana özel yönetici paneli', 'Sunucu tarafında korunan girişle oyuncuları ve dünyayı izle; erişimi askıya alıp aç, duyuru gönder ve sohbeti yönet.'],
 ];
 
 function overlayWith(content, onClose) {
@@ -46,7 +54,7 @@ function seen() {
   }
 }
 
-/** Eski bir kayıtla gelen oyuncuya 2.0 yeniliklerini bir kez gösterir. */
+/** Eski bir kayıtla gelen oyuncuya 2.3 yeniliklerini bir kez gösterir. */
 export function maybeShowWhatsNew() {
   if (seen() || document.querySelector('.overlay')) return;
   const ok = h('button', { type: 'button', class: 'btn btn-large btn-gold' }, 'Beyliğime dön');
@@ -55,7 +63,7 @@ export function maybeShowWhatsNew() {
     h(
       'div',
       { class: 'picker news stack' },
-      h('header', { class: 'picker-head' }, h('p', { class: 'eyebrow' }, 'Beylikler 2.0'), h('h1', { id: 'news-title' }, 'Beyliğin büyüdü!'), h('p', { class: 'muted' }, 'Kaydın güvende; bütün yenilikler mevcut oyununa eklendi. Kazandığın şan, unvanını hemen belirledi.')),
+      h('header', { class: 'picker-head' }, h('p', { class: 'eyebrow' }, 'Beylikler 2.3'), h('h1', { id: 'news-title' }, 'Beyliğinde yeni yollar!'), h('p', { class: 'muted' }, 'Kaydın güvende; keşif, ticaret, ordu ve sunucu yönetimine yeni araçlar eklendi.')),
       h('ul', { class: 'news-grid' }, NEWS.map(([iconName, title, text]) => h('li', null, h('span', { class: 'news-icon' }, icon(iconName)), h('div', null, h('strong', null, title), h('span', null, text))))),
       h('div', { class: 'picker-foot' }, hero, ok),
     ),

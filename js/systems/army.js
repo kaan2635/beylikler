@@ -21,11 +21,12 @@ export function armyCarry(units) {
   return Object.entries(units).reduce((total, [id, n]) => total + n * UNITS[id].carry, 0);
 }
 
-/** Kuşatma gücü: koçbaşı suru, mancınık seçilen binayı döver; Topçu ikisini birden, dört katı. */
+/** Kuşatma gücü: koçbaşı suru, mancınık seçilen binayı; Topçu ikisini de döver. */
 export function siegeEngines(units, factor = 1) {
   const cannons = units.topcu ?? 0;
+  const specialistRams = Object.entries(units).reduce((total, [id, count]) => total + count * (UNITS[id]?.siegePower ?? 0), 0);
   return {
-    rams: Math.floor(((units.kocbasi ?? 0) + COMBAT.cannonSiege * cannons) * factor),
+    rams: Math.floor(((units.kocbasi ?? 0) + specialistRams + COMBAT.cannonSiege * cannons) * factor),
     catapults: Math.floor(((units.mancinik ?? 0) + COMBAT.cannonSiege * cannons) * factor),
   };
 }

@@ -26,6 +26,13 @@ export function newToken() {
   return randomBytes(32).toString('hex');
 }
 
+/** Gizli değerleri içerik ve uzunluk denetimiyle karşılaştır; zamanlama farkını azaltır. */
+export function safeEqualText(left, right) {
+  const a = Buffer.from(typeof left === 'string' ? left : '', 'utf8');
+  const b = Buffer.from(typeof right === 'string' ? right : '', 'utf8');
+  return a.length > 0 && a.length === b.length && timingSafeEqual(a, b);
+}
+
 export function validUsername(name) {
   return /^[\p{L}\p{N}_]{3,20}$/u.test(name);
 }

@@ -43,7 +43,7 @@ export function createChatView({ game, refresh }) {
     update(now) {
       setText(info, `${game.playerCount ?? 0} oyuncu bu dünyada`);
       const log = game.chatLog ?? [];
-      const next = log.map((m) => `${m.at}:${m.playerId}`).join('|');
+      const next = log.map((m) => `${m.at}:${m.playerId ?? m.name ?? ''}:${m.text ?? ''}`).join('|');
       if (next === signature) return;
       signature = next;
       list.replaceChildren(

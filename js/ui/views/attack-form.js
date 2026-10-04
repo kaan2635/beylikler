@@ -7,6 +7,7 @@ import { inspectAttack, totalUnits } from '../../systems/movements.js';
 import { heroAvailable, heroEffects } from '../../systems/hero.js';
 import { terrainDefense } from '../../core/formulas.js';
 import { terrainAt } from '../../systems/world.js';
+import { FORMATIONS, FORMATION_IDS, DEFAULT_FORMATION } from '../../config/formations.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
@@ -38,6 +39,15 @@ export function createAttackForm({ game, refresh }) {
   );
   catapultSelect.addEventListener('change', () => refresh());
   const catapultRow = h('div', { class: 'form-row' }, h('label', { for: 'catapult-target' }, 'Mancınık hedefi'), catapultSelect);
+
+  const formationSelect = h(
+    'select',
+    { id: 'attack-formation' },
+    FORMATION_IDS.map((id) => h('option', { value: id, selected: id === DEFAULT_FORMATION }, FORMATIONS[id].name)),
+  );
+  formationSelect.addEventListener('change', () => refresh());
+  const formationRow = h('div', { class: 'form-row' }, h('label', { for: 'attack-formation' }, 'Savaş düzeni'), formationSelect);
+  const formationNote = h('p', { class: 'muted hint' });
 
   // Kahraman: orduya katılırsa gücünü, Kılıç ve Akın özelliklerini, atının hızını katar.
   const heroBox = h('input', { type: 'checkbox', id: 'attack-hero' });
@@ -74,6 +84,8 @@ export function createAttackForm({ game, refresh }) {
     empty,
     h('div', { class: 'send-grid' }, UNIT_IDS.map((id) => rows[id].row)),
     catapultRow,
+    formationRow,
+    formationNote,
     heroRow,
     terrainNote,
     envoyHint,
@@ -85,7 +97,7 @@ export function createAttackForm({ game, refresh }) {
   el.hidden = true;
 
   const readUnits = () => Object.fromEntries(UNIT_IDS.map((id) => [id, Number(rows[id].input.value || 0)]));
-  const options = () => ({ catapultTarget: catapultSelect.value, ...(heroBox.checked && { hero: true }) });
+  const options = () => ({ catapultTarget: catapultSelect.value, formation: formationSelect.value, ...(heroBox.checked && { hero: true }) });
   const isSupport = () => target?.kind === 'oyuncu';
   const latest = (type) => (target && !isSupport() ? game.state.reports.find((r) => r.type === type && r.target.id === target.id) : null);
 
@@ -106,6 +118,7 @@ export function createAttackForm({ game, refresh }) {
     if (!report) return;
     for (const id of UNIT_IDS) rows[id].input.value = String(Math.min(report.attackers[id] ?? 0, game.village.units[id]));
     if (report.catapultTarget) catapultSelect.value = report.catapultTarget;
+    formationSelect.value = FORMATIONS[report.formation] ? report.formation : DEFAULT_FORMATION;
     refresh();
   }
 
@@ -206,6 +219,9 @@ export function createAttackForm({ game, refresh }) {
 
       const check = inspectAttack(game.state, village, target.x, target.y, readUnits(), now, options());
       catapultRow.hidden = !check.units.mancinik;
+      formationRow.hidden = support || check.mission !== 'saldiri';
+      formationNote.hidden = formationRow.hidden;
+      setText(formationNote, FORMATIONS[formationSelect.value]?.effect ?? '');
       const envoys = support ? 0 : (check.units.elci ?? 0);
       envoyHint.hidden = !envoys;
       if (envoys) {
@@ -222,7 +238,11 @@ export function createAttackForm({ game, refresh }) {
         const kind = {
           casus: [h('span', { class: 'muted' }, 'Casusluk')],
           destek: [h('span', { class: 'muted' }, `Destek: askerler ${target.name} köyünü savunur, istediğinde geri çağırırsın`)],
-          saldiri: [stat('saldiri', 'Saldırı gücü', fmtInt(check.attack)), stat('tasima', 'Taşıma kapasitesi', fmtInt(check.carry))],
+          saldiri: [
+            stat('saldiri', 'Saldırı gücü', fmtInt(check.attack)),
+            stat('tasima', 'Taşıma kapasitesi', fmtInt(check.carry * FORMATIONS[check.formation].carry)),
+            h('span', { class: 'muted' }, `Düzen: ${FORMATIONS[check.formation].name}`),
+          ],
         }[check.mission];
         summary.replaceChildren(
           ...kind,

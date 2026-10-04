@@ -24,6 +24,9 @@ const REMOTE = {
   cancelResearch: 0,
   trade: 3,
   sendTransport: 2,
+  createTradeRoute: 5,
+  toggleTradeRoute: 2,
+  deleteTradeRoute: 1,
   withdrawSupport: 2,
   sendAttack: 'attack',
   repeatAttack: 1,
@@ -46,6 +49,7 @@ const REMOTE = {
   claimDaily: 0,
   startIlim: 1,
   cancelIlim: 0,
+  chooseEdict: 1,
   chooseEvent: 1,
   sendGift: 2,
   makePeace: 1,
@@ -104,8 +108,16 @@ export class OnlineGame extends Game {
         if (events?.length) this.emit(events);
       },
       chat: (message) => {
-        if (!message.system) this.chatLog = [...this.chatLog, message].slice(-50);
+        if (Number.isFinite(message.at)) this.chatLog = [...this.chatLog, message].slice(-50);
         this.emit([{ type: 'chat', message }]);
+      },
+      'chat-cleared': () => {
+        this.chatLog = [];
+        this.emit([{ type: 'chat-cleared' }]);
+      },
+      'session-expired': ({ reason } = {}) => {
+        this.source?.close();
+        this.emit([{ type: 'session-expired', ...(reason && { reason }) }]);
       },
       disconnected: () => {
         this.connected = false;

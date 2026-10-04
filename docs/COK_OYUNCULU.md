@@ -53,7 +53,7 @@ Bilgisayarının yerel IP adresini öğren (`ipconfig` → "IPv4 Address", ör. 
 
 ## 3. İnternette herkese aç
 
-Sunucunun sürekli açık kalan bir bilgisayarda (bulut sunucusu) çalışması ve **kalıcı bir diske** yazabilmesi gerekir. Dünya ve hesaplar `data/` klasöründeki JSON dosyalarındadır.
+Sunucunun sürekli açık kalan bir bilgisayarda (bulut sunucusu) çalışması ve **kalıcı bir diske** yazabilmesi gerekir. Dünya, hesaplar, oturumlar ve yönetici askı listesi `data/` klasöründeki JSON dosyalarındadır.
 
 ### Seçenek A: Docker destekleyen bir barındırma (Render, Railway, Fly.io…)
 
@@ -90,11 +90,13 @@ En kolayı, oyuncuların oyunu doğrudan sunucunun adresinden açmasıdır; o za
 |---|---|---|
 | `PORT` | `8787` | Sunucunun dinlediği kapı |
 | `HOST` | `127.0.0.1` | `0.0.0.0` yaparsan ağdaki başka cihazlar da bağlanır |
-| `DATA_DIR` | `./data` | Dünya, hesap ve oturum dosyaları |
+| `DATA_DIR` | `./data` | Dünya, hesap, oturum ve yönetici askı-listesi dosyaları |
 | `WORLD_SPEED` | `1` | Yalnızca **yeni** dünya kurulurken kullanılır (1, 2, 5, 10…) |
 | `WORLD_SEED` | rastgele | Yeni dünyanın harita tohumu |
 | `ALLOWED_ORIGINS` | boş | Başka adresteki oyun sayfalarına izin (virgülle) |
 | `SERVE_STATIC` | `true` | `false` ise yalnızca API sunar |
+| `ADMIN_USERNAME` | boş | Yönetici paneli kullanıcı adı; boşsa panel girişi kapalı |
+| `ADMIN_PASSWORD` | boş | En az 16 karakterlik gizli yönetici parolası; sunucu ortamında tutulur |
 
 Dünyayı sıfırlamak için sunucuyu durdurup `data/world.json` dosyasını silersin; hesaplar da silinsin istersen `data/` klasörünün tamamını sil.
 
@@ -105,6 +107,26 @@ Dünyayı sıfırlamak için sunucuyu durdurup `data/world.json` dosyasını sil
 - **Tek zaman çizelgesi:** Bütün oyuncuların olayları (inşaat, eğitim, savaş, keşif, beylerin yağmaları) tek bir sırayla işlenir. Böylece iki oyuncunun aynı barbar köyüne saldırısı ya da birbirine saldırıları tutarlı çözülür.
 - **Ortak dünya:** Barbar köyleri ve rakip beyler herkes için aynıdır. Bir oyuncunun yağmaladığı köy, öbürü için de boşalmıştır.
 - **Canlı bildirim:** Tarayıcı sunucuya açık bir bağlantıyla (Server-Sent Events) bağlanır. Saldırı gelince, savaş bitince ya da sohbete mesaj düşünce hemen haberdar olur.
+
+## Yalnız sunucu sahibine açık yönetici paneli
+
+Panel yalnızca kendi Node sunucusunda çalışır; GitHub Pages ve statik `npm start` sunucusu yönetim API'si sunmaz. Sunucuyu başlatırken iki gizli ortam değişkeni tanımla:
+
+```powershell
+$env:ADMIN_USERNAME = "senin_yonetici_adin"
+$env:ADMIN_PASSWORD = "en_az_16_karakterlik_rastgele_parola"
+npm run server
+```
+
+Linux/macOS:
+
+```bash
+ADMIN_USERNAME='senin_yonetici_adin' ADMIN_PASSWORD='en_az_16_karakterlik_rastgele_parola' npm run server
+```
+
+Oyunu kendi sunucu adresinden HTTPS ile aç, alt kısımdaki **Yönetici girişi** bağlantısına bas ve bu bilgileri kullan. Arayüz parolayı saklamaz; yönetici oturumu sekmede tutulur ve 8 saat sonra sona erer. Başka bir siteden (ör. GitHub Pages) bağlanıyorsan sunucuda `ALLOWED_ORIGINS` içine o sitenin tam adresini ekle.
+
+Panel dünya/oyuncu özetini ve sohbet geçmişini gösterir; oyuncu erişimini askıya alıp yeniden açabilir, dünyaya duyuru gönderebilir ve sohbet geçmişini temizleyebilir. Askıya alma hesabı veya köyleri silmez. Yönetici adı/parolası kaynak koda, depoya ya da istemci tarafı ayarlara konmamalıdır; güçlü parolayı yalnızca barındırma ortam değişkenlerinde tut.
 
 ## Kurallar (çok oyunculu dünyaya özel)
 
@@ -117,7 +139,8 @@ Dünyayı sıfırlamak için sunucuyu durdurup `data/world.json` dosyasını sil
 ## Güvenlik ve gizlilik
 
 - Şifreler düz metin olarak saklanmaz; `scrypt` ile tuzlanıp özetlenir.
-- Oturum jetonu 30 gün geçerlidir; **Çıkış yap** jetonu geçersiz kılar.
+- Oyuncu oturumu 30 gün, ayrı yönetici oturumu 8 saat geçerlidir; **Çıkış yap** jetonu geçersiz kılar.
+- Yönetici parolası yalnızca sunucu ortamında tutulur; yönetici giriş denemeleri IP başına sınırlandırılır.
 - Hesap için yalnızca kullanıcı adı ve şifre istenir; e-posta ya da kişisel veri toplanmaz.
 - Giriş denemeleri, eylemler ve sohbet için hız sınırı vardır.
 - Sunucu yalnızca oyunun dosyalarını (`index.html`, `css/`, `js/`, `assets/`…) sunar; `server/` ve `data/` klasörleri dışarıdan görünmez.

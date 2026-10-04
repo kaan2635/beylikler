@@ -2,6 +2,7 @@ import { UNITS } from '../config/units.js';
 import { COMBAT } from '../config/combat.js';
 import { wallBonus } from '../core/formulas.js';
 import { techMultiplier } from './research.js';
+import { DEFAULT_FORMATION, FORMATIONS } from '../config/formations.js';
 
 const TYPES = ['piyade', 'suvari', 'okcu'];
 
@@ -43,10 +44,11 @@ function scaleUnits(units, ratio) {
  * `attackerTech` / `defenderTech` Demirci geliştirmeleridir; `attackerBonus` / `defenderBonus`
  * sınıf, görevli, unvan ve arazi çarpanlarıdır. `heroAttack` / `heroDefense` kahramanın gücüdür.
  */
-export function resolveBattle({ attackers, defenders, wallLevel = 0, luck = 0, attackerTech = {}, defenderTech = {}, attackerBonus = 1, defenderBonus = 1, heroAttack = 0, heroDefense = 0 }) {
+export function resolveBattle({ attackers, defenders, wallLevel = 0, luck = 0, attackerTech = {}, defenderTech = {}, attackerBonus = 1, defenderBonus = 1, heroAttack = 0, heroDefense = 0, formation = DEFAULT_FORMATION }) {
   const power = attackByType(attackers, attackerTech);
   power.suvari += heroAttack; // orduyu yöneten kahraman atlı savaşır
-  const attack = sum(power) * attackerBonus * (1 + luck);
+  const plan = FORMATIONS[formation] ?? FORMATIONS[DEFAULT_FORMATION];
+  const attack = sum(power) * attackerBonus * plan.attack * (1 + luck);
   const defense =
     (weightedDefense(defenders, power, defenderTech) + heroDefense) * defenderBonus * (1 + wallBonus(wallLevel)) +
     COMBAT.villageDefense +
@@ -58,7 +60,7 @@ export function resolveBattle({ attackers, defenders, wallLevel = 0, luck = 0, a
     attack,
     defense,
     luck,
-    attackerLosses: attackerWins ? scaleUnits(attackers, ratio) : { ...attackers },
+    attackerLosses: attackerWins ? scaleUnits(attackers, ratio * plan.losses) : { ...attackers },
     defenderLosses: attackerWins ? { ...defenders } : scaleUnits(defenders, ratio),
   };
 }

@@ -1,6 +1,6 @@
 import { RESOURCES, RESOURCE_IDS } from '../../config/resources.js';
-import { MARKET } from '../../config/tech.js';
 import { inspectTrade, marketFee, inspectTransport, merchantCapacity } from '../../systems/market.js';
+import { inspectTradeRoute, maxTradeRoutes } from '../../systems/trade-routes.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
 import { fmtInt, fmtDuration, fmtClock } from '../format.js';
@@ -48,6 +48,7 @@ export function createMarketView({ game, refresh }) {
   );
 
   const transport = createTransportPanel({ game, refresh });
+  const routes = createTradeRoutesPanel({ game, refresh });
   const capacityNote = h('p', { class: 'muted' });
 
   const el = h(
@@ -62,6 +63,7 @@ export function createMarketView({ game, refresh }) {
       transport.el,
       h('section', { class: 'panel stack-sm' }, h('h2', null, 'Tüccarlar'), merchants),
     ),
+    routes.el,
   );
 
   for (const control of [give, take, amount]) control.addEventListener('input', () => refresh());
@@ -94,7 +96,7 @@ export function createMarketView({ game, refresh }) {
         h(
           'div',
           { class: 'queue-row' },
-          h('div', null, `${m.merchants} tüccar → ${m.target.name}: ${fmtInt(Object.values(m.resources).reduce((a, b) => a + b, 0))} kaynak`),
+          h('div', null, `${m.merchants} tüccar → ${m.target.name}: ${fmtInt(Object.values(m.resources).reduce((a, b) => a + b, 0))} kaynak${m.routeId != null ? ` · otomatik hat #${m.routeId}` : ''}`),
           h('div', { class: 'queue-time' }, h('span', { class: 'queue-remaining' }, fmtDuration((m.arriveAt - now) / 1000)), h('span', { class: 'muted' }, `varış ${fmtClock(m.arriveAt, now)}`)),
           h('span'),
         ),
@@ -140,6 +142,174 @@ export function createMarketView({ game, refresh }) {
       setText(status, check.ok ? '' : check.reason);
       transport.update(now);
       renderMerchants(village, now);
+      routes.update(now);
+    },
+  };
+}
+
+/** Düzenli kaynak sevkiyatı: eşik korumalı, tekrarlanan kervan hatları. */
+function createTradeRoutesPanel({ game, refresh }) {
+  const source = h('select', { id: 'route-source' });
+  const target = h('select', { id: 'route-target' });
+  const interval = h(
+    'select',
+    { id: 'route-interval' },
+    [1, 2, 4, 8, 12, 24].map((hours) => h('option', { value: hours }, `Her ${hours} oyun saati`)),
+  );
+  const cargo = {};
+  const reserve = {};
+  const resourceRows = RESOURCE_IDS.map((id) => {
+    const row = h(
+      'div',
+      { class: 'route-resource-row' },
+      h('span', { class: 'unit-icon small' }, icon(id)),
+      h('strong', null, RESOURCES[id].name),
+      h('label', { for: `route-load-${id}` }, 'Sefer yükü'),
+      h('input', { type: 'number', id: `route-load-${id}`, min: 0, step: 1, value: 0, inputmode: 'numeric', dataset: { resource: id, field: 'cargo' }, 'aria-label': `${RESOURCES[id].name} kervan yükü` }),
+      h('label', { for: `route-reserve-${id}` }, 'Ambarda kalsın'),
+      h('input', { type: 'number', id: `route-reserve-${id}`, min: 0, step: 1, value: 0, inputmode: 'numeric', dataset: { resource: id, field: 'reserve' }, 'aria-label': `${RESOURCES[id].name} ambar yedeği` }),
+    );
+    cargo[id] = row.querySelector('[data-field="cargo"]');
+    reserve[id] = row.querySelector('[data-field="reserve"]');
+    return row;
+  });
+  const capacityNote = h('p', { class: 'muted' });
+  const preview = h('div', { class: 'trade-preview' });
+  const status = h('p', { class: 'card-status' });
+  const submit = h('button', { type: 'submit', class: 'btn' }, 'Kervan hattı kur');
+  const emptySource = h('p', { class: 'muted' }, 'Önce en az bir köyünde Pazar kur. Pazar 1 ilk hat yerini, her üç ek seviye yeni bir yer açar.');
+  const list = h('div', { class: 'queue route-list' });
+  const form = h(
+    'form',
+    { class: 'stack-sm', onsubmit: onCreate },
+    h('div', { class: 'route-select-row' }, h('label', { for: 'route-source' }, 'Çıkış köyü'), source, h('label', { for: 'route-target' }, 'Hedef köy'), target),
+    h('div', { class: 'route-resource-grid' }, resourceRows),
+    h('div', { class: 'form-row route-interval' }, h('label', { for: 'route-interval' }, 'Gönderim'), interval),
+    capacityNote,
+    preview,
+    h('div', { class: 'form-row' }, submit),
+    status,
+  );
+  const el = h(
+    'section',
+    { class: 'panel stack-sm trade-routes-panel' },
+    h('div', { class: 'panel-head' }, h('h2', null, 'Kervan hatları'), h('span', { class: 'muted' }, 'Otomatik köyler arası sevkiyat')),
+    h('p', { class: 'muted' }, 'Hat, belirlediğin miktarı seçilen aralıkla yollar. Her kaynak için ambar yedeği ayarla; hedefteki tahmini boş alan ve yoldaki kervanlar hesaba katılarak yük otomatik azaltılır. Tüccar ya da kaynak yetmezse çevrim atlanır.'),
+    emptySource,
+    form,
+    h('h3', { class: 'info-subtitle' }, 'Kurulu hatlar'),
+    list,
+  );
+  let sourceSignature = null;
+  let targetSignature = null;
+
+  source.addEventListener('change', () => refresh());
+  target.addEventListener('change', () => refresh());
+  interval.addEventListener('change', () => refresh());
+  for (const input of [...Object.values(cargo), ...Object.values(reserve)]) input.addEventListener('input', () => refresh());
+
+  function readAmounts(inputs) {
+    return Object.fromEntries(RESOURCE_IDS.map((id) => [id, Number(inputs[id].value || 0)]));
+  }
+
+  function onCreate(event) {
+    event.preventDefault();
+    const now = Date.now();
+    const result = game.createTradeRoute(source.value, target.value, readAmounts(cargo), readAmounts(reserve), Number(interval.value), now);
+    if (result.ok) {
+      const from = game.state.villages[result.route.sourceId]?.name ?? result.route.sourceId;
+      const to = game.state.villages[result.route.targetId]?.name ?? result.route.targetId;
+      toast(`${from} → ${to} kervan hattı kuruldu. İlk sefer ${fmtClock(result.route.nextAt, now)}.`, 'success');
+      for (const input of [...Object.values(cargo), ...Object.values(reserve)]) input.value = '0';
+    } else {
+      toast(result.reason, 'error');
+    }
+    refresh(now);
+  }
+
+  list.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-route-action]');
+    if (!button) return;
+    const now = Date.now();
+    const id = Number(button.dataset.routeId);
+    if (button.dataset.routeAction === 'delete') {
+      const result = game.deleteTradeRoute(id, now);
+      if (result.ok) toast('Kervan hattı silindi. Yoldaki tüccarlar seferini tamamlar.', 'info');
+      else toast(result.reason, 'error');
+    } else {
+      const enabled = button.dataset.routeAction === 'resume';
+      const result = game.toggleTradeRoute(id, enabled, now);
+      if (result.ok) toast(enabled ? 'Kervan hattı yeniden başlatıldı.' : 'Kervan hattı durduruldu.', 'success');
+      else toast(result.reason, 'error');
+    }
+    refresh(now);
+  });
+
+  function routeRow(route, state, now) {
+    const from = state.villages[route.sourceId];
+    const to = state.villages[route.targetId];
+    const load = RESOURCE_IDS.filter((id) => route.cargo?.[id] > 0).map((id) => `${fmtInt(route.cargo[id])} ${RESOURCES[id].name.toLocaleLowerCase('tr')}`).join(' · ') || 'Yük yok';
+    const held = RESOURCE_IDS.filter((id) => route.reserve?.[id] > 0).map((id) => `${fmtInt(route.reserve[id])} ${RESOURCES[id].name.toLocaleLowerCase('tr')}`).join(' · ');
+    const last = route.lastAt == null
+      ? 'Henüz sefer yapılmadı.'
+      : route.lastReason
+        ? `${fmtClock(route.lastAt, now)} · ${route.lastSent > 0 ? `${fmtInt(route.lastSent)} kaynak yola çıktı; ` : 'Atlandı: '}${route.lastReason}.`
+        : `${fmtClock(route.lastAt, now)} · ${fmtInt(route.lastSent)} kaynak yola çıktı.`;
+    const next = route.enabled && route.nextAt != null ? `Sonraki sefer ${fmtDuration(Math.max(0, route.nextAt - now) / 1000)} sonra` : 'Durduruldu';
+    return h(
+      'article',
+      { class: `route-entry${route.enabled ? '' : ' is-paused'}` },
+      h('div', { class: 'route-entry-head' }, h('strong', null, `${from?.name ?? 'Kayıp köy'} → ${to?.name ?? 'Kayıp köy'}`), h('span', { class: `badge${route.enabled ? '' : ' badge-muted'}` }, route.enabled ? 'Etkin' : 'Duraklatıldı')),
+      h('p', { class: 'muted route-entry-meta' }, `Her ${route.intervalHours} oyun saati · ${load}${held ? ` · Ambar yedeği: ${held}` : ''}`),
+      h('div', { class: 'route-entry-foot' }, h('span', { class: 'muted' }, `${last} ${next}`), h('div', { class: 'form-row' }, h('button', { type: 'button', class: 'btn btn-small btn-ghost', dataset: { routeId: route.id, routeAction: route.enabled ? 'pause' : 'resume' } }, route.enabled ? 'Durdur' : 'Sürdür'), h('button', { type: 'button', class: 'btn btn-small btn-ghost btn-quiet', dataset: { routeId: route.id, routeAction: 'delete' } }, 'Sil'))),
+    );
+  }
+
+  return {
+    el,
+    update(now) {
+      const state = game.state;
+      const villages = Object.values(state.villages);
+      el.hidden = villages.length < 2;
+      if (el.hidden) return;
+      const sources = villages.filter((village) => village.buildings.pazar > 0);
+      emptySource.hidden = sources.length > 0;
+      form.hidden = sources.length === 0;
+
+      const newSourceSignature = sources.map((village) => `${village.id}:${village.name}:${village.buildings.pazar}`).join('|');
+      if (newSourceSignature !== sourceSignature) {
+        sourceSignature = newSourceSignature;
+        const chosen = source.value;
+        source.replaceChildren(...sources.map((village) => h('option', { value: village.id }, `${village.name} · Pazar ${village.buildings.pazar}`)));
+        source.value = sources.some((village) => village.id === chosen) ? chosen : sources[0]?.id ?? '';
+        targetSignature = null;
+      }
+
+      const sourceVillage = state.villages[source.value];
+      const targets = villages.filter((village) => village.id !== source.value);
+      const newTargetSignature = `${source.value}|${targets.map((village) => `${village.id}:${village.name}`).join('|')}`;
+      if (newTargetSignature !== targetSignature) {
+        targetSignature = newTargetSignature;
+        const chosen = target.value;
+        target.replaceChildren(...targets.map((village) => h('option', { value: village.id }, `${village.name} (${village.x}|${village.y})`)));
+        target.value = targets.some((village) => village.id === chosen) ? chosen : targets[0]?.id ?? '';
+      }
+
+      if (sourceVillage) {
+        const used = (state.tradeRoutes ?? []).filter((route) => route.sourceId === sourceVillage.id).length;
+        setText(capacityNote, `Pazar ${sourceVillage.buildings.pazar}: ${used}/${maxTradeRoutes(sourceVillage)} hat yeri · tek seferde en çok ${fmtInt(merchantCapacity(sourceVillage) * sourceVillage.buildings.pazar)} kaynak. Hedefteki tahmini boş alana göre sevkiyat küçültülür.`);
+        const check = inspectTradeRoute(state, source.value, target.value, readAmounts(cargo), readAmounts(reserve), Number(interval.value));
+        submit.disabled = !check.ok;
+        setText(status, check.ok ? '' : check.reason);
+        if (check.ok) {
+          preview.replaceChildren(h('span', { class: 'muted trade-meta' }, `${fmtInt(check.total)} kaynaklık yük · ilk sefer ${fmtClock(now + (check.intervalHours * 3_600_000) / state.world.speed, now)} · Pazar ${check.used}/${check.slots} hat dolu`));
+        } else {
+          preview.replaceChildren();
+        }
+      }
+
+      const routes = [...(state.tradeRoutes ?? [])].sort((a, b) => (a.nextAt ?? Infinity) - (b.nextAt ?? Infinity));
+      list.replaceChildren(...(routes.length ? routes.map((route) => routeRow(route, state, now)) : [h('p', { class: 'muted' }, 'Henüz otomatik kervan hattı yok. İki köyün arasında düzenli kaynak akışı kur.')]));
     },
   };
 }
@@ -217,7 +387,7 @@ function createTransportPanel({ game, refresh }) {
         const parts = [
           h('span', { class: 'muted trade-meta' }, `${check.merchants} tüccar · yolculuk ${fmtDuration(check.seconds)} · varış ${fmtClock(check.arriveAt, now)}`),
         ];
-        if (check.lost) parts.push(h('p', { class: 'card-status warn' }, `Hedef ambara şu an sığmayan ${fmtInt(check.lost)} kaynak kaybolur.`));
+        if (check.lost) parts.push(h('p', { class: 'card-status warn' }, `Varışta hedef ambarını aşması beklenen ${fmtInt(check.lost)} kaynak kaybolabilir; yükü azalt.`));
         preview.replaceChildren(...parts);
       } else {
         preview.replaceChildren();

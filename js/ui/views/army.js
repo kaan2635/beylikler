@@ -26,11 +26,13 @@ export function createArmyView(ctx) {
   const summary = createSummaryPanel();
   const movements = createMovementsPanel(ctx);
   const support = createSupportPanel(ctx);
-  const panels = TRAINING_BUILDINGS.map((buildingId) => createBuildingPanel(buildingId, ctx));
+  const roleFilter = createRoleFilter();
+  roleFilter.select.addEventListener('change', () => ctx.refresh());
+  const panels = TRAINING_BUILDINGS.map((buildingId) => createBuildingPanel(buildingId, { ...ctx, roleFilter }));
   const el = h(
     'section',
     { class: 'stack' },
-    h('header', { class: 'view-header' }, h('h1', null, 'Ordu')),
+    h('header', { class: 'view-header' }, h('h1', null, 'Ordu'), roleFilter.el),
     incoming.el,
     summary.el,
     movements.el,
@@ -48,6 +50,20 @@ export function createArmyView(ctx) {
       support.update(ctx.game.state, village);
       for (const panel of panels) panel.update(village, ctx.game.state.world, now);
     },
+  };
+}
+
+function createRoleFilter() {
+  const roles = [...new Set(UNIT_IDS.map((id) => UNITS[id].role))];
+  const select = h(
+    'select',
+    { id: 'army-role-filter' },
+    h('option', { value: 'tumu' }, `Tüm roller · ${UNIT_IDS.length}`),
+    roles.map((role) => h('option', { value: role }, `${role} · ${UNIT_IDS.filter((id) => UNITS[id].role === role).length}`)),
+  );
+  return {
+    select,
+    el: h('div', { class: 'army-filter' }, h('label', { for: 'army-role-filter' }, 'Birlik rolü'), select),
   };
 }
 
@@ -333,13 +349,14 @@ function createMovementsPanel({ game, refresh }) {
   };
 }
 
-function createBuildingPanel(buildingId, { game, refresh }) {
+function createBuildingPanel(buildingId, { game, refresh, roleFilter }) {
   const badge = h('span', { class: 'badge' });
   const info = h('span', { class: 'muted' });
   const queue = createTrainQueue(buildingId);
   const unitIds = UNIT_IDS.filter((id) => UNITS[id].building === buildingId);
   const cards = unitIds.map((id) => createUnitCard(id, { game, refresh }));
   const grid = h('div', { class: 'building-grid' }, cards.map((card) => card.el));
+  const noMatches = h('p', { class: 'muted army-filter-note' });
   // Bina yokken kartlar yerine tek satır: ne eğitileceği ve binaya giden düğme.
   const absent = h(
     'div',
@@ -354,6 +371,7 @@ function createBuildingPanel(buildingId, { game, refresh }) {
     absent,
     queue.el,
     grid,
+    noMatches,
   );
 
   el.addEventListener('click', (event) => {
@@ -373,14 +391,23 @@ function createBuildingPanel(buildingId, { game, refresh }) {
     el,
     update(village, world, now) {
       const level = village.buildings[buildingId];
+      const selectedRole = roleFilter.select.value;
+      const hasMatches = selectedRole === 'tumu' || cards.some((card) => card.role === selectedRole);
+      const hasQueue = level > 0 && village.trainQueues[buildingId].length > 0;
       setText(badge, level > 0 ? `${level}. seviye` : 'Yok');
       badge.classList.toggle('badge-muted', level === 0);
       setText(info, level > 0 ? `Eğitim süresi %${Math.round(trainingTimeFactor(level) * 100)}` : '');
       absent.hidden = level > 0;
       queue.el.hidden = level === 0;
-      grid.hidden = level === 0;
+      grid.hidden = level === 0 || !hasMatches;
+      noMatches.hidden = level === 0 || hasMatches || !hasQueue;
+      el.hidden = selectedRole !== 'tumu' && !hasMatches && !hasQueue;
+      if (!noMatches.hidden) setText(noMatches, `${BUILDINGS[buildingId].name} içinde “${selectedRole}” rolünde asker yok; mevcut eğitim kuyruğun görünmeye devam eder.`);
       queue.update(village, now);
-      for (const card of cards) card.update(village, world, now);
+      for (const card of cards) {
+        card.el.hidden = selectedRole !== 'tumu' && card.role !== selectedRole;
+        card.update(village, world, now);
+      }
     },
   };
 }
@@ -483,6 +510,7 @@ function createUnitCard(unitId, { game, refresh }) {
       stat('savunma', 'Savunma: piyadeye / süvariye / okçuya karşı', `${d.piyade} / ${d.suvari} / ${d.okcu}`),
       stat('hiz', 'Hız: bir alanı geçme süresi', `${unit.speed} dk`),
       stat('tasima', 'Taşıma kapasitesi', String(unit.carry)),
+      unit.siegePower ? stat('saldiri', 'Sur kuşatma gücü', `${unit.siegePower.toLocaleString('tr-TR')} koçbaşı`) : null,
     ),
     costRow,
     h('form', { class: 'form-row', onsubmit: onTrain }, input, submit, maxButton),
@@ -508,6 +536,7 @@ function createUnitCard(unitId, { game, refresh }) {
 
   return {
     el,
+    role: unit.role,
     update(village, world, now) {
       const check = inspectTraining(village, world, unitId, readCount(), now);
       const max = maxTrainable(village, unitId);

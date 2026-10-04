@@ -20,6 +20,7 @@ import { syncBonuses } from './premium.js';
 import { HERO } from '../config/hero.js';
 import { terrainDefense } from '../core/formulas.js';
 import { terrainAt } from './world.js';
+import { FORMATIONS, DEFAULT_FORMATION } from '../config/formations.js';
 import { attackSite, siteLive } from './sites.js';
 import {
   totalUnits,
@@ -85,13 +86,19 @@ export function inspectAttack(state, village, x, y, requested, now, options = {}
   const travel = withHero ? heroTravelFactor(state) : 1; // kahramanın atı orduyu hızlandırır
   const seconds = Math.max(1, Math.round(travelSeconds(dist, speed, state.world.speed) * bonus.travel * travel));
   const hero = withHero && state.hero ? heroEffects(state.hero) : null;
-  const attack = (armyAttack(units, village.tech) + (hero?.power ?? 0)) * bonus.attack * (1 + (hero?.attack ?? 0));
   const own = ownVillageAt(state, x, y);
+  const requestedFormation = options.formation ?? DEFAULT_FORMATION;
+  const formation = FORMATIONS[requestedFormation];
+  const mission = own ? 'destek' : totalUnits(units) > 0 && armyAttack(units, village.tech) === 0 ? 'casus' : 'saldiri';
+  const attack =
+    (armyAttack(units, village.tech) + (hero?.power ?? 0)) * bonus.attack * (1 + (hero?.attack ?? 0)) *
+    (mission === 'saldiri' ? (formation?.attack ?? 1) : 1);
   const info = {
     ok: false,
     units,
-    mission: own ? 'destek' : totalUnits(units) > 0 && attack === 0 ? 'casus' : 'saldiri',
+    mission,
     attack,
+    formation: requestedFormation,
     carry: armyCarry(units),
     distance: dist,
     seconds,
@@ -100,6 +107,7 @@ export function inspectAttack(state, village, x, y, requested, now, options = {}
     hero: withHero,
   };
 
+  if (!formation) return { ...info, code: 'formation', reason: 'Geçerli bir savaş düzeni seç' };
   if (!totalUnits(units)) return { ...info, code: 'empty', reason: 'Göndermek için asker seç' };
   if (withHero) {
     const available = heroAvailable(state, village, now);
@@ -139,6 +147,7 @@ export function sendAttack(state, village, x, y, requested, now, options = {}) {
     departAt: now,
     arriveAt: check.arriveAt,
     ...(check.catapultTarget && { catapultTarget: check.catapultTarget }),
+    ...(check.mission === 'saldiri' && { formation: check.formation }),
   };
   village.movements.push(movement);
   if (check.hero) {
@@ -237,12 +246,16 @@ function attack(state, village, movement, target) {
     attackerBonus: bonusOf(village).attack * (1 + (hero?.attack ?? 0)),
     defenderBonus: 1 + terrainDefense(terrainAt(state.world.seed, target.x, target.y)),
     heroAttack: hero?.power ?? 0,
+    formation: movement.formation ?? DEFAULT_FORMATION,
   });
   const survivors = subtractUnits(movement.units, battle.attackerLosses);
   const available = {};
   for (const id of RESOURCE_IDS) available[id] = Math.max(0, live.resources[id] - live.hidden);
   const loot = battle.attackerWins
-    ? distributeLoot(available, armyCarry(survivors) * bonusOf(village).carry * (1 + (hero?.carry ?? 0)))
+    ? distributeLoot(
+        available,
+        armyCarry(survivors) * bonusOf(village).carry * (1 + (hero?.carry ?? 0)) * (FORMATIONS[movement.formation] ?? FORMATIONS[DEFAULT_FORMATION]).carry,
+      )
     : Object.fromEntries(RESOURCE_IDS.map((id) => [id, 0]));
 
   const leftResources = {};
@@ -276,6 +289,7 @@ function attack(state, village, movement, target) {
     defenderLosses: battle.defenderLosses,
     loot,
     siege,
+    formation: movement.formation ?? DEFAULT_FORMATION,
     ...(conquest && { conquest }),
     ...(movement.catapultTarget && { catapultTarget: movement.catapultTarget }),
     ...(hero && { hero: { name: hero.name } }),

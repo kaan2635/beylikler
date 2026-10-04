@@ -1,4 +1,4 @@
-import { EXPEDITION, EXPEDITION_TEXTS, REGIONS } from '../config/expedition.js';
+import { EXPEDITION, EXPEDITION_FOCUSES, EXPEDITION_TEXTS, REGIONS } from '../config/expedition.js';
 import { heroAvailable, heroTravelFactor, departHero, woundHero, addHeroXp, rollItem, giveItem } from './hero.js';
 import { syncBonuses } from './premium.js';
 import { UNITS, UNIT_IDS } from '../config/units.js';
@@ -48,6 +48,10 @@ export function regionOf(id) {
   return REGIONS[id] ?? REGIONS.sinir;
 }
 
+export function focusOf(id) {
+  return Object.hasOwn(EXPEDITION_FOCUSES, id) ? EXPEDITION_FOCUSES[id] : EXPEDITION_FOCUSES.dengeli;
+}
+
 /** Keşif ustalığı: tamamlanan seferlerle bulgulara eklenen pay. */
 export function expeditionMastery(state) {
   return Math.min(EXPEDITION.masteryMax, (state.stats?.expeditions ?? 0) * EXPEDITION.masteryPer);
@@ -69,6 +73,7 @@ function frontierPoint(village, distance = EXPEDITION.distance) {
 export function inspectExpedition(state, village, requested, holdHours, now, options = {}) {
   const regionId = REGIONS[options.region] ? options.region : 'sinir';
   const region = REGIONS[regionId];
+  const focusId = Object.hasOwn(EXPEDITION_FOCUSES, options.focus) ? options.focus : 'dengeli';
   const withHero = !!options.hero;
   const units = {};
   for (const id of UNIT_IDS) {
@@ -93,6 +98,7 @@ export function inspectExpedition(state, village, requested, holdHours, now, opt
     slots,
     underway: expeditionsUnderway(state),
     region: regionId,
+    focus: focusId,
     hero: withHero,
   };
 
@@ -124,6 +130,7 @@ export function sendExpedition(state, village, requested, holdHours, now, option
     units: check.units,
     loot: null,
     region: check.region,
+    focus: check.focus,
     holdHours,
     departAt: now,
     exploreAt: check.exploreAt,
@@ -138,25 +145,29 @@ export function sendExpedition(state, village, requested, holdHours, now, option
 }
 
 /** Sonuç olasılıkları (0..1); bölge, sınıfın tehlike çarpanı, kahraman ve keşif süresi dahil. */
-export function expeditionOdds(village, holdHours, regionId = 'sinir', withHero = false) {
+export function expeditionOdds(village, holdHours, regionId = 'sinir', withHero = false, focusId = 'dengeli') {
   const bonus = bonusOf(village);
+  const focus = focusOf(focusId);
   const weights = { ...EXPEDITION.weights };
   for (const [key, mod] of Object.entries(regionOf(regionId).mods)) weights[key] *= mod;
-  for (const key of EXPEDITION.risky) weights[key] *= bonus.expeditionRisk * (withHero ? EXPEDITION.heroRisk : 1);
-  weights.bos *= Math.max(0.2, 1 - EXPEDITION.emptyLessPerHour * (holdHours - 1));
+  for (const [key, mod] of Object.entries(focus.mods)) weights[key] *= mod;
+  for (const key of EXPEDITION.risky) weights[key] *= bonus.expeditionRisk * (withHero ? EXPEDITION.heroRisk : 1) * focus.risk;
+  weights.bos *= focus.empty * Math.max(0.2, 1 - EXPEDITION.emptyLessPerHour * (holdHours - 1));
   const total = Object.values(weights).reduce((a, b) => a + b, 0);
   return Object.fromEntries(Object.entries(weights).map(([key, w]) => [key, w / total]));
 }
 
 /** Bulunacak kaynağın ölçeği (taşıma sınırından önce); keşif ustalığı ve kahraman dahil. */
-export function expeditionScale(state, village, holdHours, withHero = false) {
+export function expeditionScale(state, village, holdHours, withHero = false, focusId = 'dengeli') {
   const bonus = bonusOf(village);
+  const focus = focusOf(focusId);
   return (
     (EXPEDITION.resourceBase + EXPEDITION.resourcePerDay * worldDays(state.world)) *
     (1 + EXPEDITION.holdBonus * (holdHours - 1)) *
     bonus.expeditionReward *
     (1 + expeditionMastery(state)) *
-    (withHero ? EXPEDITION.heroReward : 1)
+    (withHero ? EXPEDITION.heroReward : 1) *
+    focus.reward
   );
 }
 
@@ -177,10 +188,11 @@ export function resolveExpedition(state, village, movement) {
   const bonus = bonusOf(village);
   const hold = movement.holdHours ?? 1;
   const region = regionOf(movement.region);
+  const focusId = Object.hasOwn(EXPEDITION_FOCUSES, movement.focus) ? movement.focus : 'dengeli';
   const withHero = !!movement.hero;
-  const reward = bonus.expeditionReward * (withHero ? EXPEDITION.heroReward : 1) * (1 + expeditionMastery(state));
-  let outcome = pick(expeditionOdds(village, hold, movement.region, withHero), roll(0));
-  const scale = expeditionScale(state, village, hold, withHero);
+  const reward = bonus.expeditionReward * (withHero ? EXPEDITION.heroReward : 1) * (1 + expeditionMastery(state)) * focusOf(focusId).reward;
+  let outcome = pick(expeditionOdds(village, hold, movement.region, withHero, focusId), roll(0));
+  const scale = expeditionScale(state, village, hold, withHero, focusId);
   let item = null;
   let renown = 0;
   let heroXp = withHero ? EXPEDITION.heroXpPerHour * hold : 0;
@@ -314,6 +326,7 @@ export function resolveExpedition(state, village, movement) {
     returnFactor,
     bandits,
     region: movement.region ?? 'sinir',
+    focus: focusId,
     item,
     renown,
     hero: withHero ? { name: movement.hero.name } : null,

@@ -66,6 +66,34 @@ export class Api {
     return this.request('POST', '/api/logout', {});
   }
 
+  adminLogin(username, password) {
+    return this.request('POST', '/api/admin/login', { username, password });
+  }
+
+  adminOverview() {
+    return this.request('GET', '/api/admin/overview');
+  }
+
+  adminAnnouncement(text) {
+    return this.request('POST', '/api/admin/announcement', { text });
+  }
+
+  adminClearChat() {
+    return this.request('POST', '/api/admin/chat/clear', {});
+  }
+
+  adminBanPlayer(playerId, reason) {
+    return this.request('POST', `/api/admin/players/${encodeURIComponent(playerId)}/ban`, { reason });
+  }
+
+  adminUnbanPlayer(playerId) {
+    return this.request('POST', `/api/admin/players/${encodeURIComponent(playerId)}/unban`, {});
+  }
+
+  adminLogout() {
+    return this.request('POST', '/api/admin/logout', {});
+  }
+
   state() {
     return this.request('GET', '/api/state');
   }

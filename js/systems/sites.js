@@ -12,6 +12,7 @@ import { bonusOf } from './bonus.js';
 import { grantAkce } from './premium.js';
 import { heroAfterBattle, returnHero, rollItem, giveItem } from './hero.js';
 import { attackCap } from './ai.js';
+import { FORMATIONS, DEFAULT_FORMATION } from '../config/formations.js';
 
 /**
  * Haritadaki özel yerler: harabeler ve Moğol akını.
@@ -68,10 +69,16 @@ export function attackSite(state, village, movement, site) {
     attackerBonus: bonus.attack * (1 + (hero?.attack ?? 0)),
     defenderBonus: 1 + terrainDefense(terrainAt(state.world.seed, site.x, site.y)),
     heroAttack: hero?.power ?? 0,
+    formation: movement.formation ?? DEFAULT_FORMATION,
   });
   const won = battle.attackerWins;
   const survivors = subtractUnits(movement.units, battle.attackerLosses);
-  const loot = won ? distributeLoot(live.resources, armyCarry(survivors) * bonus.carry * (1 + (hero?.carry ?? 0))) : zeroLoot();
+  const loot = won
+    ? distributeLoot(
+        live.resources,
+        armyCarry(survivors) * bonus.carry * (1 + (hero?.carry ?? 0)) * (FORMATIONS[movement.formation] ?? FORMATIONS[DEFAULT_FORMATION]).carry,
+      )
+    : zeroLoot();
   const kills = battlePoints(battle.defenderLosses);
   state.stats.kills += kills;
   state.stats.loot += resourceTotal(loot);
@@ -121,6 +128,7 @@ export function attackSite(state, village, movement, site) {
     defenderLosses: battle.defenderLosses,
     loot,
     siege: {},
+    formation: movement.formation ?? DEFAULT_FORMATION,
     hero: hero ? { name: hero.name } : null,
     reward,
   });

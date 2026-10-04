@@ -5,6 +5,7 @@ import { inspectAttack } from '../../systems/movements.js';
 import { inspectExpedition } from '../../systems/expedition.js';
 import { EXPEDITION_OUTCOMES, REGIONS } from '../../config/expedition.js';
 import { RARITIES, ITEM_SLOTS } from '../../config/hero.js';
+import { FORMATIONS } from '../../config/formations.js';
 import { outcomeTone, expeditionSummary } from './expedition.js';
 import { h, setText } from '../dom.js';
 import { icon } from '../icons.js';
@@ -373,6 +374,7 @@ function renderAttackReport(report, now) {
         h('span', { class: 'stat', title: 'Savunma gücü (sur ve köylüler dahil)' }, icon('savunma'), fmtInt(report.defense)),
         h('span', { class: 'muted' }, `Şans ${luck > 0 ? '+' : luck < 0 ? '−' : ''}%${Math.abs(luck)}`),
         h('span', { class: 'muted' }, report.wallLevel ? `Sur ${report.wallLevel}. seviye` : 'Sur yok'),
+        FORMATIONS[report.formation] ? h('span', { class: 'muted' }, `Düzen: ${FORMATIONS[report.formation].name}`) : null,
         report.hero ? h('span', { class: 'stat', title: 'Savaşa katılan kahraman' }, icon('nav-kahraman'), report.hero.name) : null,
       ),
       balance(report),

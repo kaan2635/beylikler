@@ -51,13 +51,14 @@ export function createNewGame({
     achievements: {}, // başarım → ulaşılan kademe
     victory: null, // Sultanlık ilan edildiyse { at }
     diplomacy: {}, // beylerle ilişkiler (bkz. systems/diplomacy.js)
+    tradeRoutes: [], // otomatik kervan hatları (bkz. systems/trade-routes.js)
     // events: olaylar ve kararlar; motor ilk ilerlemede kurar (bkz. systems/events.js)
   };
 }
 
 /** Oyuncu: sınıf oyun başında seçilir (null iken arayüz seçim penceresini açar). */
 function newPlayer(name = 'Bey') {
-  return { name, class: null, akce: PREMIUM.startAkce, officers: {}, akceLog: [], ilim: { done: [], current: null }, modifiers: [] };
+  return { name, class: null, akce: PREMIUM.startAkce, officers: {}, akceLog: [], ilim: { done: [], current: null }, modifiers: [], edict: null };
 }
 
 function newStats() {
@@ -147,6 +148,13 @@ const MIGRATIONS = {
   // 2.0: kahraman, şan ve unvan, harabeler, Moğol akını, tarihçe. Kahraman, akın takvimi ve
   // tarihçe motorca kurulur; unvan, kayıttaki başarılardan hesaplanan şana göre hemen verilir.
   11: (data) => ({ ...data, player: { ...data.player, title: data.player?.title ?? 0 }, version: 12 }),
+  // 2.1: her mevsim seçilebilen fermanlar ve otomatik kervan hatları.
+  12: (data) => ({
+    ...data,
+    player: { ...data.player, edict: data.player?.edict ?? null },
+    tradeRoutes: data.tradeRoutes ?? [],
+    version: 13,
+  }),
 };
 
 /** Kayıttan okunan veriyi doğrular ve güncel şemaya taşır. Geçersizse hata fırlatır. */
@@ -172,6 +180,8 @@ export function migrate(data) {
   data.player.akce ??= 0;
   data.player.ilim ??= { done: [], current: null };
   data.player.modifiers ??= [];
+  data.player.edict ??= null;
+  data.tradeRoutes ??= [];
   data.diplomacy ??= {};
   data.stats = { ...newStats(), ...data.stats };
   data.quests ??= { claimed: [] };

@@ -22,6 +22,7 @@ import { createDiplomacyView } from './views/diplomacy.js';
 import { openEventDialog } from './event-dialog.js';
 import { createHeroView } from './views/hero.js';
 import { createHistoryView } from './views/history.js';
+import { createAdminView } from './views/admin.js';
 import { maybeShowWhatsNew, openIntro } from './whats-new.js';
 import { titleOf } from '../systems/renown.js';
 import { heroHealthy } from '../systems/hero.js';
@@ -57,13 +58,14 @@ const ROUTES = {
   diplomasi: (ctx) => createDiplomacyView(ctx),
   kahraman: (ctx) => createHeroView(ctx),
   tarihce: (ctx) => createHistoryView(ctx),
+  yonetim: () => createAdminView(),
 };
 
 // Sekmesi olmayan bina sayfalarında hangi sekme seçili görünsün.
 const PARENT_TAB = { demirci: 'koy', pazar: 'koy' };
 
 // Sayfa başlığının yanındaki madalyonun simgesi; sekmesi olanlarda sekmenin simgesi.
-const VIEW_ICONS = { demirci: 'savunma', pazar: 'tuccar', hazine: 'sandik' };
+const VIEW_ICONS = { demirci: 'savunma', pazar: 'tuccar', hazine: 'sandik', yonetim: 'tac' };
 
 /** Ekranın başlığına, altın çerçeveli bir madalyon içinde sayfanın simgesini ekler. */
 function withEmblem(view, name) {
@@ -299,7 +301,9 @@ export function mountApp(game, { isNew, events }) {
       } else if (event.type === 'connection-back') {
         toast('Bağlantı yeniden kuruldu.', 'success');
       } else if (event.type === 'session-expired') {
-        toast('Oturumun sona erdi. Ayarlar → Çok oyunculu bölümünden yeniden giriş yap.', 'error', 10000);
+        toast(event.reason ?? 'Oturumun sona erdi. Ayarlar → Çok oyunculu bölümünden yeniden giriş yap.', 'error', 10000);
+      } else if (event.type === 'chat-cleared') {
+        toast('Yönetici sohbet geçmişini temizledi.', 'info');
       } else {
         rest.push(event);
       }
@@ -347,6 +351,7 @@ function announce(events, whileAway) {
       'incoming-attack': 'bey saldırısı',
       'defense-result': 'savunma',
       'transport-arrived': 'nakliye',
+      'trade-route': 'kervan sevkiyatı',
       'support-arrived': 'destek',
       'officer-expired': 'görevli ayrılığı',
       season: 'mevsim değişimi',
@@ -445,6 +450,10 @@ function describe(event) {
       const overflow = lost > 0 ? ` Ambar dolu olduğu için ${fmtInt(lost)} kaynak kayboldu.` : '';
       return { text: `Tüccarlar ${event.target} köyüne ${fmtInt(total(event.stored))} kaynak ulaştırdı.${overflow}`, kind: 'success' };
     }
+    case 'trade-route':
+      return event.reason
+        ? { text: `${event.source} → ${event.target} kervan hattı bu çevrimde sevkiyat yapmadı: ${event.reason}.`, kind: 'info' }
+        : { text: `${event.source} → ${event.target} kervan hattı ${fmtInt(event.sent)} kaynakla yola çıktı.`, kind: 'success' };
     case 'hero-level':
       return { text: `${event.name} ${event.level}. seviyeye ulaştı! Kahraman sayfasında özellik puanı seni bekliyor.`, kind: 'success' };
     case 'hero-wounded':
